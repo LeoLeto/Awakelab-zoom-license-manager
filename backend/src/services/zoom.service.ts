@@ -163,8 +163,8 @@ class ZoomService {
 
 
       console.log('📥 [ZOOM API RESPONSE]');
-      console.log(`   Status: ${response.status}`);
-      console.log(`   Status Text: ${response.statusText}`);
+      // console.log(`   Status: ${response.status}`);
+      // console.log(`   Status Text: ${response.statusText}`);
       // console.log(`   Response Data:`, JSON.stringify(response.data, null, 2));
       // console.log(`   Headers:`, JSON.stringify(response.headers, null, 2));
       console.log(`✅ Successfully changed password for user: ${userIdOrEmail}`);

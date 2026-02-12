@@ -23,10 +23,7 @@ export default function PasswordChangeModal({ user, onClose, onSuccess }: Passwo
       const result = await zoomApi.changePassword(user.email);
       setNewPassword(result.newPassword);
       setSuccess(true);
-      setTimeout(() => {
-        onSuccess();
-        onClose();
-      }, 3000);
+      onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to change password');
     } finally {
@@ -47,10 +44,7 @@ export default function PasswordChangeModal({ user, onClose, onSuccess }: Passwo
       const result = await zoomApi.changePassword(user.email, customPassword);
       setNewPassword(result.newPassword);
       setSuccess(true);
-      setTimeout(() => {
-        onSuccess();
-        onClose();
-      }, 3000);
+      onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to change password');
     } finally {
@@ -77,7 +71,7 @@ export default function PasswordChangeModal({ user, onClose, onSuccess }: Passwo
             <p><strong>New Password:</strong></p>
             <div className="password-display">{newPassword}</div>
             <p style={{ fontSize: '0.9rem', marginTop: '10px' }}>
-              Make sure to save this password securely. This window will close automatically.
+              Make sure to save this password securely before closing this window.
             </p>
           </div>
           <div className="button-group">
