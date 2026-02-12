@@ -141,11 +141,18 @@ class ZoomService {
     }
 
     try {
-      await axios.patch(
-        `https://api.zoom.us/v2/users/${encodeURIComponent(userIdOrEmail)}/password`,
-        {
-          password: newPassword
-        },
+      const url = `https://api.zoom.us/v2/users/${encodeURIComponent(userIdOrEmail)}/password`;
+      const payload = { password: newPassword };
+      
+      console.log('🔍 [PASSWORD CHANGE DEBUG]');
+      console.log(`   URL: ${url}`);
+      console.log(`   Payload:`, JSON.stringify(payload, null, 2));
+      console.log(`   User: ${userIdOrEmail}`);
+      
+      // Correct Zoom API endpoint: PUT /users/{userId}/password with password in body
+      const response = await axios.put(
+        url,
+        payload,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -154,10 +161,21 @@ class ZoomService {
         }
       );
 
+
+      console.log('📥 [ZOOM API RESPONSE]');
+      console.log(`   Status: ${response.status}`);
+      console.log(`   Status Text: ${response.statusText}`);
+      // console.log(`   Response Data:`, JSON.stringify(response.data, null, 2));
+      // console.log(`   Headers:`, JSON.stringify(response.headers, null, 2));
       console.log(`✅ Successfully changed password for user: ${userIdOrEmail}`);
+      
       return true;
     } catch (error: any) {
-      console.error('Failed to change Zoom password:', error.response?.data || error.message);
+      console.error('❌ [PASSWORD CHANGE ERROR]');
+      console.error('   Status:', error.response?.status);
+      console.error('   Status Text:', error.response?.statusText);
+      console.error('   Error Data:', JSON.stringify(error.response?.data, null, 2));
+      console.error('   Error Message:', error.message);
       throw new Error(`Failed to change password for user: ${userIdOrEmail}`);
     }
   }
