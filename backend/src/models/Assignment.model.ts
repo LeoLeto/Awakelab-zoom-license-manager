@@ -72,7 +72,6 @@ const AssignmentSchema = new Schema<IAssignment>(
 );
 
 // Indexes for better query performance
-AssignmentSchema.index({ licenseId: 1 });
 AssignmentSchema.index({ correocorporativo: 1 });
 AssignmentSchema.index({ estado: 1 });
 AssignmentSchema.index({ fechaInicioUso: 1, fechaFinUso: 1 });

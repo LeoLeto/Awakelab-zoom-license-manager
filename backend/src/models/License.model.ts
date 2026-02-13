@@ -69,7 +69,6 @@ const LicenseSchema = new Schema<ILicense>(
 );
 
 // Indexes for better query performance
-LicenseSchema.index({ email: 1 });
 LicenseSchema.index({ estado: 1 });
 LicenseSchema.index({ cuenta: 1 });
 

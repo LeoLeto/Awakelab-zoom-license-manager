@@ -51,7 +51,7 @@ ZOOM_CLIENT_ID=your_client_id
 ZOOM_CLIENT_SECRET=your_client_secret
 
 # Database
-DATABASE_URL=postgresql://user:password@localhost:5432/zoom_licenses
+MONGODB_URI=mongodb://localhost:27017/zoom_licenses
 
 # Server
 PORT=3001
