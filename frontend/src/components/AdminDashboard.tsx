@@ -14,8 +14,8 @@ export default function AdminDashboard() {
   return (
     <div className="admin-dashboard">
       <div className="dashboard-header">
-        <h1>🎯 Admin Dashboard</h1>
-        <p className="subtitle">Manage Zoom licenses, assignments, and user passwords</p>
+        <h1>🎯 Panel de Administración</h1>
+        <p className="subtitle">Gestiona licencias de Zoom, asignaciones y contraseñas de usuarios</p>
       </div>
 
       {/* Navigation Tabs */}
@@ -24,19 +24,19 @@ export default function AdminDashboard() {
           className={`tab ${activeTab === 'overview' ? 'active' : ''}`}
           onClick={() => setActiveTab('overview')}
         >
-          📊 License Overview
+          📊 Resumen de Licencias
         </button>
         <button
           className={`tab ${activeTab === 'assignments' ? 'active' : ''}`}
           onClick={() => setActiveTab('assignments')}
         >
-          📅 Assignments
+          📅 Asignaciones
         </button>
         <button
           className={`tab ${activeTab === 'users' ? 'active' : ''}`}
           onClick={() => setActiveTab('users')}
         >
-          👥 Password Management
+          👥 Gestión de Contraseñas
         </button>
       </div>
 

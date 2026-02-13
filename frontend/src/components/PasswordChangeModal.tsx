@@ -33,7 +33,7 @@ export default function PasswordChangeModal({ user, onClose, onSuccess }: Passwo
 
   const handleCustomPassword = async () => {
     if (!customPassword || customPassword.length < 8) {
-      setError('Password must be at least 8 characters long');
+      setError('La contraseña debe tener al menos 8 caracteres');
       return;
     }
 
@@ -57,7 +57,7 @@ export default function PasswordChangeModal({ user, onClose, onSuccess }: Passwo
       const result = await zoomApi.generatePassword(12);
       setCustomPassword(result.password);
     } catch (err) {
-      setError('Failed to generate password');
+      setError('No se pudo generar la contraseña');
     }
   };
 
@@ -65,17 +65,17 @@ export default function PasswordChangeModal({ user, onClose, onSuccess }: Passwo
     return (
       <div className="modal-overlay" onClick={onClose}>
         <div className="modal" onClick={(e) => e.stopPropagation()}>
-          <h3>✅ Password Changed Successfully</h3>
+          <h3>✅ Contraseña Cambiada Exitosamente</h3>
           <div className="success-message">
-            <p><strong>User:</strong> {user.email}</p>
-            <p><strong>New Password:</strong></p>
+            <p><strong>Usuario:</strong> {user.email}</p>
+            <p><strong>Nueva Contraseña:</strong></p>
             <div className="password-display">{newPassword}</div>
             <p style={{ fontSize: '0.9rem', marginTop: '10px' }}>
-              Make sure to save this password securely before closing this window.
+              Asegúrate de guardar esta contraseña de forma segura antes de cerrar esta ventana.
             </p>
           </div>
           <div className="button-group">
-            <button onClick={onClose}>Close</button>
+            <button onClick={onClose}>Cerrar</button>
           </div>
         </div>
       </div>
@@ -85,7 +85,7 @@ export default function PasswordChangeModal({ user, onClose, onSuccess }: Passwo
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h3>🔐 Change Password</h3>
+        <h3>🔐 Cambiar Contraseña</h3>
         
         <div className="modal-user-info">
           <p><strong>User:</strong> {user.first_name} {user.last_name}</p>
@@ -99,16 +99,16 @@ export default function PasswordChangeModal({ user, onClose, onSuccess }: Passwo
         )}
 
         <div className="form-group">
-          <label>Custom Password (optional)</label>
+          <label>Contraseña Personalizada (opcional)</label>
           <input
             type="text"
             value={customPassword}
             onChange={(e) => setCustomPassword(e.target.value)}
-            placeholder="Leave blank to auto-generate"
+            placeholder="Dejar en blanco para generar automáticamente"
             disabled={loading}
           />
           <a className="generate-link" onClick={handleGeneratePasswordOnly}>
-            Generate secure password
+            Generar contraseña segura
           </a>
         </div>
 
@@ -118,7 +118,7 @@ export default function PasswordChangeModal({ user, onClose, onSuccess }: Passwo
             onClick={onClose}
             disabled={loading}
           >
-            Cancel
+            Cancelar
           </button>
           
           {customPassword ? (
@@ -126,7 +126,7 @@ export default function PasswordChangeModal({ user, onClose, onSuccess }: Passwo
               onClick={handleCustomPassword}
               disabled={loading}
             >
-              {loading ? 'Changing...' : 'Set Custom Password'}
+              {loading ? 'Cambiando...' : 'Establecer Contraseña Personalizada'}
             </button>
           ) : (
             <button 
@@ -134,7 +134,7 @@ export default function PasswordChangeModal({ user, onClose, onSuccess }: Passwo
               onClick={handleAutoGenerate}
               disabled={loading}
             >
-              {loading ? 'Generating...' : 'Auto-Generate & Change'}
+              {loading ? 'Generando...' : 'Auto-Generar y Cambiar'}
             </button>
           )}
         </div>

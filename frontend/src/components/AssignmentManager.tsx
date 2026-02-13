@@ -84,7 +84,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
   };
 
   const handleCancelAssignment = async (id: string) => {
-    if (!confirm('Are you sure you want to cancel this assignment?')) return;
+    if (!confirm('¿Estás seguro de que quieres cancelar esta asignación?')) return;
 
     try {
       await assignmentApi.cancelAssignment(id);
@@ -96,18 +96,18 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
   };
 
   if (loading) {
-    return <div className="loading">Loading assignments...</div>;
+    return <div className="loading">Cargando asignaciones...</div>;
   }
 
   return (
     <div className="assignment-manager">
       <div className="section-header">
-        <h2>📅 Assignment Management</h2>
+        <h2>📅 Gestión de Asignaciones</h2>
         <button
           className="btn-primary"
           onClick={() => setShowCreateForm(!showCreateForm)}
         >
-          {showCreateForm ? '✖ Cancel' : '➕ New Assignment'}
+          {showCreateForm ? '✖ Cancelar' : '➕ Nueva Asignación'}
         </button>
       </div>
 
@@ -116,44 +116,44 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
       {/* Create Assignment Form */}
       {showCreateForm && (
         <div className="card">
-          <h3>Create New Assignment</h3>
+          <h3>Crear Nueva Asignación</h3>
           <form onSubmit={handleCreateAssignment} className="assignment-form">
             <div className="form-row">
               <div className="form-group">
-                <label>Teacher Name *</label>
+                <label>Nombre del Profesor *</label>
                 <input
                   type="text"
                   required
                   value={formData.nombreApellidos}
                   onChange={(e) => setFormData({ ...formData, nombreApellidos: e.target.value })}
-                  placeholder="John Doe"
+                  placeholder="Juan Pérez"
                 />
               </div>
               <div className="form-group">
-                <label>Corporate Email *</label>
+                <label>Email Corporativo *</label>
                 <input
                   type="email"
                   required
                   value={formData.correocorporativo}
                   onChange={(e) => setFormData({ ...formData, correocorporativo: e.target.value })}
-                  placeholder="john.doe@example.com"
+                  placeholder="juan.perez@ejemplo.com"
                 />
               </div>
             </div>
 
             <div className="form-row">
               <div className="form-group">
-                <label>Area/Department *</label>
+                <label>Área/Departamento *</label>
                 <input
                   type="text"
                   required
                   value={formData.area}
                   onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                  placeholder="Mathematics"
+                  placeholder="Matemáticas"
                 />
               </div>
               <div className="form-group">
-                <label>Autonomous Community *</label>
+                <label>Comunidad Autónoma *</label>
                 <input
                   type="text"
                   required
@@ -166,23 +166,23 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
 
             <div className="form-row">
               <div className="form-group">
-                <label>Platform Type *</label>
+                <label>Tipo de Plataforma *</label>
                 <select
                   required
                   value={formData.tipoUso}
                   onChange={(e) => setFormData({ ...formData, tipoUso: e.target.value })}
                 >
-                  <option value="">Select...</option>
+                  <option value="">Seleccionar...</option>
                   <option value="Zoom Meetings">Zoom Meetings</option>
                   <option value="Zoom Webinar">Zoom Webinar</option>
-                  <option value="Both">Both</option>
+                  <option value="Both">Ambos</option>
                 </select>
               </div>
             </div>
 
             <div className="form-row">
               <div className="form-group">
-                <label>Start Date *</label>
+                <label>Fecha de Inicio *</label>
                 <input
                   type="date"
                   required
@@ -191,7 +191,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
                 />
               </div>
               <div className="form-group">
-                <label>End Date *</label>
+                <label>Fecha de Fin *</label>
                 <input
                   type="date"
                   required
@@ -203,7 +203,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
             </div>
 
             <div className="form-group">
-              <label>Available License *</label>
+              <label>Licencia Disponible *</label>
               <select
                 required
                 value={formData.licenseId}
@@ -212,10 +212,10 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
               >
                 <option value="">
                   {!formData.fechaInicioUso || !formData.fechaFinUso
-                    ? 'Select dates first...'
+                    ? 'Selecciona primero las fechas...'
                     : availableLicenses.length === 0
-                    ? 'No licenses available for selected period'
-                    : 'Select a license...'}
+                    ? 'No hay licencias disponibles para el período seleccionado'
+                    : 'Selecciona una licencia...'}
                 </option>
                 {availableLicenses.map((license) => (
                   <option key={license._id} value={license._id}>
@@ -225,21 +225,21 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
               </select>
               {availableLicenses.length > 0 && (
                 <small className="form-hint">
-                  {availableLicenses.length} license(s) available for selected period
+                  {availableLicenses.length} licencia(s) disponible(s) para el período seleccionado
                 </small>
               )}
             </div>
 
             <div className="form-actions">
               <button type="submit" className="btn-primary">
-                Create Assignment
+                Crear Asignación
               </button>
               <button
                 type="button"
                 className="btn-secondary"
                 onClick={() => setShowCreateForm(false)}
               >
-                Cancel
+                Cancelar
               </button>
             </div>
           </form>
@@ -248,25 +248,25 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
 
       {/* Active Assignments */}
       <div className="assignments-list">
-        <h3>Active Assignments ({assignments.length})</h3>
+        <h3>Asignaciones Activas ({assignments.length})</h3>
         {assignments.length === 0 ? (
           <div className="empty-state">
-            <p>No active assignments found.</p>
+            <p>No se encontraron asignaciones activas.</p>
           </div>
         ) : (
           <div className="table-container">
             <table>
               <thead>
                 <tr>
-                  <th>Teacher</th>
+                  <th>Profesor</th>
                   <th>Email</th>
-                  <th>Area</th>
-                  <th>Community</th>
-                  <th>Platform</th>
-                  <th>Start Date</th>
-                  <th>End Date</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                  <th>Área</th>
+                  <th>Comunidad</th>
+                  <th>Plataforma</th>
+                  <th>Fecha Inicio</th>
+                  <th>Fecha Fin</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -290,7 +290,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
                           className="btn-danger btn-small"
                           onClick={() => handleCancelAssignment(assignment._id)}
                         >
-                          Cancel
+                          Cancelar
                         </button>
                       )}
                     </td>

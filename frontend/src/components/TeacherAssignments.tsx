@@ -50,15 +50,15 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
     const endDate = new Date(assignment.fechaFinUso);
 
     if (assignment.estado === 'cancelado') {
-      return { label: 'Cancelled', className: 'cancelled', icon: '🚫' };
+      return { label: 'Cancelada', className: 'cancelled', icon: '🚫' };
     }
     if (assignment.estado === 'expirado' || endDate < now) {
-      return { label: 'Expired', className: 'expired', icon: '⌛' };
+      return { label: 'Expirada', className: 'expired', icon: '⌛' };
     }
     if (startDate > now) {
-      return { label: 'Upcoming', className: 'upcoming', icon: '📅' };
+      return { label: 'Próxima', className: 'upcoming', icon: '📅' };
     }
-    return { label: 'Active', className: 'active', icon: '✅' };
+    return { label: 'Activa', className: 'active', icon: '✅' };
   };
 
   const getDaysRemaining = (endDate: string) => {
@@ -70,14 +70,14 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
   };
 
   if (loading) {
-    return <div className="loading">Loading your assignments...</div>;
+    return <div className="loading">Cargando tus asignaciones...</div>;
   }
 
   if (error) {
     return (
       <div className="error">
         <p>{error}</p>
-        <button onClick={loadAssignments}>Retry</button>
+        <button onClick={loadAssignments}>Reintentar</button>
       </div>
     );
   }
@@ -96,23 +96,23 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
     <div className="teacher-assignments">
       {!teacherEmail && (
         <div className="form-group">
-          <label htmlFor="emailFilter">Filter by Email</label>
+          <label htmlFor="emailFilter">Filtrar por Email</label>
           <input
             id="emailFilter"
             type="email"
             value={filterEmail}
             onChange={(e) => setFilterEmail(e.target.value)}
-            placeholder="Enter your corporate email..."
+            placeholder="Ingresa tu email corporativo..."
           />
         </div>
       )}
 
       {/* Active & Upcoming Assignments */}
       <div className="assignments-section">
-        <h3>📋 Current & Upcoming Assignments ({activeAssignments.length})</h3>
+        <h3>📋 Asignaciones Actuales y Próximas ({activeAssignments.length})</h3>
         {activeAssignments.length === 0 ? (
           <div className="empty-state">
-            <p>You have no active or upcoming assignments.</p>
+            <p>No tienes asignaciones activas o próximas.</p>
           </div>
         ) : (
           <div className="assignments-grid">
@@ -127,7 +127,7 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
                       {status.icon} {status.label}
                     </span>
                     {status.className === 'active' && daysRemaining <= 7 && (
-                      <span className="warning-badge">⚠️ {daysRemaining} days left</span>
+                      <span className="warning-badge">⚠️ {daysRemaining} días restantes</span>
                     )}
                   </div>
                   
@@ -139,19 +139,19 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
                         <span className="value">{assignment.correocorporativo}</span>
                       </div>
                       <div className="detail-row">
-                        <span className="label">📚 Area:</span>
+                        <span className="label">📚 Área:</span>
                         <span className="value">{assignment.area}</span>
                       </div>
                       <div className="detail-row">
-                        <span className="label">📍 Community:</span>
+                        <span className="label">📍 Comunidad:</span>
                         <span className="value">{assignment.comunidadAutonoma}</span>
                       </div>
                       <div className="detail-row">
-                        <span className="label">💻 Platform:</span>
+                        <span className="label">💻 Plataforma:</span>
                         <span className="value">{assignment.tipoUso}</span>
                       </div>
                       <div className="detail-row">
-                        <span className="label">📅 Period:</span>
+                        <span className="label">📅 Período:</span>
                         <span className="value">
                           {new Date(assignment.fechaInicioUso).toLocaleDateString()} - 
                           {new Date(assignment.fechaFinUso).toLocaleDateString()}
@@ -169,16 +169,16 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
       {/* Past Assignments */}
       {pastAssignments.length > 0 && (
         <div className="assignments-section">
-          <h3>📜 Past Assignments ({pastAssignments.length})</h3>
+          <h3>📜 Asignaciones Pasadas ({pastAssignments.length})</h3>
           <div className="table-container">
             <table>
               <thead>
                 <tr>
-                  <th>Status</th>
-                  <th>Name</th>
-                  <th>Area</th>
-                  <th>Start Date</th>
-                  <th>End Date</th>
+                  <th>Estado</th>
+                  <th>Nombre</th>
+                  <th>Área</th>
+                  <th>Fecha Inicio</th>
+                  <th>Fecha Fin</th>
                 </tr>
               </thead>
               <tbody>

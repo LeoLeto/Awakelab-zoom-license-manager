@@ -29,18 +29,18 @@ export default function UserList() {
   const getUserTypeLabel = (type: number): { label: string; className: string } => {
     switch (type) {
       case 1:
-        return { label: 'Basic', className: 'basic' };
+        return { label: 'Básico', className: 'basic' };
       case 2:
-        return { label: 'Licensed', className: 'licensed' };
+        return { label: 'Licenciado', className: 'licensed' };
       case 3:
-        return { label: 'Admin', className: 'admin' };
+        return { label: 'Administrador', className: 'admin' };
       default:
-        return { label: 'Unknown', className: 'basic' };
+        return { label: 'Desconocido', className: 'basic' };
     }
   };
 
   if (loading) {
-    return <div className="loading">Loading Zoom users...</div>;
+    return <div className="loading">Cargando usuarios de Zoom...</div>;
   }
 
   if (error) {
@@ -49,7 +49,7 @@ export default function UserList() {
         <div className="error">
           <strong>Error:</strong> {error}
         </div>
-        <button onClick={loadUsers}>Retry</button>
+        <button onClick={loadUsers}>Reintentar</button>
       </div>
     );
   }
@@ -57,18 +57,18 @@ export default function UserList() {
   return (
     <>
       <div className="user-list">
-        <h2>Zoom Users</h2>
+        <h2>Usuarios de Zoom</h2>
         <div className="user-stats">
-          Total Users: <strong>{users.length}</strong>
+          Total de Usuarios: <strong>{users.length}</strong>
         </div>
         <table>
           <thead>
             <tr>
-              <th>Name</th>
+              <th>Nombre</th>
               <th>Email</th>
-              <th>Type</th>
-              <th>User ID</th>
-              <th>Actions</th>
+              <th>Tipo</th>
+              <th>ID de Usuario</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -91,7 +91,7 @@ export default function UserList() {
                       className="btn-small"
                       onClick={() => setSelectedUser(user)}
                     >
-                      Change Password
+                      Cambiar Contraseña
                     </button>
                   </td>
                 </tr>
@@ -107,7 +107,7 @@ export default function UserList() {
           onClose={() => setSelectedUser(null)}
           onSuccess={() => {
             // Could refresh user list here if needed
-            console.log('Password changed successfully');
+            console.log('Contraseña cambiada exitosamente');
           }}
         />
       )}

@@ -14,8 +14,8 @@ export default function TeacherPortal() {
   return (
     <div className="teacher-portal">
       <div className="dashboard-header">
-        <h1>👨‍🏫 Teacher Portal</h1>
-        <p className="subtitle">Request and manage your Zoom licenses</p>
+        <h1>👨‍🏫 Portal del Profesor</h1>
+        <p className="subtitle">Solicita y gestiona tus licencias de Zoom</p>
       </div>
 
       {/* Navigation Tabs */}
@@ -24,13 +24,13 @@ export default function TeacherPortal() {
           className={`tab ${activeTab === 'request' ? 'active' : ''}`}
           onClick={() => setActiveTab('request')}
         >
-          📝 Request License
+          📝 Solicitar Licencia
         </button>
         <button
           className={`tab ${activeTab === 'assignments' ? 'active' : ''}`}
           onClick={() => setActiveTab('assignments')}
         >
-          📋 My Assignments
+          📋 Mis Asignaciones
         </button>
       </div>
 

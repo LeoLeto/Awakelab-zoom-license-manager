@@ -46,7 +46,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
     e.preventDefault();
     
     if (!selectedLicense) {
-      setError('Please select a license');
+      setError('Por favor, selecciona una licencia');
       return;
     }
 
@@ -83,10 +83,10 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
   if (success) {
     return (
       <div className="card success-message">
-        <h3>✅ License Request Submitted Successfully!</h3>
-        <p>Your license has been assigned. You can view it in the "My Assignments" section.</p>
+        <h3>✅ ¡Solicitud de Licencia Enviada Exitosamente!</h3>
+        <p>Tu licencia ha sido asignada. Puedes verla en la sección "Mis Asignaciones".</p>
         <button onClick={() => setSuccess(false)} className="btn-primary">
-          Submit Another Request
+          Enviar Otra Solicitud
         </button>
       </div>
     );
@@ -95,9 +95,9 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
   return (
     <div className="teacher-request-form">
       <div className="card">
-        <h2>📝 Request a Zoom License</h2>
+        <h2>📝 Solicitar una Licencia de Zoom</h2>
         <p className="form-description">
-          Fill out this form to request a Zoom license for your teaching needs.
+          Completa este formulario para solicitar una licencia de Zoom para tus necesidades docentes.
         </p>
 
         {error && <div className="error">{error}</div>}
@@ -105,28 +105,28 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
         <form onSubmit={handleSubmit}>
           {/* Personal Information */}
           <div className="form-section">
-            <h3>Personal Information</h3>
+            <h3>Información Personal</h3>
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="nombreApellidos">Full Name *</label>
+                <label htmlFor="nombreApellidos">Nombre Completo *</label>
                 <input
                   id="nombreApellidos"
                   type="text"
                   required
                   value={formData.nombreApellidos}
                   onChange={(e) => setFormData({ ...formData, nombreApellidos: e.target.value })}
-                  placeholder="John Doe"
+                  placeholder="Juan Pérez"
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="correocorporativo">Corporate Email *</label>
+                <label htmlFor="correocorporativo">Email Corporativo *</label>
                 <input
                   id="correocorporativo"
                   type="email"
                   required
                   value={formData.correocorporativo}
                   onChange={(e) => setFormData({ ...formData, correocorporativo: e.target.value })}
-                  placeholder="john.doe@example.com"
+                  placeholder="juan.perez@ejemplo.com"
                 />
               </div>
             </div>
@@ -134,28 +134,28 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
 
           {/* Work Information */}
           <div className="form-section">
-            <h3>Work Information</h3>
+            <h3>Información Laboral</h3>
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="area">Area/Department *</label>
+                <label htmlFor="area">Área/Departamento *</label>
                 <input
                   id="area"
                   type="text"
                   required
                   value={formData.area}
                   onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                  placeholder="e.g., Mathematics, Sciences, Languages"
+                  placeholder="ej., Matemáticas, Ciencias, Idiomas"
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="comunidadAutonoma">Autonomous Community *</label>
+                <label htmlFor="comunidadAutonoma">Comunidad Autónoma *</label>
                 <select
                   id="comunidadAutonoma"
                   required
                   value={formData.comunidadAutonoma}
                   onChange={(e) => setFormData({ ...formData, comunidadAutonoma: e.target.value })}
                 >
-                  <option value="">Select...</option>
+                  <option value="">Seleccionar...</option>
                   <option value="Andalucía">Andalucía</option>
                   <option value="Aragón">Aragón</option>
                   <option value="Asturias">Asturias</option>
@@ -177,27 +177,27 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
               </div>
             </div>
             <div className="form-group">
-              <label htmlFor="tipoUso">Platform Type *</label>
+              <label htmlFor="tipoUso">Tipo de Plataforma *</label>
               <select
                 id="tipoUso"
                 required
                 value={formData.tipoUso}
                 onChange={(e) => setFormData({ ...formData, tipoUso: e.target.value })}
               >
-                <option value="">Select...</option>
+                <option value="">Seleccionar...</option>
                 <option value="Zoom Meetings">Zoom Meetings</option>
                 <option value="Zoom Webinar">Zoom Webinar</option>
-                <option value="Both">Both (Meetings & Webinar)</option>
+                <option value="Both">Ambos (Meetings y Webinar)</option>
               </select>
             </div>
           </div>
 
           {/* Date Range */}
           <div className="form-section">
-            <h3>License Period</h3>
+            <h3>Período de Licencia</h3>
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="fechaInicioUso">Start Date *</label>
+                <label htmlFor="fechaInicioUso">Fecha de Inicio *</label>
                 <input
                   id="fechaInicioUso"
                   type="date"
@@ -211,7 +211,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="fechaFinUso">End Date *</label>
+                <label htmlFor="fechaFinUso">Fecha de Fin *</label>
                 <input
                   id="fechaFinUso"
                   type="date"
@@ -233,7 +233,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                 onClick={checkAvailability}
                 disabled={checkingAvailability}
               >
-                {checkingAvailability ? 'Checking...' : '🔍 Check Availability'}
+                {checkingAvailability ? 'Verificando...' : '🔍 Verificar Disponibilidad'}
               </button>
             )}
           </div>
@@ -241,20 +241,20 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
           {/* Available Licenses */}
           {availableLicenses.length > 0 && (
             <div className="form-section">
-              <h3>Available Licenses</h3>
+              <h3>Licencias Disponibles</h3>
               <div className="license-selection">
                 <p className="success">
-                  ✅ {availableLicenses.length} license(s) available for your selected period!
+                  ✅ ¡{availableLicenses.length} licencia(s) disponible(s) para tu período seleccionado!
                 </p>
                 <div className="form-group">
-                  <label htmlFor="license">Select a License *</label>
+                  <label htmlFor="license">Selecciona una Licencia *</label>
                   <select
                     id="license"
                     required
                     value={selectedLicense}
                     onChange={(e) => setSelectedLicense(e.target.value)}
                   >
-                    <option value="">Choose one...</option>
+                    <option value="">Elige una...</option>
                     {availableLicenses.map((license) => (
                       <option key={license._id} value={license._id}>
                         {license.usuarioMoodle} ({license.email})
@@ -268,7 +268,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
 
           {availableLicenses.length === 0 && formData.fechaInicioUso && formData.fechaFinUso && !checkingAvailability && (
             <div className="warning">
-              ⚠️ No licenses available for the selected period. Please try different dates or contact an administrator.
+              ⚠️ No hay licencias disponibles para el período seleccionado. Por favor, prueba con fechas diferentes o contacta a un administrador.
             </div>
           )}
 
@@ -279,7 +279,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
               className="btn-primary"
               disabled={loading || !selectedLicense}
             >
-              {loading ? 'Submitting...' : '🚀 Submit Request'}
+              {loading ? 'Enviando...' : '🚀 Enviar Solicitud'}
             </button>
           </div>
         </form>

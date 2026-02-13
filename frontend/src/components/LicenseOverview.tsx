@@ -50,14 +50,14 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
   };
 
   if (loading) {
-    return <div className="loading">Loading licenses...</div>;
+    return <div className="loading">Cargando licencias...</div>;
   }
 
   if (error) {
     return (
       <div className="error">
         <p>{error}</p>
-        <button onClick={loadLicenses}>Retry</button>
+        <button onClick={loadLicenses}>Reintentar</button>
       </div>
     );
   }
@@ -76,26 +76,26 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
   return (
     <div className="license-overview">
       <div className="section-header">
-        <h2>📊 License Overview</h2>
-        <button onClick={loadLicenses} className="btn-refresh">🔄 Refresh</button>
+        <h2>📊 Resumen de Licencias</h2>
+        <button onClick={loadLicenses} className="btn-refresh">🔄 Actualizar</button>
       </div>
 
       {/* Statistics */}
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-label">Total Licenses</div>
+          <div className="stat-label">Total de Licencias</div>
           <div className="stat-value">{stats.total}</div>
         </div>
         <div className="stat-card libre">
-          <div className="stat-label">Available</div>
+          <div className="stat-label">Disponibles</div>
           <div className="stat-value">{stats.libre}</div>
         </div>
         <div className="stat-card ocupado">
-          <div className="stat-label">Occupied</div>
+          <div className="stat-label">Ocupadas</div>
           <div className="stat-value">{stats.ocupado}</div>
         </div>
         <div className="stat-card mantenimiento">
-          <div className="stat-label">Maintenance</div>
+          <div className="stat-label">Mantenimiento</div>
           <div className="stat-value">{stats.mantenimiento}</div>
         </div>
       </div>
@@ -107,30 +107,30 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
             className={filter === 'all' ? 'active' : ''}
             onClick={() => setFilter('all')}
           >
-            All ({stats.total})
+            Todas ({stats.total})
           </button>
           <button
             className={filter === 'libre' ? 'active' : ''}
             onClick={() => setFilter('libre')}
           >
-            Available ({stats.libre})
+            Disponibles ({stats.libre})
           </button>
           <button
             className={filter === 'ocupado' ? 'active' : ''}
             onClick={() => setFilter('ocupado')}
           >
-            Occupied ({stats.ocupado})
+            Ocupadas ({stats.ocupado})
           </button>
           <button
             className={filter === 'mantenimiento' ? 'active' : ''}
             onClick={() => setFilter('mantenimiento')}
           >
-            Maintenance ({stats.mantenimiento})
+            Mantenimiento ({stats.mantenimiento})
           </button>
         </div>
         <input
           type="text"
-          placeholder="🔍 Search by email, username, or account..."
+          placeholder="🔍 Buscar por email, usuario o cuenta..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="search-input"
@@ -142,13 +142,13 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
         <table className="licenses-table">
           <thead>
             <tr>
-              <th>Account</th>
+              <th>Cuenta</th>
               <th>Email</th>
-              <th>Moodle User</th>
-              <th>Status</th>
-              <th>Assigned To</th>
-              <th>Period</th>
-              <th>Actions</th>
+              <th>Usuario Moodle</th>
+              <th>Estado</th>
+              <th>Asignado a</th>
+              <th>Período</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -187,7 +187,7 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
                   <button
                     className="btn-small"
                     onClick={() => handlePasswordChange(item)}
-                    title="Change Zoom password"
+                    title="Cambiar contraseña de Zoom"
                   >
                     🔐
                   </button>
@@ -200,7 +200,7 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
 
       {filteredLicenses.length === 0 && (
         <div className="empty-state">
-          <p>No licenses found matching your criteria.</p>
+          <p>No se encontraron licencias que coincidan con tus criterios.</p>
         </div>
       )}
 

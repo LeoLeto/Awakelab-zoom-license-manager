@@ -13,8 +13,8 @@ const API_BASE_URL = '/api';
 async function apiCall<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, options);
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(error.error || error.message || 'Request failed');
+    const error = await response.json().catch(() => ({ error: 'Solicitud fallida' }));
+    throw new Error(error.error || error.message || 'Solicitud fallida');
   }
   return response.json();
 }
