@@ -17,7 +17,6 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
     fechaFinUso: '',
   });
   const [availableLicenses, setAvailableLicenses] = useState<License[]>([]);
-  const [selectedLicense, setSelectedLicense] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -44,20 +43,13 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!selectedLicense) {
-      setError('Por favor, selecciona una licencia');
-      return;
-    }
 
     try {
       setLoading(true);
       setError(null);
       
-      await assignmentApi.createAssignment({
-        licenseId: selectedLicense,
-        ...formData,
-      });
+      // Submit without licenseId - admin will assign it later
+      await assignmentApi.createAssignment(formData);
       
       setSuccess(true);
       setFormData({
@@ -69,7 +61,6 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
         fechaInicioUso: '',
         fechaFinUso: '',
       });
-      setSelectedLicense('');
       setAvailableLicenses([]);
       
       onSuccess?.();
@@ -84,7 +75,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
     return (
       <div className="card success-message">
         <h3>✅ ¡Solicitud de Licencia Enviada Exitosamente!</h3>
-        <p>Tu licencia ha sido asignada. Puedes verla en la sección "Mis Asignaciones".</p>
+        <p>Tu solicitud ha sido enviada al administrador y está pendiente de aprobación. Te notificaremos cuando se te asigne una licencia.</p>
         <button onClick={() => setSuccess(false)} className="btn-primary">
           Enviar Otra Solicitud
         </button>
@@ -205,7 +196,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                   value={formData.fechaInicioUso}
                   onChange={(e) => {
                     setFormData({ ...formData, fechaInicioUso: e.target.value });
-                    setSelectedLicense('');
+                    setAvailableLicenses([]);
                   }}
                   min={new Date().toISOString().split('T')[0]}
                 />
@@ -219,7 +210,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                   value={formData.fechaFinUso}
                   onChange={(e) => {
                     setFormData({ ...formData, fechaFinUso: e.target.value });
-                    setSelectedLicense('');
+                    setAvailableLicenses([]);
                   }}
                   min={formData.fechaInicioUso || new Date().toISOString().split('T')[0]}
                 />
@@ -227,48 +218,32 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
             </div>
 
             {formData.fechaInicioUso && formData.fechaFinUso && (
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={checkAvailability}
-                disabled={checkingAvailability}
-              >
-                {checkingAvailability ? 'Verificando...' : '🔍 Verificar Disponibilidad'}
-              </button>
+              <div>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={checkAvailability}
+                  disabled={checkingAvailability}
+                >
+                  {checkingAvailability ? 'Verificando...' : '🔍 Verificar Disponibilidad (Opcional)'}
+                </button>
+                <small className="form-hint" style={{ display: 'block', marginTop: '8px' }}>
+                  Esta verificación es solo informativa. Puedes enviar tu solicitud independientemente de la disponibilidad.
+                </small>
+              </div>
             )}
           </div>
 
-          {/* Available Licenses */}
+          {/* Availability Information (Optional) */}
           {availableLicenses.length > 0 && (
-            <div className="form-section">
-              <h3>Licencias Disponibles</h3>
-              <div className="license-selection">
-                <p className="success">
-                  ✅ ¡{availableLicenses.length} licencia(s) disponible(s) para tu período seleccionado!
-                </p>
-                <div className="form-group">
-                  <label htmlFor="license">Selecciona una Licencia *</label>
-                  <select
-                    id="license"
-                    required
-                    value={selectedLicense}
-                    onChange={(e) => setSelectedLicense(e.target.value)}
-                  >
-                    <option value="">Elige una...</option>
-                    {availableLicenses.map((license) => (
-                      <option key={license._id} value={license._id}>
-                        {license.usuarioMoodle} ({license.email})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+            <div className="info" style={{ padding: '12px', backgroundColor: '#d4edda', border: '1px solid #c3e6cb', borderRadius: '4px', color: '#155724' }}>
+              ✅ Hay {availableLicenses.length} licencia(s) disponible(s) para tu período seleccionado. El administrador asignará una de ellas a tu solicitud.
             </div>
           )}
 
           {availableLicenses.length === 0 && formData.fechaInicioUso && formData.fechaFinUso && !checkingAvailability && (
-            <div className="warning">
-              ⚠️ No hay licencias disponibles para el período seleccionado. Por favor, prueba con fechas diferentes o contacta a un administrador.
+            <div className="warning" style={{ padding: '12px', backgroundColor: '#fff3cd', border: '1px solid #ffeeba', borderRadius: '4px', color: '#856404' }}>
+              ℹ️ Actualmente no hay licencias disponibles para el período seleccionado, pero puedes enviar tu solicitud de todos modos. El administrador gestionará la asignación.
             </div>
           )}
 
@@ -277,7 +252,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
             <button
               type="submit"
               className="btn-primary"
-              disabled={loading || !selectedLicense}
+              disabled={loading}
             >
               {loading ? 'Enviando...' : '🚀 Enviar Solicitud'}
             </button>

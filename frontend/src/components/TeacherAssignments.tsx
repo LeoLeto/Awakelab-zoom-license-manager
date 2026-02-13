@@ -49,6 +49,9 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
     const startDate = new Date(assignment.fechaInicioUso);
     const endDate = new Date(assignment.fechaFinUso);
 
+    if (assignment.estado === 'pendiente') {
+      return { label: 'Pendiente de Aprobación', className: 'pending', icon: '⏳' };
+    }
     if (assignment.estado === 'cancelado') {
       return { label: 'Cancelada', className: 'cancelled', icon: '🚫' };
     }
@@ -84,7 +87,7 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
 
   const activeAssignments = assignments.filter((a) => {
     const status = getStatusInfo(a);
-    return status.className === 'active' || status.className === 'upcoming';
+    return status.className === 'active' || status.className === 'upcoming' || status.className === 'pending';
   });
 
   const pastAssignments = assignments.filter((a) => {

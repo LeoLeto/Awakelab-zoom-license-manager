@@ -2,7 +2,7 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IAssignment extends Document {
   _id: Types.ObjectId;
-  licenseId: Types.ObjectId;
+  licenseId?: Types.ObjectId;
   nombreApellidos: string;
   correocorporativo: string;
   area: string;
@@ -10,7 +10,7 @@ export interface IAssignment extends Document {
   tipoUso: string;
   fechaInicioUso: Date;
   fechaFinUso: Date;
-  estado: 'activo' | 'expirado' | 'cancelado';
+  estado: 'activo' | 'expirado' | 'cancelado' | 'pendiente';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -20,7 +20,7 @@ const AssignmentSchema = new Schema<IAssignment>(
     licenseId: {
       type: Schema.Types.ObjectId,
       ref: 'License',
-      required: true,
+      required: false,
       index: true,
     },
     nombreApellidos: {
@@ -59,8 +59,8 @@ const AssignmentSchema = new Schema<IAssignment>(
     },
     estado: {
       type: String,
-      enum: ['activo', 'expirado', 'cancelado'],
-      default: 'activo',
+      enum: ['activo', 'expirado', 'cancelado', 'pendiente'],
+      default: 'pendiente',
       required: true,
     },
   },

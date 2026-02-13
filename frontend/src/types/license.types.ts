@@ -15,7 +15,7 @@ export interface License {
 
 export interface Assignment {
   _id: string;
-  licenseId: string;
+  licenseId?: string;
   nombreApellidos: string;
   correocorporativo: string;
   area: string;
@@ -23,7 +23,7 @@ export interface Assignment {
   tipoUso: string;
   fechaInicioUso: string;
   fechaFinUso: string;
-  estado: 'activo' | 'expirado' | 'cancelado';
+  estado: 'activo' | 'expirado' | 'cancelado' | 'pendiente';
   createdAt: string;
   updatedAt: string;
 }
@@ -46,7 +46,7 @@ export interface CreateLicenseDto {
 }
 
 export interface CreateAssignmentDto {
-  licenseId: string;
+  licenseId?: string;
   nombreApellidos: string;
   correocorporativo: string;
   area: string;

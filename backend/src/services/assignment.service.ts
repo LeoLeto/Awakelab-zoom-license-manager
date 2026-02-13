@@ -62,36 +62,47 @@ export class AssignmentService {
    * Create a new assignment
    */
   async createAssignment(assignmentData: Partial<IAssignment>): Promise<IAssignment> {
-    // Validate license exists
-    const license = await License.findById(assignmentData.licenseId);
-    if (!license) {
-      throw new Error('License not found');
+    // If licenseId is provided, validate and check availability
+    if (assignmentData.licenseId) {
+      // Validate license exists
+      const license = await License.findById(assignmentData.licenseId);
+      if (!license) {
+        throw new Error('License not found');
+      }
+
+      // Check if license is available for the requested dates
+      const overlappingAssignments = await Assignment.find({
+        licenseId: assignmentData.licenseId,
+        estado: 'activo',
+        $or: [
+          {
+            fechaInicioUso: { $lte: assignmentData.fechaFinUso },
+            fechaFinUso: { $gte: assignmentData.fechaInicioUso }
+          }
+        ]
+      });
+
+      if (overlappingAssignments.length > 0) {
+        throw new Error('License is not available for the requested date range');
+      }
     }
 
-    // Check if license is available for the requested dates
-    const overlappingAssignments = await Assignment.find({
-      licenseId: assignmentData.licenseId,
-      estado: 'activo',
-      $or: [
-        {
-          fechaInicioUso: { $lte: assignmentData.fechaFinUso },
-          fechaFinUso: { $gte: assignmentData.fechaInicioUso }
-        }
-      ]
+    // Set estado based on whether licenseId is provided
+    const estado = assignmentData.licenseId ? 'activo' : 'pendiente';
+    
+    const assignment = new Assignment({
+      ...assignmentData,
+      estado
     });
-
-    if (overlappingAssignments.length > 0) {
-      throw new Error('License is not available for the requested date range');
-    }
-
-    const assignment = new Assignment(assignmentData);
     const savedAssignment = await assignment.save();
 
-    // Update license status to 'ocupado'
-    await License.findByIdAndUpdate(
-      assignmentData.licenseId,
-      { $set: { estado: 'ocupado' } }
-    );
+    // Update license status to 'ocupado' only if licenseId is provided
+    if (assignmentData.licenseId) {
+      await License.findByIdAndUpdate(
+        assignmentData.licenseId,
+        { $set: { estado: 'ocupado' } }
+      );
+    }
 
     return savedAssignment;
   }
