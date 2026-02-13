@@ -21,7 +21,11 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
       setLoading(true);
       setError(null);
       const response = await licenseApi.getAllLicenses();
-      setLicenses(response.licenses);
+      // Filter out any invalid data
+      const validLicenses = response.licenses.filter(
+        (item: any) => item && item.license && item.license.email
+      );
+      setLicenses(validLicenses);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load licenses');
     } finally {

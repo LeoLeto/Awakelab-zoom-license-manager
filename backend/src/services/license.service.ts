@@ -150,8 +150,8 @@ export class LicenseService {
     });
 
     return {
-      ...license.toObject(),
-      currentAssignment: currentAssignment?.toObject() || null
+      license: license.toObject(),
+      assignment: currentAssignment?.toObject() || null
     };
   }
 
@@ -172,8 +172,8 @@ export class LicenseService {
         });
 
         return {
-          ...license.toObject(),
-          currentAssignment: currentAssignment?.toObject() || null
+          license: license.toObject(),
+          assignment: currentAssignment?.toObject() || null
         };
       })
     );

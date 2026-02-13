@@ -25,8 +25,8 @@ const LicenseSchema = new Schema<ILicense>(
     },
     usuarioMoodle: {
       type: String,
+      required: true,
       trim: true,
-      default: '',
     },
     email: {
       type: String,
@@ -42,21 +42,22 @@ const LicenseSchema = new Schema<ILicense>(
     },
     claveUsuarioMoodle: {
       type: String,
-      default: '',
+      required: true,
     },
     passwordZoom: {
       type: String,
-      default: '',
+      required: true,
     },
     passwordEmail: {
       type: String,
-      default: '',
+      required: true,
     },
     estado: {
       type: String,
       enum: ['libre', 'ocupado', 'mantenimiento'],
       default: 'libre',
       required: true,
+      index: true,
     },
     observaciones: {
       type: String,
@@ -71,5 +72,7 @@ const LicenseSchema = new Schema<ILicense>(
 
 // Indexes for better query performance
 LicenseSchema.index({ estado: 1 });
+LicenseSchema.index({ cuenta: 1 });
+LicenseSchema.index({ email: 1 });
 
 export const License = mongoose.model<ILicense>('License', LicenseSchema);
