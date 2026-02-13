@@ -8,10 +8,13 @@ interface AssignmentManagerProps {
 
 export default function AssignmentManager({ onAssignmentChange }: AssignmentManagerProps) {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [pendingAssignments, setPendingAssignments] = useState<Assignment[]>([]);
   const [availableLicenses, setAvailableLicenses] = useState<License[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [assigningTo, setAssigningTo] = useState<string | null>(null);
+  const [selectedLicenseForAssignment, setSelectedLicenseForAssignment] = useState<string>('');
   const [formData, setFormData] = useState({
     licenseId: '',
     nombreApellidos: '',
@@ -36,6 +39,15 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
     }
   };
 
+  const loadPendingAssignments = async () => {
+    try {
+      const response = await assignmentApi.getPendingAssignments();
+      setPendingAssignments(response.assignments);
+    } catch (err) {
+      console.error('Failed to load pending assignments:', err);
+    }
+  };
+
   const loadAvailableLicenses = async () => {
     if (!formData.fechaInicioUso || !formData.fechaFinUso) return;
     
@@ -51,8 +63,22 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
     }
   };
 
+  const loadAvailableLicensesForAssignment = async (assignment: Assignment) => {
+    try {
+      const response = await licenseApi.getAvailableLicenses(
+        assignment.fechaInicioUso,
+        assignment.fechaFinUso
+      );
+      setAvailableLicenses(response.availableLicenses);
+    } catch (err) {
+      console.error('Failed to load available licenses:', err);
+      setAvailableLicenses([]);
+    }
+  };
+
   useEffect(() => {
     loadAssignments();
+    loadPendingAssignments();
   }, []);
 
   useEffect(() => {
@@ -89,10 +115,45 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
     try {
       await assignmentApi.cancelAssignment(id);
       loadAssignments();
+      loadPendingAssignments();
       onAssignmentChange?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to cancel assignment');
     }
+  };
+
+  const handleStartAssigning = async (assignment: Assignment) => {
+    setAssigningTo(assignment._id);
+    setSelectedLicenseForAssignment('');
+    await loadAvailableLicensesForAssignment(assignment);
+  };
+
+  const handleAssignLicense = async (assignmentId: string) => {
+    if (!selectedLicenseForAssignment) {
+      setError('Por favor, selecciona una licencia');
+      return;
+    }
+
+    try {
+      await assignmentApi.updateAssignment(assignmentId, {
+        licenseId: selectedLicenseForAssignment
+      });
+      setAssigningTo(null);
+      setSelectedLicenseForAssignment('');
+      setAvailableLicenses([]);
+      loadAssignments();
+      loadPendingAssignments();
+      onAssignmentChange?.();
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to assign license');
+    }
+  };
+
+  const handleCancelAssigning = () => {
+    setAssigningTo(null);
+    setSelectedLicenseForAssignment('');
+    setAvailableLicenses([]);
   };
 
   if (loading) {
@@ -243,6 +304,84 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Pending Requests */}
+      {pendingAssignments.length > 0 && (
+        <div className="pending-requests">
+          <h3>⏳ Solicitudes Pendientes ({pendingAssignments.length})</h3>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Profesor</th>
+                  <th>Email</th>
+                  <th>Área</th>
+                  <th>Comunidad</th>
+                  <th>Plataforma</th>
+                  <th>Fecha Inicio</th>
+                  <th>Fecha Fin</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingAssignments.map((assignment) => (
+                  <tr key={assignment._id}>
+                    <td>{assignment.nombreApellidos}</td>
+                    <td>{assignment.correocorporativo}</td>
+                    <td>{assignment.area}</td>
+                    <td>{assignment.comunidadAutonoma}</td>
+                    <td>{assignment.tipoUso}</td>
+                    <td>{new Date(assignment.fechaInicioUso).toLocaleDateString()}</td>
+                    <td>{new Date(assignment.fechaFinUso).toLocaleDateString()}</td>
+                    <td>
+                      {assigningTo === assignment._id ? (
+                        <div className="assign-license-form">
+                          <select
+                            value={selectedLicenseForAssignment}
+                            onChange={(e) => setSelectedLicenseForAssignment(e.target.value)}
+                            className="license-select"
+                          >
+                            <option value="">
+                              {availableLicenses.length === 0
+                                ? 'No hay licencias disponibles'
+                                : 'Selecciona una licencia...'}
+                            </option>
+                            {availableLicenses.map((license) => (
+                              <option key={license._id} value={license._id}>
+                                {license.email} - {license.usuarioMoodle}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            className="btn-primary btn-small"
+                            onClick={() => handleAssignLicense(assignment._id)}
+                            disabled={!selectedLicenseForAssignment}
+                          >
+                            ✓ Asignar
+                          </button>
+                          <button
+                            className="btn-secondary btn-small"
+                            onClick={handleCancelAssigning}
+                          >
+                            ✖
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          className="btn-primary btn-small"
+                          onClick={() => handleStartAssigning(assignment)}
+                        >
+                          Asignar Licencia
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

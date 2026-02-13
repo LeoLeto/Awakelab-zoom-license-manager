@@ -102,12 +102,27 @@ export const assignmentApi = {
     return apiCall(`${API_BASE_URL}/licenses/assignments/active`);
   },
 
+  async getPendingAssignments(): Promise<{ success: boolean; assignments: Assignment[] }> {
+    return apiCall(`${API_BASE_URL}/licenses/assignments/pending`);
+  },
+
   async createAssignment(data: CreateAssignmentDto): Promise<{ 
     success: boolean; 
     assignment: Assignment 
   }> {
     return apiCall(`${API_BASE_URL}/licenses/assignments`, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  },
+
+  async updateAssignment(id: string, data: Partial<CreateAssignmentDto>): Promise<{ 
+    success: boolean; 
+    assignment: Assignment 
+  }> {
+    return apiCall(`${API_BASE_URL}/licenses/assignments/${id}`, {
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });

@@ -190,6 +190,24 @@ POST /api/zoom/bulk-change-password
 
 **See [PHASE3_COMPLETE.md](PHASE3_COMPLETE.md) for detailed documentation.**
 
+### Phase 3.5: Pending Request Management ✅ COMPLETE
+- [x] Teachers can submit requests without selecting a license
+- [x] Requests are created with 'pendiente' status
+- [x] Admin dashboard shows pending requests section
+- [x] Admin can assign licenses to pending requests
+- [x] Availability check when assigning licenses
+- [x] Automatic status change from 'pendiente' to 'activo' upon assignment
+- [x] Backend API endpoints:
+  - `GET /api/licenses/assignments/pending` - Get pending assignments
+  - `PUT /api/licenses/assignments/:id` - Update assignment (assign license)
+- [x] License conflict prevention when assigning to pending requests
+
+**Key Features:**
+- Teachers no longer need to select licenses themselves
+- Administrators handle all license assignments
+- Requests can be submitted even when no licenses are available
+- Admin sees all pending requests in one place with inline assignment UI
+
 ### Phase 4: Automation
 - [ ] Scheduled password rotation (on expiration)
 - [ ] Email notifications
@@ -252,6 +270,8 @@ POST /api/zoom/bulk-change-password
 
 ✅ **Phase 1 Complete: Password Management**
 ✅ **Phase 2 Complete: MongoDB Database & License Management**
+✅ **Phase 3 Complete: React Frontend Dashboard**
+✅ **Phase 3.5 Complete: Pending Request Management**
 
 The most critical features are now implemented and ready for testing! You can:
 - Change Zoom passwords programmatically
@@ -261,6 +281,9 @@ The most critical features are now implemented and ready for testing! You can:
 - Track license assignments with MongoDB
 - Check license availability for date ranges
 - Automatically expire assignments with cron jobs
+- **NEW:** Teachers can submit requests without selecting licenses
+- **NEW:** Administrators approve and assign licenses to pending requests
+- **NEW:** Flexible workflow that handles varying license availability
 
 ## 🆘 Getting Help
 

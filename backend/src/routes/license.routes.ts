@@ -226,6 +226,54 @@ router.get('/assignments/active', async (req: Request, res: Response) => {
 });
 
 /**
+ * Get pending assignments (awaiting license assignment)
+ * GET /api/licenses/assignments/pending
+ */
+router.get('/assignments/pending', async (req: Request, res: Response) => {
+  try {
+    const assignments = await assignmentService.getPendingAssignments();
+    res.json({ 
+      success: true,
+      count: assignments.length,
+      assignments
+    });
+  } catch (error: any) {
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+/**
+ * Update an assignment (assign license to pending request)
+ * PUT /api/licenses/assignments/:id
+ */
+router.put('/assignments/:id', async (req: Request, res: Response) => {
+  try {
+    const assignment = await assignmentService.updateAssignment(req.params.id, req.body);
+    
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        error: 'Assignment not found'
+      });
+    }
+
+    res.json({ 
+      success: true,
+      message: 'Assignment updated successfully',
+      assignment
+    });
+  } catch (error: any) {
+    res.status(400).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+/**
  * Cancel an assignment
  * POST /api/licenses/assignments/:id/cancel
  */

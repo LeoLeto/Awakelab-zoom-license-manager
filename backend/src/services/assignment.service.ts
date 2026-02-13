@@ -48,6 +48,16 @@ export class AssignmentService {
   }
 
   /**
+   * Get pending assignments (awaiting license assignment)
+   */
+  async getPendingAssignments(): Promise<IAssignment[]> {
+    return await Assignment.find({
+      estado: 'pendiente'
+    })
+      .sort({ createdAt: -1 });
+  }
+
+  /**
    * Get assignments by teacher email
    */
   async getAssignmentsByTeacher(email: string): Promise<IAssignment[]> {
@@ -120,25 +130,63 @@ export class AssignmentService {
       throw new Error('Assignment not found');
     }
 
-    // If dates are being updated, check for conflicts
-    if (updateData.fechaInicioUso || updateData.fechaFinUso) {
-      const startDate = updateData.fechaInicioUso || existingAssignment.fechaInicioUso;
-      const endDate = updateData.fechaFinUso || existingAssignment.fechaFinUso;
+    // If licenseId is being assigned (for pending requests)
+    if (updateData.licenseId && !existingAssignment.licenseId) {
+      // Validate license exists
+      const license = await License.findById(updateData.licenseId);
+      if (!license) {
+        throw new Error('License not found');
+      }
 
+      // Check if license is available for the assignment dates
       const overlappingAssignments = await Assignment.find({
         _id: { $ne: id },
-        licenseId: existingAssignment.licenseId,
+        licenseId: updateData.licenseId,
         estado: 'activo',
         $or: [
           {
-            fechaInicioUso: { $lte: endDate },
-            fechaFinUso: { $gte: startDate }
+            fechaInicioUso: { $lte: existingAssignment.fechaFinUso },
+            fechaFinUso: { $gte: existingAssignment.fechaInicioUso }
           }
         ]
       });
 
       if (overlappingAssignments.length > 0) {
-        throw new Error('Updated dates conflict with existing assignments');
+        throw new Error('License is not available for the requested date range');
+      }
+
+      // Update license status to ocupado
+      await License.findByIdAndUpdate(
+        updateData.licenseId,
+        { $set: { estado: 'ocupado' } }
+      );
+
+      // Set estado to 'activo' when assigning a license
+      updateData.estado = 'activo';
+    }
+
+    // If dates are being updated, check for conflicts
+    if (updateData.fechaInicioUso || updateData.fechaFinUso) {
+      const startDate = updateData.fechaInicioUso || existingAssignment.fechaInicioUso;
+      const endDate = updateData.fechaFinUso || existingAssignment.fechaFinUso;
+      const licenseToCheck = updateData.licenseId || existingAssignment.licenseId;
+
+      if (licenseToCheck) {
+        const overlappingAssignments = await Assignment.find({
+          _id: { $ne: id },
+          licenseId: licenseToCheck,
+          estado: 'activo',
+          $or: [
+            {
+              fechaInicioUso: { $lte: endDate },
+              fechaFinUso: { $gte: startDate }
+            }
+          ]
+        });
+
+        if (overlappingAssignments.length > 0) {
+          throw new Error('Updated dates conflict with existing assignments');
+        }
       }
     }
 
