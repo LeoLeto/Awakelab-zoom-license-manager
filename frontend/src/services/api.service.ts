@@ -6,6 +6,7 @@ import {
   CreateLicenseDto, 
   CreateAssignmentDto 
 } from '../types/license.types';
+import { HistoryEntry, HistoryFilters } from '../types/history.types';
 
 const API_BASE_URL = '/api';
 
@@ -132,5 +133,29 @@ export const assignmentApi = {
     return apiCall(`${API_BASE_URL}/licenses/assignments/${id}/cancel`, {
       method: 'POST',
     });
+  },
+};
+
+export const historyApi = {
+  async getRecentHistory(filters?: HistoryFilters): Promise<HistoryEntry[]> {
+    const params = new URLSearchParams();
+    
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.entityType) params.append('entityType', filters.entityType);
+    if (filters?.action) params.append('action', filters.action);
+    if (filters?.actor) params.append('actor', filters.actor);
+    if (filters?.startDate) params.append('startDate', filters.startDate.toISOString());
+    if (filters?.endDate) params.append('endDate', filters.endDate.toISOString());
+    
+    const queryString = params.toString();
+    return apiCall(`${API_BASE_URL}/history/recent${queryString ? `?${queryString}` : ''}`);
+  },
+
+  async getLicenseHistory(licenseId: string, limit: number = 50, full: boolean = true): Promise<HistoryEntry[]> {
+    return apiCall(`${API_BASE_URL}/history/license/${licenseId}?limit=${limit}&full=${full}`);
+  },
+
+  async getAssignmentHistory(assignmentId: string, limit: number = 50): Promise<HistoryEntry[]> {
+    return apiCall(`${API_BASE_URL}/history/assignment/${assignmentId}?limit=${limit}`);
   },
 };

@@ -1,6 +1,7 @@
 import { Assignment, IAssignment } from '../models/Assignment.model';
 import { License } from '../models/License.model';
 import { Types } from 'mongoose';
+import { HistoryService } from './history.service';
 
 export class AssignmentService {
   /**
@@ -71,7 +72,7 @@ export class AssignmentService {
   /**
    * Create a new assignment
    */
-  async createAssignment(assignmentData: Partial<IAssignment>): Promise<IAssignment> {
+  async createAssignment(assignmentData: Partial<IAssignment>, actor: string = 'system'): Promise<IAssignment> {
     // If licenseId is provided, validate and check availability
     if (assignmentData.licenseId) {
       // Validate license exists
@@ -112,6 +113,41 @@ export class AssignmentService {
         assignmentData.licenseId,
         { $set: { estado: 'ocupado' } }
       );
+
+      // Record assignment action
+      await HistoryService.recordChange({
+        entityType: 'assignment',
+        entityId: savedAssignment._id,
+        action: 'assign',
+        actor,
+        changes: [
+          { field: 'licenseId', newValue: assignmentData.licenseId },
+          { field: 'nombreApellidos', newValue: savedAssignment.nombreApellidos },
+          { field: 'estado', newValue: estado },
+          { field: 'fechaInicioUso', newValue: savedAssignment.fechaInicioUso },
+          { field: 'fechaFinUso', newValue: savedAssignment.fechaFinUso },
+        ],
+        metadata: {
+          assignmentName: savedAssignment.nombreApellidos,
+        },
+      });
+    } else {
+      // Record create action for pending assignment
+      await HistoryService.recordChange({
+        entityType: 'assignment',
+        entityId: savedAssignment._id,
+        action: 'create',
+        actor,
+        changes: [
+          { field: 'nombreApellidos', newValue: savedAssignment.nombreApellidos },
+          { field: 'estado', newValue: estado },
+          { field: 'fechaInicioUso', newValue: savedAssignment.fechaInicioUso },
+          { field: 'fechaFinUso', newValue: savedAssignment.fechaFinUso },
+        ],
+        metadata: {
+          assignmentName: savedAssignment.nombreApellidos,
+        },
+      });
     }
 
     return savedAssignment;
@@ -120,7 +156,7 @@ export class AssignmentService {
   /**
    * Update assignment
    */
-  async updateAssignment(id: string, updateData: Partial<IAssignment>): Promise<IAssignment | null> {
+  async updateAssignment(id: string, updateData: Partial<IAssignment>, actor: string = 'system'): Promise<IAssignment | null> {
     if (!Types.ObjectId.isValid(id)) {
       throw new Error('Invalid assignment ID');
     }
@@ -130,8 +166,13 @@ export class AssignmentService {
       throw new Error('Assignment not found');
     }
 
+    const oldLicenseId = existingAssignment.licenseId;
+    let isAssigningLicense = false;
+
     // If licenseId is being assigned (for pending requests)
     if (updateData.licenseId && !existingAssignment.licenseId) {
+      isAssigningLicense = true;
+      
       // Validate license exists
       const license = await License.findById(updateData.licenseId);
       if (!license) {
@@ -190,19 +231,64 @@ export class AssignmentService {
       }
     }
 
-    return await Assignment.findByIdAndUpdate(
+    const updatedAssignment = await Assignment.findByIdAndUpdate(
       id,
       { $set: updateData },
       { new: true, runValidators: true }
     ).populate('licenseId');
+
+    if (updatedAssignment) {
+      // Track changes
+      const fieldsToTrack = [
+        'licenseId', 'nombreApellidos', 'correocorporativo', 'area',
+        'comunidadAutonoma', 'tipoUso', 'fechaInicioUso', 'fechaFinUso', 'estado'
+      ];
+
+      const changes = HistoryService.extractChanges(
+        existingAssignment.toObject(),
+        updatedAssignment.toObject(),
+        fieldsToTrack
+      );
+
+      if (changes.length > 0) {
+        // Determine action type
+        let action: 'update' | 'assign' | 'unassign' | 'status_change' = 'update';
+        
+        if (isAssigningLicense) {
+          action = 'assign';
+        } else if (changes.some(c => c.field === 'licenseId')) {
+          action = oldLicenseId ? 'unassign' : 'assign';
+        } else if (changes.some(c => c.field === 'estado')) {
+          action = 'status_change';
+        }
+
+        await HistoryService.recordChange({
+          entityType: 'assignment',
+          entityId: updatedAssignment._id,
+          action,
+          actor,
+          changes,
+          metadata: {
+            assignmentName: updatedAssignment.nombreApellidos,
+          },
+        });
+      }
+    }
+
+    return updatedAssignment;
   }
 
   /**
    * Cancel assignment
    */
-  async cancelAssignment(id: string): Promise<IAssignment | null> {
+  async cancelAssignment(id: string, actor: string = 'system'): Promise<IAssignment | null> {
     if (!Types.ObjectId.isValid(id)) {
       throw new Error('Invalid assignment ID');
+    }
+
+    const existingAssignment = await Assignment.findById(id);
+    if (!existingAssignment) {
+      return null;
     }
 
     const assignment = await Assignment.findByIdAndUpdate(
@@ -226,6 +312,21 @@ export class AssignmentService {
           { $set: { estado: 'libre' } }
         );
       }
+
+      // Record history
+      await HistoryService.recordChange({
+        entityType: 'assignment',
+        entityId: assignment._id,
+        action: 'status_change',
+        actor,
+        changes: [
+          { field: 'estado', oldValue: existingAssignment.estado, newValue: 'cancelado' },
+        ],
+        metadata: {
+          assignmentName: assignment.nombreApellidos,
+          reason: 'Assignment cancelled',
+        },
+      });
     }
 
     return assignment;
@@ -234,7 +335,7 @@ export class AssignmentService {
   /**
    * Delete assignment
    */
-  async deleteAssignment(id: string): Promise<boolean> {
+  async deleteAssignment(id: string, actor: string = 'system'): Promise<boolean> {
     if (!Types.ObjectId.isValid(id)) {
       throw new Error('Invalid assignment ID');
     }
@@ -247,6 +348,21 @@ export class AssignmentService {
     const result = await Assignment.findByIdAndDelete(id);
 
     if (result) {
+      // Record history
+      await HistoryService.recordChange({
+        entityType: 'assignment',
+        entityId: new Types.ObjectId(id),
+        action: 'delete',
+        actor,
+        changes: [
+          { field: 'nombreApellidos', oldValue: assignment.nombreApellidos },
+          { field: 'estado', oldValue: assignment.estado },
+        ],
+        metadata: {
+          assignmentName: assignment.nombreApellidos,
+        },
+      });
+
       // Check if there are other active assignments for this license
       const activeAssignments = await Assignment.find({
         licenseId: assignment.licenseId,
@@ -254,7 +370,7 @@ export class AssignmentService {
       });
 
       // If no other active assignments, set license to 'libre'
-      if (activeAssignments.length === 0) {
+      if (activeAssignments.length === 0 && assignment.licenseId) {
         await License.findByIdAndUpdate(
           assignment.licenseId,
           { $set: { estado: 'libre' } }

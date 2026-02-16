@@ -2,6 +2,7 @@ import { License, ILicense } from '../models/License.model';
 import { Assignment, IAssignment } from '../models/Assignment.model';
 import { Types } from 'mongoose';
 import { startOfDay, endOfDay } from 'date-fns';
+import { HistoryService } from './history.service';
 
 export class LicenseService {
   /**
@@ -38,7 +39,7 @@ export class LicenseService {
   /**
    * Create a new license
    */
-  async createLicense(licenseData: Partial<ILicense>): Promise<ILicense> {
+  async createLicense(licenseData: Partial<ILicense>, actor: string = 'system'): Promise<ILicense> {
     // Check if license with email already exists
     const existingLicense = await this.getLicenseByEmail(licenseData.email!);
     if (existingLicense) {
@@ -46,15 +47,39 @@ export class LicenseService {
     }
 
     const license = new License(licenseData);
-    return await license.save();
+    const savedLicense = await license.save();
+
+    // Record history
+    await HistoryService.recordChange({
+      entityType: 'license',
+      entityId: savedLicense._id,
+      action: 'create',
+      actor,
+      changes: [
+        { field: 'cuenta', newValue: savedLicense.cuenta },
+        { field: 'email', newValue: savedLicense.email },
+        { field: 'estado', newValue: savedLicense.estado },
+      ],
+      metadata: {
+        licenseEmail: savedLicense.email,
+      },
+    });
+
+    return savedLicense;
   }
 
   /**
    * Update license
    */
-  async updateLicense(id: string, updateData: Partial<ILicense>): Promise<ILicense | null> {
+  async updateLicense(id: string, updateData: Partial<ILicense>, actor: string = 'system'): Promise<ILicense | null> {
     if (!Types.ObjectId.isValid(id)) {
       throw new Error('Invalid license ID');
+    }
+
+    // Get the current license state before update
+    const oldLicense = await License.findById(id);
+    if (!oldLicense) {
+      throw new Error('License not found');
     }
 
     // Prevent email updates to avoid duplicates
@@ -68,17 +93,50 @@ export class LicenseService {
       }
     }
 
-    return await License.findByIdAndUpdate(
+    const updatedLicense = await License.findByIdAndUpdate(
       id,
       { $set: updateData },
       { new: true, runValidators: true }
     );
+
+    if (updatedLicense) {
+      // Track fields that might change
+      const fieldsToTrack = [
+        'cuenta', 'usuarioMoodle', 'email', 'claveAnfitrionZoom',
+        'claveUsuarioMoodle', 'passwordZoom', 'passwordEmail',
+        'estado', 'observaciones'
+      ];
+
+      const changes = HistoryService.extractChanges(
+        oldLicense.toObject(),
+        updatedLicense.toObject(),
+        fieldsToTrack
+      );
+
+      if (changes.length > 0) {
+        // Determine the action type
+        const action = changes.some(c => c.field === 'estado') ? 'status_change' : 'update';
+
+        await HistoryService.recordChange({
+          entityType: 'license',
+          entityId: updatedLicense._id,
+          action,
+          actor,
+          changes,
+          metadata: {
+            licenseEmail: updatedLicense.email,
+          },
+        });
+      }
+    }
+
+    return updatedLicense;
   }
 
   /**
    * Delete license
    */
-  async deleteLicense(id: string): Promise<boolean> {
+  async deleteLicense(id: string, actor: string = 'system'): Promise<boolean> {
     if (!Types.ObjectId.isValid(id)) {
       throw new Error('Invalid license ID');
     }
@@ -93,7 +151,31 @@ export class LicenseService {
       throw new Error('Cannot delete license with active assignments');
     }
 
+    const license = await License.findById(id);
+    if (!license) {
+      return false;
+    }
+
     const result = await License.findByIdAndDelete(id);
+
+    if (result) {
+      // Record history
+      await HistoryService.recordChange({
+        entityType: 'license',
+        entityId: new Types.ObjectId(id),
+        action: 'delete',
+        actor,
+        changes: [
+          { field: 'cuenta', oldValue: license.cuenta },
+          { field: 'email', oldValue: license.email },
+          { field: 'estado', oldValue: license.estado },
+        ],
+        metadata: {
+          licenseEmail: license.email,
+        },
+      });
+    }
+
     return result !== null;
   }
 

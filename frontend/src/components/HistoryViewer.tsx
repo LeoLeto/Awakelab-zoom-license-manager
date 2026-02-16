@@ -1,0 +1,496 @@
+import React, { useState, useEffect } from 'react';
+import { historyApi } from '../services/api.service';
+import { HistoryEntry, HistoryFilters } from '../types/history.types';
+
+interface HistoryViewerProps {
+  entityType?: 'license' | 'assignment';
+  entityId?: string;
+  showFilters?: boolean;
+  title?: string;
+}
+
+export const HistoryViewer: React.FC<HistoryViewerProps> = ({
+  entityType,
+  entityId,
+  showFilters = true,
+  title = 'Historial de Cambios',
+}) => {
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useState<HistoryFilters>({
+    limit: 50,
+  });
+
+  useEffect(() => {
+    fetchHistory();
+  }, [entityType, entityId, filters]);
+
+  const fetchHistory = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      let data: HistoryEntry[];
+      
+      if (entityId && entityType === 'license') {
+        data = await historyApi.getLicenseHistory(entityId, filters.limit || 50);
+      } else if (entityId && entityType === 'assignment') {
+        data = await historyApi.getAssignmentHistory(entityId, filters.limit || 50);
+      } else {
+        data = await historyApi.getRecentHistory({
+          ...filters,
+          entityType: entityType,
+        });
+      }
+
+      setHistory(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al cargar el historial');
+      console.error('Error fetching history:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getActionIcon = (action: string) => {
+    switch (action) {
+      case 'create':
+        return '➕';
+      case 'update':
+        return '✏️';
+      case 'delete':
+        return '🗑️';
+      case 'assign':
+        return '🔗';
+      case 'unassign':
+        return '🔓';
+      case 'status_change':
+        return '🔄';
+      default:
+        return '📝';
+    }
+  };
+
+  const getActionLabel = (action: string) => {
+    const labels: { [key: string]: string } = {
+      create: 'Creado',
+      update: 'Actualizado',
+      delete: 'Eliminado',
+      assign: 'Asignado',
+      unassign: 'Desasignado',
+      status_change: 'Cambio de Estado',
+    };
+    return labels[action] || action;
+  };
+
+  const formatFieldName = (field: string) => {
+    const fieldNames: { [key: string]: string } = {
+      cuenta: 'Cuenta',
+      email: 'Email',
+      estado: 'Estado',
+      passwordZoom: 'Contraseña Zoom',
+      passwordEmail: 'Contraseña Email',
+      observaciones: 'Observaciones',
+      licenseId: 'Licencia',
+      nombreApellidos: 'Nombre',
+      correocorporativo: 'Email Corporativo',
+      fechaInicioUso: 'Fecha Inicio',
+      fechaFinUso: 'Fecha Fin',
+      area: 'Área',
+      comunidadAutonoma: 'Comunidad Autónoma',
+      tipoUso: 'Tipo de Uso',
+    };
+    return fieldNames[field] || field;
+  };
+
+  const formatValue = (value: any) => {
+    if (value === null || value === undefined) {
+      return '(vacío)';
+    }
+    if (typeof value === 'boolean') {
+      return value ? 'Sí' : 'No';
+    }
+    if (value instanceof Date || (typeof value === 'string' && !isNaN(Date.parse(value)) && value.includes('-'))) {
+      return new Date(value).toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    }
+    if (typeof value === 'object') {
+      return JSON.stringify(value);
+    }
+    return String(value);
+  };
+
+  const formatTimestamp = (timestamp: string) => {
+    return new Date(timestamp).toLocaleString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="history-viewer">
+        <h3>{title}</h3>
+        <div className="loading">Cargando historial...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="history-viewer">
+        <h3>{title}</h3>
+        <div className="error">Error: {error}</div>
+        <button onClick={fetchHistory} className="btn-retry">
+          Reintentar
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="history-viewer">
+      <div className="history-header">
+        <h3>{title}</h3>
+        <button onClick={fetchHistory} className="btn-refresh">
+          🔄 Actualizar
+        </button>
+      </div>
+
+      {showFilters && !entityId && (
+        <div className="history-filters">
+          <div className="filter-group">
+            <label>Tipo de Entidad:</label>
+            <select
+              value={filters.entityType || ''}
+              onChange={(e) =>
+                setFilters({
+                  ...filters,
+                  entityType: e.target.value ? (e.target.value as 'license' | 'assignment') : undefined,
+                })
+              }
+            >
+              <option value="">Todos</option>
+              <option value="license">Licencias</option>
+              <option value="assignment">Asignaciones</option>
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label>Acción:</label>
+            <select
+              value={filters.action || ''}
+              onChange={(e) =>
+                setFilters({
+                  ...filters,
+                  action: e.target.value || undefined,
+                })
+              }
+            >
+              <option value="">Todas</option>
+              <option value="create">Crear</option>
+              <option value="update">Actualizar</option>
+              <option value="delete">Eliminar</option>
+              <option value="assign">Asignar</option>
+              <option value="unassign">Desasignar</option>
+              <option value="status_change">Cambio de Estado</option>
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label>Límite:</label>
+            <select
+              value={filters.limit || 50}
+              onChange={(e) =>
+                setFilters({
+                  ...filters,
+                  limit: parseInt(e.target.value),
+                })
+              }
+            >
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+              <option value="200">200</option>
+            </select>
+          </div>
+        </div>
+      )}
+
+      <div className="history-timeline">
+        {history.length === 0 ? (
+          <div className="no-history">No hay historial disponible</div>
+        ) : (
+          history.map((entry) => (
+            <div key={entry._id} className="history-entry">
+              <div className="entry-header">
+                <span className="entry-icon">{getActionIcon(entry.action)}</span>
+                <span className="entry-action">{getActionLabel(entry.action)}</span>
+                <span className="entry-type">
+                  {entry.entityType === 'license' ? '📋 Licencia' : '👤 Asignación'}
+                </span>
+                <span className="entry-timestamp">{formatTimestamp(entry.timestamp)}</span>
+              </div>
+
+              {entry.metadata && (
+                <div className="entry-metadata">
+                  {entry.metadata.licenseEmail && (
+                    <span className="metadata-item">📧 {entry.metadata.licenseEmail}</span>
+                  )}
+                  {entry.metadata.assignmentName && (
+                    <span className="metadata-item">👤 {entry.metadata.assignmentName}</span>
+                  )}
+                  {entry.metadata.reason && (
+                    <span className="metadata-reason">💭 {entry.metadata.reason}</span>
+                  )}
+                </div>
+              )}
+
+              <div className="entry-changes">
+                {entry.changes.map((change, idx) => (
+                  <div key={idx} className="change-item">
+                    <span className="change-field">{formatFieldName(change.field)}:</span>
+                    {change.oldValue !== undefined && (
+                      <span className="change-old-value">
+                        <span className="value-label">Anterior:</span>
+                        <span className="value">{formatValue(change.oldValue)}</span>
+                      </span>
+                    )}
+                    {change.newValue !== undefined && (
+                      <span className="change-new-value">
+                        <span className="value-label">Nuevo:</span>
+                        <span className="value">{formatValue(change.newValue)}</span>
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="entry-footer">
+                <span className="entry-actor">Por: {entry.actor}</span>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <style>{`
+        .history-viewer {
+          padding: 20px;
+          background: #f9f9f9;
+          border-radius: 8px;
+        }
+
+        .history-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+        }
+
+        .history-header h3 {
+          margin: 0;
+          color: #333;
+        }
+
+        .btn-refresh, .btn-retry {
+          padding: 8px 16px;
+          background: #007bff;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 14px;
+        }
+
+        .btn-refresh:hover, .btn-retry:hover {
+          background: #0056b3;
+        }
+
+        .history-filters {
+          display: flex;
+          gap: 15px;
+          margin-bottom: 20px;
+          padding: 15px;
+          background: white;
+          border-radius: 8px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .filter-group {
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+        }
+
+        .filter-group label {
+          font-size: 12px;
+          font-weight: 600;
+          color: #666;
+        }
+
+        .filter-group select {
+          padding: 6px 10px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 14px;
+        }
+
+        .history-timeline {
+          display: flex;
+          flex-direction: column;
+          gap: 15px;
+        }
+
+        .history-entry {
+          background: white;
+          border-left: 4px solid #007bff;
+          border-radius: 8px;
+          padding: 15px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .history-entry:hover {
+          transform: translateX(5px);
+          box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .entry-header {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 10px;
+          font-weight: 600;
+        }
+
+        .entry-icon {
+          font-size: 20px;
+        }
+
+        .entry-action {
+          color: #007bff;
+          font-size: 16px;
+        }
+
+        .entry-type {
+          color: #666;
+          font-size: 14px;
+        }
+
+        .entry-timestamp {
+          margin-left: auto;
+          color: #999;
+          font-size: 12px;
+          font-weight: normal;
+        }
+
+        .entry-metadata {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-bottom: 10px;
+          padding: 8px;
+          background: #f0f8ff;
+          border-radius: 4px;
+        }
+
+        .metadata-item {
+          font-size: 13px;
+          color: #555;
+        }
+
+        .metadata-reason {
+          font-size: 13px;
+          color: #666;
+          font-style: italic;
+        }
+
+        .entry-changes {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          padding: 10px;
+          background: #f8f9fa;
+          border-radius: 4px;
+          margin-bottom: 10px;
+        }
+
+        .change-item {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          font-size: 14px;
+          padding: 5px 0;
+          border-bottom: 1px solid #e9ecef;
+        }
+
+        .change-item:last-child {
+          border-bottom: none;
+        }
+
+        .change-field {
+          font-weight: 600;
+          color: #333;
+          min-width: 150px;
+        }
+
+        .change-old-value, .change-new-value {
+          display: flex;
+          gap: 5px;
+        }
+
+        .value-label {
+          font-size: 12px;
+          color: #666;
+        }
+
+        .change-old-value .value {
+          color: #dc3545;
+          text-decoration: line-through;
+        }
+
+        .change-new-value .value {
+          color: #28a745;
+          font-weight: 500;
+        }
+
+        .entry-footer {
+          display: flex;
+          justify-content: flex-end;
+          padding-top: 8px;
+          border-top: 1px solid #e9ecef;
+        }
+
+        .entry-actor {
+          font-size: 12px;
+          color: #666;
+        }
+
+        .loading, .error, .no-history {
+          text-align: center;
+          padding: 40px;
+          color: #666;
+          background: white;
+          border-radius: 8px;
+        }
+
+        .error {
+          color: #dc3545;
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default HistoryViewer;

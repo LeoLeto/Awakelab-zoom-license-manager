@@ -6,6 +6,7 @@ import { db } from './config/database';
 import { initCronJobs } from './config/cron';
 import zoomRoutes from './routes/zoom.routes';
 import licenseRoutes from './routes/license.routes';
+import historyRoutes from './routes/history.routes';
 
 // Load environment variables from backend/.env
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
@@ -37,6 +38,7 @@ app.get('/api/health', (req: Request, res: Response) => {
 
 app.use('/api/zoom', zoomRoutes);
 app.use('/api/licenses', licenseRoutes);
+app.use('/api/history', historyRoutes);
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: any) => {

@@ -1,4 +1,6 @@
 import { LicenseWithAssignment } from '../types/license.types';
+import { useState } from 'react';
+import { HistoryViewer } from './HistoryViewer';
 
 interface LicenseDetailsModalProps {
   licenseData: LicenseWithAssignment;
@@ -7,6 +9,7 @@ interface LicenseDetailsModalProps {
 
 export default function LicenseDetailsModal({ licenseData, onClose }: LicenseDetailsModalProps) {
   const { license, assignment } = licenseData;
+  const [activeTab, setActiveTab] = useState<'details' | 'history'>('details');
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -15,8 +18,24 @@ export default function LicenseDetailsModal({ licenseData, onClose }: LicenseDet
           <h3>📋 Detalles de la Licencia</h3>
           <button onClick={onClose} className="close-button">×</button>
         </div>
+
+        <div className="modal-tabs">
+          <button 
+            className={activeTab === 'details' ? 'tab-active' : ''} 
+            onClick={() => setActiveTab('details')}
+          >
+            📄 Detalles
+          </button>
+          <button 
+            className={activeTab === 'history' ? 'tab-active' : ''} 
+            onClick={() => setActiveTab('history')}
+          >
+            📜 Historial
+          </button>
+        </div>
         
-        <div className="modal-body">
+        <div className="modal-body">{activeTab === 'details' ? (
+          <>
           <div className="details-section">
             <h4>Información de la Licencia</h4>
             <div className="details-grid">
@@ -134,6 +153,17 @@ export default function LicenseDetailsModal({ licenseData, onClose }: LicenseDet
               </div>
             </div>
           </div>
+          </>
+          ) : (
+            <div className="history-section">
+              <HistoryViewer 
+                entityType="license" 
+                entityId={license._id} 
+                showFilters={false}
+                title="Historial de esta Licencia"
+              />
+            </div>
+          )}
         </div>
 
         <div className="modal-footer">
@@ -141,6 +171,44 @@ export default function LicenseDetailsModal({ licenseData, onClose }: LicenseDet
             Cerrar
           </button>
         </div>
+
+        <style>{`
+          .modal-tabs {
+            display: flex;
+            gap: 10px;
+            padding: 10px 20px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+          }
+
+          .modal-tabs button {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            color: #6c757d;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 4px 4px 0 0;
+            transition: all 0.3s;
+          }
+
+          .modal-tabs button:hover {
+            background: #e9ecef;
+            color: #495057;
+          }
+
+          .modal-tabs button.tab-active {
+            background: white;
+            color: #007bff;
+            border-bottom: 3px solid #007bff;
+          }
+
+          .history-section {
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 10px;
+          }
+        `}</style>
       </div>
     </div>
   );
