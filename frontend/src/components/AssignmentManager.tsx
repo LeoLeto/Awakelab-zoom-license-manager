@@ -7,7 +7,6 @@ interface AssignmentManagerProps {
 }
 
 export default function AssignmentManager({ onAssignmentChange }: AssignmentManagerProps) {
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [pendingAssignments, setPendingAssignments] = useState<Assignment[]>([]);
   const [availableLicenses, setAvailableLicenses] = useState<License[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,25 +25,16 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
     fechaFinUso: '',
   });
 
-  const loadAssignments = async () => {
+  const loadPendingAssignments = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await assignmentApi.getActiveAssignments();
-      setAssignments(response.assignments);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load assignments');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadPendingAssignments = async () => {
-    try {
       const response = await assignmentApi.getPendingAssignments();
       setPendingAssignments(response.assignments);
     } catch (err) {
-      console.error('Failed to load pending assignments:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load pending assignments');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -77,7 +67,6 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
   };
 
   useEffect(() => {
-    loadAssignments();
     loadPendingAssignments();
   }, []);
 
@@ -102,7 +91,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
         fechaInicioUso: '',
         fechaFinUso: '',
       });
-      loadAssignments();
+      loadPendingAssignments();
       onAssignmentChange?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create assignment');
@@ -114,7 +103,6 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
 
     try {
       await assignmentApi.cancelAssignment(id);
-      loadAssignments();
       loadPendingAssignments();
       onAssignmentChange?.();
     } catch (err) {
@@ -141,7 +129,6 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
       setAssigningTo(null);
       setSelectedLicenseForAssignment('');
       setAvailableLicenses([]);
-      loadAssignments();
       loadPendingAssignments();
       onAssignmentChange?.();
       setError(null);
@@ -157,13 +144,13 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
   };
 
   if (loading) {
-    return <div className="loading">Cargando asignaciones...</div>;
+    return <div className="loading">Cargando solicitudes...</div>;
   }
 
   return (
     <div className="assignment-manager">
       <div className="section-header">
-        <h2>📅 Gestión de Asignaciones</h2>
+        <h2>📋 Solicitudes y Nuevas Asignaciones</h2>
         <button
           className="btn-primary"
           onClick={() => setShowCreateForm(!showCreateForm)}
@@ -308,9 +295,13 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
       )}
 
       {/* Pending Requests */}
-      {pendingAssignments.length > 0 && (
-        <div className="pending-requests">
-          <h3>⏳ Solicitudes Pendientes ({pendingAssignments.length})</h3>
+      <div className="pending-requests">
+        <h3>⏳ Solicitudes Pendientes ({pendingAssignments.length})</h3>
+        {pendingAssignments.length === 0 ? (
+          <div className="empty-state">
+            <p>✅ No hay solicitudes pendientes en este momento.</p>
+          </div>
+        ) : (
           <div className="table-container">
             <table>
               <thead>
@@ -374,62 +365,6 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
                           onClick={() => handleStartAssigning(assignment)}
                         >
                           Asignar Licencia
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Active Assignments */}
-      <div className="assignments-list">
-        <h3>Asignaciones Activas ({assignments.length})</h3>
-        {assignments.length === 0 ? (
-          <div className="empty-state">
-            <p>No se encontraron asignaciones activas.</p>
-          </div>
-        ) : (
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Profesor</th>
-                  <th>Email</th>
-                  <th>Área</th>
-                  <th>Comunidad</th>
-                  <th>Plataforma</th>
-                  <th>Fecha Inicio</th>
-                  <th>Fecha Fin</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {assignments.map((assignment) => (
-                  <tr key={assignment._id}>
-                    <td>{assignment.nombreApellidos}</td>
-                    <td>{assignment.correocorporativo}</td>
-                    <td>{assignment.area}</td>
-                    <td>{assignment.comunidadAutonoma}</td>
-                    <td>{assignment.tipoUso}</td>
-                    <td>{new Date(assignment.fechaInicioUso).toLocaleDateString()}</td>
-                    <td>{new Date(assignment.fechaFinUso).toLocaleDateString()}</td>
-                    <td>
-                      <span className={`badge ${assignment.estado}`}>
-                        {assignment.estado}
-                      </span>
-                    </td>
-                    <td>
-                      {assignment.estado === 'activo' && (
-                        <button
-                          className="btn-danger btn-small"
-                          onClick={() => handleCancelAssignment(assignment._id)}
-                        >
-                          Cancelar
                         </button>
                       )}
                     </td>
