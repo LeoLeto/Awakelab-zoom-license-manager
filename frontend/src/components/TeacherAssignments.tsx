@@ -9,23 +9,27 @@ interface TeacherAssignmentsProps {
 
 export default function TeacherAssignments({ teacherEmail, refreshTrigger }: TeacherAssignmentsProps) {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filterEmail, setFilterEmail] = useState(teacherEmail || '');
 
   const loadAssignments = async () => {
+    // Don't load if no email is provided
+    if (!filterEmail.trim()) {
+      setAssignments([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
       const response = await assignmentApi.getAllAssignments();
       
-      // Filter assignments by email if provided
-      let filteredAssignments = response.assignments;
-      if (filterEmail) {
-        filteredAssignments = filteredAssignments.filter(
-          (a) => a.correocorporativo.toLowerCase() === filterEmail.toLowerCase()
-        );
-      }
+      // Filter assignments by email - only show matching assignments
+      const filteredAssignments = response.assignments.filter(
+        (a) => a.correocorporativo.toLowerCase() === filterEmail.toLowerCase().trim()
+      );
       
       // Sort by start date, most recent first
       filteredAssignments.sort(
@@ -98,26 +102,36 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
   return (
     <div className="teacher-assignments">
       {!teacherEmail && (
-        <div className="form-group">
-          <label htmlFor="emailFilter">Filtrar por Email</label>
+        <div className="form-group email-filter-required">
+          <label htmlFor="emailFilter">
+            <strong>🔍 Ingresa tu Email Corporativo</strong>
+          </label>
           <input
             id="emailFilter"
             type="email"
             value={filterEmail}
             onChange={(e) => setFilterEmail(e.target.value)}
-            placeholder="Ingresa tu email corporativo..."
+            placeholder="ejemplo@awakelab.cl"
+            autoFocus
           />
+          <small>Ingresa tu email para ver tus asignaciones de licencias Zoom</small>
         </div>
       )}
 
-      {/* Active & Upcoming Assignments */}
-      <div className="assignments-section">
-        <h3>📋 Asignaciones Actuales y Próximas ({activeAssignments.length})</h3>
-        {activeAssignments.length === 0 ? (
-          <div className="empty-state">
-            <p>No tienes asignaciones activas o próximas.</p>
-          </div>
-        ) : (
+      {!filterEmail.trim() ? (
+        <div className="info-message">
+          <p>👆 Por favor ingresa tu email corporativo arriba para ver tus asignaciones</p>
+        </div>
+      ) : (
+        <>
+          {/* Active & Upcoming Assignments */}
+          <div className="assignments-section">
+            <h3>📋 Asignaciones Actuales y Próximas ({activeAssignments.length})</h3>
+            {activeAssignments.length === 0 ? (
+              <div className="empty-state">
+                <p>No tienes asignaciones activas o próximas.</p>
+              </div>
+            ) : (
           <div className="assignments-grid">
             {activeAssignments.map((assignment) => {
               const status = getStatusInfo(assignment);
@@ -205,6 +219,8 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
             </table>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );
