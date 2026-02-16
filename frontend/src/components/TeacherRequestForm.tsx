@@ -8,6 +8,7 @@ interface TeacherRequestFormProps {
 
 export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProps) {
   const [formData, setFormData] = useState({
+    tipoSolicitud: '',
     nombreApellidos: '',
     correocorporativo: '',
     area: '',
@@ -15,6 +16,10 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
     tipoUso: '',
     fechaInicioUso: '',
     fechaFinUso: '',
+    emailAsociado: '',
+    fechaInicioInicial: '',
+    fechaFinInicial: '',
+    nuevaFechaFin: '',
   });
   const [availableLicenses, setAvailableLicenses] = useState<License[]>([]);
   const [loading, setLoading] = useState(false);
@@ -53,6 +58,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
       
       setSuccess(true);
       setFormData({
+        tipoSolicitud: '',
         nombreApellidos: '',
         correocorporativo: '',
         area: '',
@@ -60,6 +66,10 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
         tipoUso: '',
         fechaInicioUso: '',
         fechaFinUso: '',
+        emailAsociado: '',
+        fechaInicioInicial: '',
+        fechaFinInicial: '',
+        nuevaFechaFin: '',
       });
       setAvailableLicenses([]);
       
@@ -94,6 +104,87 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
         {error && <div className="error">{error}</div>}
 
         <form onSubmit={handleSubmit}>
+          {/* Request Type */}
+          <div className="form-section">
+            <h3>Tipo de Solicitud</h3>
+            <div className="form-group">
+              <div className="radio-group">
+                <label className="radio-option">
+                  <input
+                    type="radio"
+                    name="tipoSolicitud"
+                    value="Nueva aula Zoom"
+                    checked={formData.tipoSolicitud === 'Nueva aula Zoom'}
+                    onChange={(e) => setFormData({ ...formData, tipoSolicitud: e.target.value })}
+                    required
+                  />
+                  <span>Nueva aula Zoom</span>
+                </label>
+                <label className="radio-option">
+                  <input
+                    type="radio"
+                    name="tipoSolicitud"
+                    value="Ampliación o modificación de un aula Zoom previamente asignada"
+                    checked={formData.tipoSolicitud === 'Ampliación o modificación de un aula Zoom previamente asignada'}
+                    onChange={(e) => setFormData({ ...formData, tipoSolicitud: e.target.value })}
+                    required
+                  />
+                  <span>Ampliación o modificación de un aula Zoom previamente asignada</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Conditional fields for Ampliación */}
+          {formData.tipoSolicitud === 'Ampliación o modificación de un aula Zoom previamente asignada' && (
+            <div className="form-section">
+              <h3>Información de la Licencia Actual</h3>
+              <div className="form-group">
+                <label htmlFor="emailAsociado">Escribe el nombre del email asociado a la cuenta que se te facilitó *</label>
+                <input
+                  id="emailAsociado"
+                  type="email"
+                  required
+                  value={formData.emailAsociado}
+                  onChange={(e) => setFormData({ ...formData, emailAsociado: e.target.value })}
+                  placeholder="Ejemplo: videoconferencia235@grupoaspasia.com"
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="fechaInicioInicial">Indica la fecha de inicio del uso inicial *</label>
+                  <input
+                    id="fechaInicioInicial"
+                    type="date"
+                    required
+                    value={formData.fechaInicioInicial}
+                    onChange={(e) => setFormData({ ...formData, fechaInicioInicial: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="fechaFinInicial">Indica la fecha de fin del uso inicialmente prevista *</label>
+                  <input
+                    id="fechaFinInicial"
+                    type="date"
+                    required
+                    value={formData.fechaFinInicial}
+                    onChange={(e) => setFormData({ ...formData, fechaFinInicial: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label htmlFor="nuevaFechaFin">Indica la nueva fecha fin de uso prevista *</label>
+                <input
+                  id="nuevaFechaFin"
+                  type="date"
+                  required
+                  value={formData.nuevaFechaFin}
+                  onChange={(e) => setFormData({ ...formData, nuevaFechaFin: e.target.value })}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Personal Information */}
           <div className="form-section">
             <h3>Información Personal</h3>
@@ -129,20 +220,33 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="area">Área/Departamento *</label>
-                <input
+                <select
                   id="area"
-                  type="text"
                   required
                   value={formData.area}
                   onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                  placeholder="ej., Matemáticas, Ciencias, Idiomas"
-                />
+                >
+                  <option value="">Seleccionar...</option>
+                  <option value="DIRECCIÓN ESTRATÉGICA">DIRECCIÓN ESTRATÉGICA</option>
+                  <option value="DIRECCIÓN ESTATAL">DIRECCIÓN ESTATAL</option>
+                  <option value="DIRECCIÓN AUTONÓMICO">DIRECCIÓN AUTONÓMICO</option>
+                  <option value="DIRECCIÓN NEGOCIO">DIRECCIÓN NEGOCIO</option>
+                  <option value="ADMINISTRACIÓN">ADMINISTRACIÓN</option>
+                  <option value="DIRECCIÓN F.PRIVADA">DIRECCIÓN F.PRIVADA</option>
+                  <option value="DIRECCIÓN MARKETING">DIRECCIÓN MARKETING</option>
+                  <option value="GERENCIA TRANSVERSAL">GERENCIA TRANSVERSAL</option>
+                  <option value="GERENCIA TERRITORIAL">GERENCIA TERRITORIAL</option>
+                  <option value="LATAM">LATAM</option>
+                  <option value="AWAKELAB">AWAKELAB</option>
+                  <option value="TALENTO E INOVACIÓN">TALENTO E INOVACIÓN</option>
+                  <option value="FP-ASPASIA">FP-ASPASIA</option>
+                  <option value="Otras">Otras</option>
+                </select>
               </div>
               <div className="form-group">
-                <label htmlFor="comunidadAutonoma">Comunidad Autónoma *</label>
+                <label htmlFor="comunidadAutonoma">Comunidad Autónoma (Sólo en el caso de Gerencias Territoriales)</label>
                 <select
                   id="comunidadAutonoma"
-                  required
                   value={formData.comunidadAutonoma}
                   onChange={(e) => setFormData({ ...formData, comunidadAutonoma: e.target.value })}
                 >
@@ -168,7 +272,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
               </div>
             </div>
             <div className="form-group">
-              <label htmlFor="tipoUso">Tipo de Plataforma *</label>
+              <label htmlFor="tipoUso">Uso de la licencia *</label>
               <select
                 id="tipoUso"
                 required
@@ -176,9 +280,9 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                 onChange={(e) => setFormData({ ...formData, tipoUso: e.target.value })}
               >
                 <option value="">Seleccionar...</option>
-                <option value="Zoom Meetings">Zoom Meetings</option>
-                <option value="Zoom Webinar">Zoom Webinar</option>
-                <option value="Both">Ambos (Meetings y Webinar)</option>
+                <option value="USO NO ASOCIADO A PLATAFORMA">USO NO ASOCIADO A PLATAFORMA</option>
+                <option value="USO PARA UNA PLATAFORMA MOODLE DE GRUPO ASPASIA">USO PARA UNA PLATAFORMA MOODLE DE GRUPO ASPASIA</option>
+                <option value="WEBINAR para más de 300 personas">WEBINAR para más de 300 personas</option>
               </select>
             </div>
           </div>
