@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { licenseApi } from '../services/api.service';
 import { LicenseWithAssignment } from '../types/license.types';
 import PasswordChangeModal from './PasswordChangeModal';
+import LicenseDetailsModal from './LicenseDetailsModal';
 import { ZoomUser } from '../types/zoom.types';
 
 interface LicenseOverviewProps {
@@ -15,6 +16,7 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
   const [filter, setFilter] = useState<'all' | 'libre' | 'ocupado' | 'mantenimiento'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<ZoomUser | null>(null);
+  const [selectedLicenseForDetails, setSelectedLicenseForDetails] = useState<LicenseWithAssignment | null>(null);
 
   const loadLicenses = async () => {
     try {
@@ -41,8 +43,7 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
     const matchesFilter = filter === 'all' || item.license.estado === filter;
     const matchesSearch = 
       item.license.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.license.usuarioMoodle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.license.cuenta.toLowerCase().includes(searchTerm.toLowerCase());
+      item.license.usuarioMoodle.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
@@ -134,7 +135,7 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
         </div>
         <input
           type="text"
-          placeholder="🔍 Buscar por email, usuario o cuenta..."
+          placeholder="🔍 Buscar por email o usuario..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="search-input"
@@ -146,7 +147,6 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
         <table className="licenses-table">
           <thead>
             <tr>
-              <th>Cuenta</th>
               <th>Email</th>
               <th>Usuario Moodle</th>
               <th>Estado</th>
@@ -158,7 +158,6 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
           <tbody>
             {filteredLicenses.map((item) => (
               <tr key={item.license._id}>
-                <td>{item.license.cuenta}</td>
                 <td>{item.license.email}</td>
                 <td>{item.license.usuarioMoodle}</td>
                 <td>
@@ -190,6 +189,13 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
                 <td>
                   <button
                     className="btn-small"
+                    onClick={() => setSelectedLicenseForDetails(item)}
+                    title="Ver detalles"
+                  >
+                    📋
+                  </button>
+                  <button
+                    className="btn-small"
                     onClick={() => handlePasswordChange(item)}
                     title="Cambiar contraseña de Zoom"
                   >
@@ -216,6 +222,13 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
             setSelectedUser(null);
             loadLicenses();
           }}
+        />
+      )}
+
+      {selectedLicenseForDetails && (
+        <LicenseDetailsModal
+          licenseData={selectedLicenseForDetails}
+          onClose={() => setSelectedLicenseForDetails(null)}
         />
       )}
     </div>
