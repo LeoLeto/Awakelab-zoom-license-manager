@@ -7,6 +7,8 @@ import { initCronJobs } from './config/cron';
 import zoomRoutes from './routes/zoom.routes';
 import licenseRoutes from './routes/license.routes';
 import historyRoutes from './routes/history.routes';
+import authRoutes from './routes/auth.routes';
+import adminRoutes from './routes/admin.routes';
 
 // Load environment variables from backend/.env
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
@@ -36,6 +38,8 @@ app.get('/api/health', (req: Request, res: Response) => {
   });
 });
 
+app.use('/api/auth', authRoutes);
+app.use('/api/admins', adminRoutes);
 app.use('/api/zoom', zoomRoutes);
 app.use('/api/licenses', licenseRoutes);
 app.use('/api/history', historyRoutes);

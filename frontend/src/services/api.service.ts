@@ -10,9 +10,32 @@ import { HistoryEntry, HistoryFilters } from '../types/history.types';
 
 const API_BASE_URL = '/api';
 
+// Helper function to get auth headers
+function getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem('authToken');
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  return headers;
+}
+
 // Helper function for API calls
 async function apiCall<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(url, options);
+  const headers = {
+    ...getAuthHeaders(),
+    ...(options?.headers || {}),
+  };
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Solicitud fallida' }));
     throw new Error(error.error || error.message || 'Solicitud fallida');
