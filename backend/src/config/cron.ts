@@ -3,6 +3,7 @@ import { assignmentService } from '../services/assignment.service';
 import { settingsService } from '../services/settings.service';
 import { licenseService } from '../services/license.service';
 import { zoomService } from '../services/zoom.service';
+import { emailService } from '../services/email.service';
 
 /**
  * Schedule cron job to mark expired assignments and rotate passwords
@@ -37,6 +38,11 @@ export const initCronJobs = () => {
       
       let rotatedCount = 0;
       let failedCount = 0;
+      const rotatedLicenses: Array<{ email: string, password: string }> = [];
+      
+      // Check if password change notifications are enabled
+      const notifyOnPasswordChange = await settingsService.getSetting('notifyOnPasswordChange');
+      const adminEmails = await settingsService.getSetting('adminNotificationEmails');
       
       // Step 4: Rotate passwords for available licenses
       for (const license of availableLicenses) {
@@ -58,7 +64,23 @@ export const initCronJobs = () => {
           );
           
           rotatedCount++;
+          rotatedLicenses.push({ email: license.email, password: newPassword });
           console.log(`   ✅ Rotated password for license: ${license.email}`);
+          
+          // Send individual notification if enabled
+          if (notifyOnPasswordChange && adminEmails) {
+            const emails = adminEmails.split(',').map((email: string) => email.trim());
+            for (const adminEmail of emails) {
+              await emailService.sendPasswordChanged(
+                {
+                  licenseEmail: license.email,
+                  newPassword,
+                  reason: 'Rotación automática - Licencia disponible'
+                },
+                adminEmail
+              );
+            }
+          }
           
           // Add delay between API calls to avoid rate limiting
           await new Promise(resolve => setTimeout(resolve, 1000));
@@ -79,6 +101,86 @@ export const initCronJobs = () => {
     }
   });
 
-  console.log('✅ Cron jobs initialized (expired assignments + password rotation)');
+  // Check for expiring assignments and send warnings daily at 9:00 AM
+  cron.schedule('0 9 * * *', async () => {
+    try {
+      console.log('🕐 Running cron job: Check expiring assignments');
+      
+      // Check if expiration notifications are enabled
+      const notificationsEnabled = await settingsService.getSetting('notifyOnExpiration');
+      if (!notificationsEnabled) {
+        console.log('ℹ️  Expiration notifications are disabled');
+        return;
+      }
+      
+      // Get warning threshold
+      const warningDays = await settingsService.getSetting('expirationWarningDays') || 2;
+      
+      // Calculate threshold date (today + warningDays)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const thresholdDate = new Date(today);
+      thresholdDate.setDate(thresholdDate.getDate() + warningDays);
+      
+      // Get all active assignments
+      const allLicenses = await licenseService.getAllLicensesWithAssignments();
+      const expiringAssignments = allLicenses
+        .filter(license => {
+          if (!license.currentAssignment || license.currentAssignment.estado !== 'activo') {
+            return false;
+          }
+          
+          const endDate = new Date(license.currentAssignment.fechaFin);
+          endDate.setHours(0, 0, 0, 0);
+          
+          // Check if end date is within the warning threshold
+          return endDate.getTime() === thresholdDate.getTime();
+        })
+        .map(license => ({
+          license,
+          assignment: license.currentAssignment!
+        }));
+      
+      console.log(`📧 Found ${expiringAssignments.length} assignments expiring in ${warningDays} days`);
+      
+      let sentCount = 0;
+      let failedCount = 0;
+      
+      // Send warning emails
+      for (const { license, assignment } of expiringAssignments) {
+        try {
+          const endDate = new Date(assignment.fechaFin);
+          
+          await emailService.sendExpirationWarning({
+            teacherName: assignment.nombreDocente,
+            teacherEmail: assignment.emailDocente,
+            licenseEmail: license.email,
+            endDate: endDate.toLocaleDateString('es-CL'),
+            daysRemaining: warningDays
+          });
+          
+          sentCount++;
+          console.log(`   ✅ Sent warning to: ${assignment.emailDocente}`);
+          
+          // Add small delay to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+        } catch (error: any) {
+          failedCount++;
+          console.error(`   ❌ Failed to send warning to ${assignment.emailDocente}:`, error.message);
+        }
+      }
+      
+      console.log(`\n📊 Expiration Warning Summary:`);
+      console.log(`   Assignments expiring in ${warningDays} days: ${expiringAssignments.length}`);
+      console.log(`   Warnings sent: ${sentCount}`);
+      console.log(`   Failed: ${failedCount}`);
+      
+    } catch (error) {
+      console.error('❌ Error in expiration warning cron job:', error);
+    }
+  });
+
+  console.log('✅ Cron jobs initialized (expired assignments + password rotation + expiration warnings)');
 };
 

@@ -1,5 +1,6 @@
 import { Router, Response } from 'express';
 import { settingsService } from '../services/settings.service';
+import { emailService } from '../services/email.service';
 import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -108,6 +109,43 @@ router.delete('/:key', async (req: AuthRequest, res: Response) => {
     res.json({
       success: true,
       message: 'Setting deleted successfully'
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * Test email configuration
+ * POST /api/settings/test-email
+ * Body: { recipientEmail: string }
+ */
+router.post('/test-email', async (req: AuthRequest, res: Response) => {
+  try {
+    const { recipientEmail } = req.body;
+    
+    if (!recipientEmail) {
+      return res.status(400).json({
+        success: false,
+        error: 'recipientEmail is required'
+      });
+    }
+
+    const sent = await emailService.sendTestEmail(recipientEmail);
+    
+    if (!sent) {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to send test email. Check your email configuration.'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Test email sent to ${recipientEmail}`
     });
   } catch (error: any) {
     res.status(500).json({

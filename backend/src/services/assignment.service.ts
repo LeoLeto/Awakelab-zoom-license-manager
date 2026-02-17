@@ -2,6 +2,8 @@ import { Assignment, IAssignment } from '../models/Assignment.model';
 import { License } from '../models/License.model';
 import { Types } from 'mongoose';
 import { HistoryService } from './history.service';
+import { emailService } from './email.service';
+import { settingsService } from './settings.service';
 
 export class AssignmentService {
   /**
@@ -148,6 +150,22 @@ export class AssignmentService {
           assignmentName: savedAssignment.nombreApellidos,
         },
       });
+      
+      // Send notification to admins about new pending request
+      const notifyOnNewRequest = await settingsService.getSetting('notifyOnNewRequest');
+      if (notifyOnNewRequest) {
+        try {
+          await emailService.sendPendingRequestNotification(
+            savedAssignment.nombreApellidos,
+            savedAssignment.correocorporativo,
+            new Date(savedAssignment.fechaInicioUso).toLocaleDateString('es-CL'),
+            new Date(savedAssignment.fechaFinUso).toLocaleDateString('es-CL'),
+            savedAssignment.area
+          );
+        } catch (error: any) {
+          console.error('Failed to send pending request notification:', error.message);
+        }
+      }
     }
 
     return savedAssignment;
@@ -272,6 +290,26 @@ export class AssignmentService {
             assignmentName: updatedAssignment.nombreApellidos,
           },
         });
+        
+        // Send email confirmation when assigning license to pending request
+        if (isAssigningLicense && updatedAssignment.licenseId) {
+          try {
+            const license = await License.findById(updatedAssignment.licenseId);
+            if (license) {
+              await emailService.sendAssignmentConfirmation({
+                teacherName: updatedAssignment.nombreApellidos,
+                teacherEmail: updatedAssignment.correocorporativo,
+                licenseEmail: license.email,
+                startDate: new Date(updatedAssignment.fechaInicioUso).toLocaleDateString('es-CL'),
+                endDate: new Date(updatedAssignment.fechaFinUso).toLocaleDateString('es-CL'),
+                platform: license.plataforma,
+                password: license.passwordEmail
+              });
+            }
+          } catch (error: any) {
+            console.error('Failed to send assignment confirmation email:', error.message);
+          }
+        }
       }
     }
 

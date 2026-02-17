@@ -8,10 +8,18 @@
     "dev:frontend": "cd frontend && npm run dev",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
   },
-  "keywords": ["zoom", "moodle", "license-management"],
+  "keywords": [
+    "zoom",
+    "moodle",
+    "license-management"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@types/nodemailer": "^7.0.10",
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "nodemailer": "^8.0.1"
   }
 }

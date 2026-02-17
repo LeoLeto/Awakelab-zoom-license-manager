@@ -127,6 +127,51 @@ export class SettingsService {
         key: 'expirationWarningDays',
         value: 2,
         description: 'Días antes de la expiración para enviar notificación de aviso'
+      },
+      {
+        key: 'emailHost',
+        value: '',
+        description: 'Servidor SMTP para envío de correos (ej: smtp.gmail.com)'
+      },
+      {
+        key: 'emailPort',
+        value: '587',
+        description: 'Puerto del servidor SMTP (587 para TLS, 465 para SSL)'
+      },
+      {
+        key: 'emailSecure',
+        value: false,
+        description: 'Usar SSL/TLS para conexión SMTP'
+      },
+      {
+        key: 'emailUser',
+        value: '',
+        description: 'Usuario de autenticación SMTP'
+      },
+      {
+        key: 'emailPassword',
+        value: '',
+        description: 'Contraseña de autenticación SMTP'
+      },
+      {
+        key: 'emailFrom',
+        value: 'Sistema de Licencias Zoom <noreply@awakelab.cl>',
+        description: 'Dirección de correo remitente'
+      },
+      {
+        key: 'adminNotificationEmails',
+        value: '',
+        description: 'Correos de administradores (separados por comas)'
+      },
+      {
+        key: 'notifyOnPasswordChange',
+        value: false,
+        description: 'Notificar administradores cuando se cambian contraseñas'
+      },
+      {
+        key: 'notifyOnNewRequest',
+        value: true,
+        description: 'Notificar administradores de nuevas solicitudes pendientes'
       }
     ];
 
