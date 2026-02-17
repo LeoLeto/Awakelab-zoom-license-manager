@@ -9,6 +9,8 @@ import licenseRoutes from './routes/license.routes';
 import historyRoutes from './routes/history.routes';
 import authRoutes from './routes/auth.routes';
 import adminRoutes from './routes/admin.routes';
+import settingsRoutes from './routes/settings.routes';
+import { settingsService } from './services/settings.service';
 
 // Load environment variables from backend/.env
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
@@ -43,6 +45,7 @@ app.use('/api/admins', adminRoutes);
 app.use('/api/zoom', zoomRoutes);
 app.use('/api/licenses', licenseRoutes);
 app.use('/api/history', historyRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: any) => {
@@ -58,6 +61,9 @@ const startServer = async () => {
   try {
     // Connect to MongoDB
     await db.connect();
+    
+    // Initialize default settings
+    await settingsService.initializeDefaults();
     
     // Initialize cron jobs
     initCronJobs();

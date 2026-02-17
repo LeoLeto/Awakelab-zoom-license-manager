@@ -2,7 +2,7 @@ import { Types } from 'mongoose';
 import { History, IHistoryEntry } from '../models/History.model';
 
 interface RecordChangeOptions {
-  entityType: 'license' | 'assignment';
+  entityType: 'license' | 'assignment' | 'setting';
   entityId: Types.ObjectId | string;
   action: 'create' | 'update' | 'delete' | 'assign' | 'unassign' | 'status_change';
   actor?: string;
@@ -48,7 +48,7 @@ export class HistoryService {
    * Get history for a specific entity
    */
   static async getEntityHistory(
-    entityType: 'license' | 'assignment',
+    entityType: 'license' | 'assignment' | 'setting',
     entityId: Types.ObjectId | string,
     limit: number = 50
   ): Promise<IHistoryEntry[]> {
@@ -77,7 +77,7 @@ export class HistoryService {
   static async getRecentHistory(
     limit: number = 100,
     filters?: {
-      entityType?: 'license' | 'assignment';
+      entityType?: 'license' | 'assignment' | 'setting';
       action?: string;
       actor?: string;
       startDate?: Date;

@@ -3,9 +3,10 @@ import LicenseOverview from './LicenseOverview';
 import AssignmentManager from './AssignmentManager';
 import { HistoryViewer } from './HistoryViewer';
 import AdminManagement from './AdminManagement';
+import Settings from './Settings';
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'assignments' | 'history' | 'admins'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'assignments' | 'history' | 'admins' | 'settings'>('overview');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleRefresh = () => {
@@ -45,6 +46,12 @@ export default function AdminDashboard() {
         >
           👥 Administradores
         </button>
+        <button
+          className={`tab ${activeTab === 'settings' ? 'active' : ''}`}
+          onClick={() => setActiveTab('settings')}
+        >
+          ⚙️ Configuración
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -60,6 +67,9 @@ export default function AdminDashboard() {
         )}
         {activeTab === 'admins' && (
           <AdminManagement />
+        )}
+        {activeTab === 'settings' && (
+          <Settings onSettingsChange={handleRefresh} />
         )}
       </div>
     </div>

@@ -2,7 +2,7 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IHistoryEntry extends Document {
   _id: Types.ObjectId;
-  entityType: 'license' | 'assignment';
+  entityType: 'license' | 'assignment' | 'setting';
   entityId: Types.ObjectId;
   action: 'create' | 'update' | 'delete' | 'assign' | 'unassign' | 'status_change';
   actor?: string; // User who made the change (email or system)
@@ -24,7 +24,7 @@ const HistorySchema = new Schema<IHistoryEntry>(
   {
     entityType: {
       type: String,
-      enum: ['license', 'assignment'],
+      enum: ['license', 'assignment', 'setting'],
       required: true,
       index: true,
     },
