@@ -25,7 +25,7 @@ export default function PasswordChangeModal({ user, onClose, onSuccess }: Passwo
       setSuccess(true);
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to change password');
+      setError(err instanceof Error ? err.message : 'Error al cambiar contraseña');
     } finally {
       setLoading(false);
     }
@@ -46,7 +46,7 @@ export default function PasswordChangeModal({ user, onClose, onSuccess }: Passwo
       setSuccess(true);
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to change password');
+      setError(err instanceof Error ? err.message : 'Error al cambiar contraseña');
     } finally {
       setLoading(false);
     }
@@ -88,7 +88,7 @@ export default function PasswordChangeModal({ user, onClose, onSuccess }: Passwo
         <h3>🔐 Cambiar Contraseña</h3>
         
         <div className="modal-user-info">
-          <p><strong>User:</strong> {user.first_name} {user.last_name}</p>
+          <p><strong>Usuario:</strong> {user.first_name} {user.last_name}</p>
           <p><strong>Email:</strong> {user.email}</p>
         </div>
 

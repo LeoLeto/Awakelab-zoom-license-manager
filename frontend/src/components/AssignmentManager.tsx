@@ -32,7 +32,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
       const response = await assignmentApi.getPendingAssignments();
       setPendingAssignments(response.assignments);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load pending assignments');
+      setError(err instanceof Error ? err.message : 'Error al cargar solicitudes pendientes');
     } finally {
       setLoading(false);
     }
@@ -94,7 +94,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
       loadPendingAssignments();
       onAssignmentChange?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create assignment');
+      setError(err instanceof Error ? err.message : 'Error al crear asignación');
     }
   };
 
@@ -106,7 +106,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
       loadPendingAssignments();
       onAssignmentChange?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to cancel assignment');
+      setError(err instanceof Error ? err.message : 'Error al cancelar asignación');
     }
   };
 
@@ -133,7 +133,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
       onAssignmentChange?.();
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to assign license');
+      setError(err instanceof Error ? err.message : 'Error al asignar licencia');
     }
   };
 

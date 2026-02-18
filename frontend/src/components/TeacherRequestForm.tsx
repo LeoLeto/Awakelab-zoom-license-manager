@@ -39,7 +39,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
       );
       setAvailableLicenses(response.availableLicenses);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to check availability');
+      setError(err instanceof Error ? err.message : 'Error al verificar disponibilidad');
       setAvailableLicenses([]);
     } finally {
       setCheckingAvailability(false);
@@ -75,7 +75,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
       
       onSuccess?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create license request');
+      setError(err instanceof Error ? err.message : 'Error al crear solicitud de licencia');
     } finally {
       setLoading(false);
     }

@@ -16,7 +16,7 @@ export default function UserList() {
       const response = await zoomApi.getUsers();
       setUsers(response.users);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load users');
+      setError(err instanceof Error ? err.message : 'Error al cargar usuarios');
     } finally {
       setLoading(false);
     }

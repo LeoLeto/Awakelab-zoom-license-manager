@@ -38,7 +38,7 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
       
       setAssignments(filteredAssignments);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load assignments');
+      setError(err instanceof Error ? err.message : 'Error al cargar asignaciones');
     } finally {
       setLoading(false);
     }

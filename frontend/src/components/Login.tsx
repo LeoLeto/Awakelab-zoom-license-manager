@@ -20,7 +20,7 @@ const Login: React.FC = () => {
       await login(username, password);
       navigate('/admin');
     } catch (err: any) {
-      setError(err.message || 'Login failed');
+      setError(err.message || 'Error al iniciar sesión');
     } finally {
       setIsLoading(false);
     }

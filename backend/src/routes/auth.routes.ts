@@ -11,21 +11,21 @@ router.post('/login', async (req: Request, res: Response) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
-      res.status(400).json({ error: 'Username and password are required' });
+      res.status(400).json({ error: 'Usuario y contraseña son requeridos' });
       return;
     }
 
     // Find admin by username (case-insensitive)
     const admin = await Admin.findOne({ username: username.toLowerCase() });
     if (!admin) {
-      res.status(401).json({ error: 'Invalid username or password' });
+      res.status(401).json({ error: 'Usuario o contraseña inválidos' });
       return;
     }
 
     // Check password
     const isPasswordValid = await admin.comparePassword(password);
     if (!isPasswordValid) {
-      res.status(401).json({ error: 'Invalid username or password' });
+      res.status(401).json({ error: 'Usuario o contraseña inválidos' });
       return;
     }
 
@@ -55,7 +55,7 @@ router.post('/login', async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Internal server error', message: error.message });
+    res.status(500).json({ error: 'Error interno del servidor', message: error.message });
   }
 });
 
@@ -64,7 +64,7 @@ router.get('/me', authenticateToken, async (req: AuthRequest, res: Response) => 
   try {
     const admin = await Admin.findById(req.adminId).select('-password');
     if (!admin) {
-      res.status(404).json({ error: 'Admin not found' });
+      res.status(404).json({ error: 'Administrador no encontrado' });
       return;
     }
 
@@ -76,13 +76,13 @@ router.get('/me', authenticateToken, async (req: AuthRequest, res: Response) => 
     });
   } catch (error: any) {
     console.error('Get current admin error:', error);
-    res.status(500).json({ error: 'Internal server error', message: error.message });
+    res.status(500).json({ error: 'Error interno del servidor', message: error.message });
   }
 });
 
 // Logout (client-side token removal, but endpoint for tracking)
 router.post('/logout', authenticateToken, (req: AuthRequest, res: Response) => {
-  res.json({ message: 'Logged out successfully' });
+  res.json({ message: 'Sesión cerrada exitosamente' });
 });
 
 export default router;

@@ -65,7 +65,7 @@ export default function Navigation() {
                 onMouseEnter={(e) => e.currentTarget.style.background = '#dc2626'}
                 onMouseLeave={(e) => e.currentTarget.style.background = '#ef4444'}
               >
-                🚪 Logout
+                🚪 Cerrar Sesión
               </button>
             </div>
           )}

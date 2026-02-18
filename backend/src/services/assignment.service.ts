@@ -20,7 +20,7 @@ export class AssignmentService {
    */
   async getAssignmentById(id: string): Promise<IAssignment | null> {
     if (!Types.ObjectId.isValid(id)) {
-      throw new Error('Invalid assignment ID');
+      throw new Error('ID de asignación inválido');
     }
     return await Assignment.findById(id).populate('licenseId');
   }
@@ -30,7 +30,7 @@ export class AssignmentService {
    */
   async getAssignmentsByLicense(licenseId: string): Promise<IAssignment[]> {
     if (!Types.ObjectId.isValid(licenseId)) {
-      throw new Error('Invalid license ID');
+      throw new Error('ID de licencia inválido');
     }
     return await Assignment.find({ licenseId: new Types.ObjectId(licenseId) })
       .sort({ createdAt: -1 });
@@ -80,7 +80,7 @@ export class AssignmentService {
       // Validate license exists
       const license = await License.findById(assignmentData.licenseId);
       if (!license) {
-        throw new Error('License not found');
+        throw new Error('Licencia no encontrada');
       }
 
       // Check if license is available for the requested dates
@@ -96,7 +96,7 @@ export class AssignmentService {
       });
 
       if (overlappingAssignments.length > 0) {
-        throw new Error('License is not available for the requested date range');
+        throw new Error('La licencia no está disponible para el rango de fechas solicitado');
       }
     }
 
@@ -176,12 +176,12 @@ export class AssignmentService {
    */
   async updateAssignment(id: string, updateData: Partial<IAssignment>, actor: string = 'system'): Promise<IAssignment | null> {
     if (!Types.ObjectId.isValid(id)) {
-      throw new Error('Invalid assignment ID');
+      throw new Error('ID de asignación inválido');
     }
 
     const existingAssignment = await Assignment.findById(id);
     if (!existingAssignment) {
-      throw new Error('Assignment not found');
+      throw new Error('Asignación no encontrada');
     }
 
     const oldLicenseId = existingAssignment.licenseId;
@@ -194,7 +194,7 @@ export class AssignmentService {
       // Validate license exists
       const license = await License.findById(updateData.licenseId);
       if (!license) {
-        throw new Error('License not found');
+        throw new Error('Licencia no encontrada');
       }
 
       // Check if license is available for the assignment dates
@@ -211,7 +211,7 @@ export class AssignmentService {
       });
 
       if (overlappingAssignments.length > 0) {
-        throw new Error('License is not available for the requested date range');
+        throw new Error('La licencia no está disponible para el rango de fechas solicitado');
       }
 
       // Update license status to ocupado
@@ -244,7 +244,7 @@ export class AssignmentService {
         });
 
         if (overlappingAssignments.length > 0) {
-          throw new Error('Updated dates conflict with existing assignments');
+          throw new Error('Las fechas actualizadas entran en conflicto con asignaciones existentes');
         }
       }
     }
@@ -321,7 +321,7 @@ export class AssignmentService {
    */
   async cancelAssignment(id: string, actor: string = 'system'): Promise<IAssignment | null> {
     if (!Types.ObjectId.isValid(id)) {
-      throw new Error('Invalid assignment ID');
+      throw new Error('ID de asignación inválido');
     }
 
     const existingAssignment = await Assignment.findById(id);
@@ -375,7 +375,7 @@ export class AssignmentService {
    */
   async deleteAssignment(id: string, actor: string = 'system'): Promise<boolean> {
     if (!Types.ObjectId.isValid(id)) {
-      throw new Error('Invalid assignment ID');
+      throw new Error('ID de asignación inválido');
     }
 
     const assignment = await Assignment.findById(id);

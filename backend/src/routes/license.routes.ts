@@ -35,7 +35,7 @@ router.get('/available', async (req: Request, res: Response) => {
     if (!startDate || !endDate) {
       return res.status(400).json({
         success: false,
-        error: 'startDate and endDate are required'
+        error: 'La fecha de inicio y la fecha de fin son requeridas'
       });
     }
 
@@ -45,7 +45,7 @@ router.get('/available', async (req: Request, res: Response) => {
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid date format'
+        error: 'Formato de fecha inválido'
       });
     }
 
@@ -74,7 +74,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     if (!license) {
       return res.status(404).json({
         success: false,
-        error: 'License not found'
+        error: 'Licencia no encontrada'
       });
     }
 
@@ -99,7 +99,7 @@ router.post('/', async (req: Request, res: Response) => {
     const license = await licenseService.createLicense(req.body);
     res.status(201).json({ 
       success: true,
-      message: 'License created successfully',
+      message: 'Licencia creada exitosamente',
       license
     });
   } catch (error: any) {
@@ -121,13 +121,13 @@ router.put('/:id', async (req: Request, res: Response) => {
     if (!license) {
       return res.status(404).json({
         success: false,
-        error: 'License not found'
+        error: 'Licencia no encontrada'
       });
     }
 
     res.json({ 
       success: true,
-      message: 'License updated successfully',
+      message: 'Licencia actualizada exitosamente',
       license
     });
   } catch (error: any) {
@@ -149,13 +149,13 @@ router.delete('/:id', async (req: Request, res: Response) => {
     if (!deleted) {
       return res.status(404).json({
         success: false,
-        error: 'License not found'
+        error: 'Licencia no encontrada'
       });
     }
 
     res.json({ 
       success: true,
-      message: 'License deleted successfully'
+      message: 'Licencia eliminada exitosamente'
     });
   } catch (error: any) {
     res.status(400).json({ 
@@ -174,7 +174,7 @@ router.post('/assignments', async (req: Request, res: Response) => {
     const assignment = await assignmentService.createAssignment(req.body);
     res.status(201).json({ 
       success: true,
-      message: 'Assignment created successfully',
+      message: 'Asignación creada exitosamente',
       assignment
     });
   } catch (error: any) {
@@ -256,13 +256,13 @@ router.put('/assignments/:id', async (req: Request, res: Response) => {
     if (!assignment) {
       return res.status(404).json({
         success: false,
-        error: 'Assignment not found'
+        error: 'Asignación no encontrada'
       });
     }
 
     res.json({ 
       success: true,
-      message: 'Assignment updated successfully',
+      message: 'Asignación actualizada exitosamente',
       assignment
     });
   } catch (error: any) {
@@ -284,13 +284,13 @@ router.post('/assignments/:id/cancel', async (req: Request, res: Response) => {
     if (!assignment) {
       return res.status(404).json({
         success: false,
-        error: 'Assignment not found'
+        error: 'Asignación no encontrada'
       });
     }
 
     res.json({ 
       success: true,
-      message: 'Assignment cancelled successfully',
+      message: 'Asignación cancelada exitosamente',
       assignment
     });
   } catch (error: any) {

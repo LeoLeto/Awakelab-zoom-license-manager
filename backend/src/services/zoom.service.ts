@@ -68,7 +68,7 @@ class ZoomService {
       return this.accessToken;
     } catch (error: any) {
       console.error('Failed to get Zoom access token:', error.response?.data || error.message);
-      throw new Error('Failed to authenticate with Zoom API');
+      throw new Error('Error al autenticar con la API de Zoom');
     }
   }
 
@@ -96,7 +96,7 @@ class ZoomService {
       return response.data.users;
     } catch (error: any) {
       console.error('Failed to get Zoom users:', error.response?.data || error.message);
-      throw new Error('Failed to retrieve Zoom users');
+      throw new Error('Error al obtener usuarios de Zoom');
     }
   }
 
@@ -120,7 +120,7 @@ class ZoomService {
       return response.data;
     } catch (error: any) {
       console.error('Failed to get Zoom user:', error.response?.data || error.message);
-      throw new Error(`Failed to retrieve user: ${userIdOrEmail}`);
+      throw new Error(`Error al obtener usuario: ${userIdOrEmail}`);
     }
   }
 
@@ -137,7 +137,7 @@ class ZoomService {
     
     // Validate password meets Zoom requirements
     if (!this.validatePassword(newPassword)) {
-      throw new Error('Password does not meet Zoom requirements (min 8 chars, mix of letters and numbers)');
+      throw new Error('La contraseña no cumple los requisitos de Zoom (mínimo 8 caracteres, mezcla de letras y números)');
     }
 
     try {
@@ -176,7 +176,7 @@ class ZoomService {
       console.error('   Status Text:', error.response?.statusText);
       console.error('   Error Data:', JSON.stringify(error.response?.data, null, 2));
       console.error('   Error Message:', error.message);
-      throw new Error(`Failed to change password for user: ${userIdOrEmail}`);
+      throw new Error(`Error al cambiar contraseña para usuario: ${userIdOrEmail}`);
     }
   }
 

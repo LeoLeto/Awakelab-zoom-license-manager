@@ -18,7 +18,7 @@ router.get('/', async (req: AuthRequest, res: Response) => {
     res.json(admins);
   } catch (error: any) {
     console.error('Get admins error:', error);
-    res.status(500).json({ error: 'Internal server error', message: error.message });
+    res.status(500).json({ error: 'Error interno del servidor', message: error.message });
   }
 });
 
@@ -29,24 +29,24 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 
     // Validation
     if (!username || !password) {
-      res.status(400).json({ error: 'Username and password are required' });
+      res.status(400).json({ error: 'Usuario y contraseña son requeridos' });
       return;
     }
 
     if (username.length < 3) {
-      res.status(400).json({ error: 'Username must be at least 3 characters long' });
+      res.status(400).json({ error: 'El nombre de usuario debe tener al menos 3 caracteres' });
       return;
     }
 
     if (password.length < 6) {
-      res.status(400).json({ error: 'Password must be at least 6 characters long' });
+      res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
       return;
     }
 
     // Check if username already exists (case-insensitive)
     const existingAdmin = await Admin.findOne({ username: username.toLowerCase() });
     if (existingAdmin) {
-      res.status(409).json({ error: 'Username already exists' });
+      res.status(409).json({ error: 'El nombre de usuario ya existe' });
       return;
     }
 
@@ -60,7 +60,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
     await newAdmin.save();
 
     res.status(201).json({
-      message: 'Admin created successfully',
+      message: 'Administrador creado exitosamente',
       admin: {
         id: newAdmin._id,
         username: newAdmin.username,
@@ -69,7 +69,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
     });
   } catch (error: any) {
     console.error('Create admin error:', error);
-    res.status(500).json({ error: 'Internal server error', message: error.message });
+    res.status(500).json({ error: 'Error interno del servidor', message: error.message });
   }
 });
 
@@ -80,28 +80,28 @@ router.delete('/:id', async (req: AuthRequest, res: Response) => {
 
     // Prevent deleting yourself
     if (id === req.adminId) {
-      res.status(400).json({ error: 'You cannot delete your own account' });
+      res.status(400).json({ error: 'No puedes eliminar tu propia cuenta' });
       return;
     }
 
     // Check if trying to delete superadmin
     const adminToDelete = await Admin.findById(id);
     if (!adminToDelete) {
-      res.status(404).json({ error: 'Admin not found' });
+      res.status(404).json({ error: 'Administrador no encontrado' });
       return;
     }
 
     if (adminToDelete.username === 'superadmin') {
-      res.status(403).json({ error: 'Cannot delete the Superadmin account' });
+      res.status(403).json({ error: 'No se puede eliminar la cuenta de Superadmin' });
       return;
     }
 
     await Admin.findByIdAndDelete(id);
 
-    res.json({ message: 'Admin deleted successfully' });
+    res.json({ message: 'Administrador eliminado exitosamente' });
   } catch (error: any) {
     console.error('Delete admin error:', error);
-    res.status(500).json({ error: 'Internal server error', message: error.message });
+    res.status(500).json({ error: 'Error interno del servidor', message: error.message });
   }
 });
 
@@ -111,25 +111,25 @@ router.put('/change-password', async (req: AuthRequest, res: Response) => {
     const { currentPassword, newPassword } = req.body;
 
     if (!currentPassword || !newPassword) {
-      res.status(400).json({ error: 'Current password and new password are required' });
+      res.status(400).json({ error: 'La contraseña actual y la nueva contraseña son requeridas' });
       return;
     }
 
     if (newPassword.length < 6) {
-      res.status(400).json({ error: 'New password must be at least 6 characters long' });
+      res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
       return;
     }
 
     const admin = await Admin.findById(req.adminId);
     if (!admin) {
-      res.status(404).json({ error: 'Admin not found' });
+      res.status(404).json({ error: 'Administrador no encontrado' });
       return;
     }
 
     // Verify current password
     const isPasswordValid = await admin.comparePassword(currentPassword);
     if (!isPasswordValid) {
-      res.status(401).json({ error: 'Current password is incorrect' });
+      res.status(401).json({ error: 'La contraseña actual es incorrecta' });
       return;
     }
 
@@ -137,10 +137,10 @@ router.put('/change-password', async (req: AuthRequest, res: Response) => {
     admin.password = newPassword;
     await admin.save();
 
-    res.json({ message: 'Password changed successfully' });
+    res.json({ message: 'Contraseña cambiada exitosamente' });
   } catch (error: any) {
     console.error('Change password error:', error);
-    res.status(500).json({ error: 'Internal server error', message: error.message });
+    res.status(500).json({ error: 'Error interno del servidor', message: error.message });
   }
 });
 

@@ -28,7 +28,7 @@ router.get('/recent', async (req: Request, res: Response) => {
     res.json(history);
   } catch (error) {
     console.error('Error fetching recent history:', error);
-    res.status(500).json({ error: 'Failed to fetch recent history' });
+    res.status(500).json({ error: 'Error al cargar historial reciente' });
   }
 });
 
@@ -41,7 +41,7 @@ router.get('/license/:licenseId', async (req: Request, res: Response) => {
     const { licenseId } = req.params;
     
     if (!Types.ObjectId.isValid(licenseId)) {
-      return res.status(400).json({ error: 'Invalid license ID' });
+      return res.status(400).json({ error: 'ID de licencia inválido' });
     }
 
     const limit = parseInt(req.query.limit as string) || 50;
@@ -54,7 +54,7 @@ router.get('/license/:licenseId', async (req: Request, res: Response) => {
     res.json(history);
   } catch (error) {
     console.error('Error fetching license history:', error);
-    res.status(500).json({ error: 'Failed to fetch license history' });
+    res.status(500).json({ error: 'Error al cargar historial de licencia' });
   }
 });
 
@@ -67,7 +67,7 @@ router.get('/assignment/:assignmentId', async (req: Request, res: Response) => {
     const { assignmentId } = req.params;
     
     if (!Types.ObjectId.isValid(assignmentId)) {
-      return res.status(400).json({ error: 'Invalid assignment ID' });
+      return res.status(400).json({ error: 'ID de asignación inválido' });
     }
 
     const limit = parseInt(req.query.limit as string) || 50;
@@ -76,7 +76,7 @@ router.get('/assignment/:assignmentId', async (req: Request, res: Response) => {
     res.json(history);
   } catch (error) {
     console.error('Error fetching assignment history:', error);
-    res.status(500).json({ error: 'Failed to fetch assignment history' });
+    res.status(500).json({ error: 'Error al cargar historial de asignación' });
   }
 });
 
@@ -90,12 +90,12 @@ router.delete('/cleanup', async (req: Request, res: Response) => {
     const deletedCount = await HistoryService.cleanupOldHistory(daysToKeep);
 
     res.json({ 
-      message: `Cleaned up ${deletedCount} old history entries`,
+      message: `Se limpiaron ${deletedCount} entradas antiguas del historial`,
       deletedCount 
     });
   } catch (error) {
     console.error('Error cleaning up history:', error);
-    res.status(500).json({ error: 'Failed to clean up history' });
+    res.status(500).json({ error: 'Error al limpiar historial' });
   }
 });
 

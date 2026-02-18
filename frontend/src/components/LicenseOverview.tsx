@@ -29,7 +29,7 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
       );
       setLicenses(validLicenses);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load licenses');
+      setError(err instanceof Error ? err.message : 'Error al cargar licencias');
     } finally {
       setLoading(false);
     }

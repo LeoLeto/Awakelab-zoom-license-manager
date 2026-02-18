@@ -39,7 +39,7 @@ router.get('/:key', async (req: AuthRequest, res: Response) => {
     if (value === null) {
       return res.status(404).json({
         success: false,
-        error: 'Setting not found'
+        error: 'Configuración no encontrada'
       });
     }
 
@@ -70,7 +70,7 @@ router.put('/:key', async (req: AuthRequest, res: Response) => {
     if (value === undefined) {
       return res.status(400).json({
         success: false,
-        error: 'Value is required'
+        error: 'El valor es requerido'
       });
     }
 
@@ -102,13 +102,13 @@ router.delete('/:key', async (req: AuthRequest, res: Response) => {
     if (!deleted) {
       return res.status(404).json({
         success: false,
-        error: 'Setting not found'
+        error: 'Configuración no encontrada'
       });
     }
 
     res.json({
       success: true,
-      message: 'Setting deleted successfully'
+      message: 'Configuración eliminada exitosamente'
     });
   } catch (error: any) {
     res.status(500).json({
@@ -130,7 +130,7 @@ router.post('/test-email', async (req: AuthRequest, res: Response) => {
     if (!recipientEmail) {
       return res.status(400).json({
         success: false,
-        error: 'recipientEmail is required'
+        error: 'El email del destinatario es requerido'
       });
     }
 
@@ -139,13 +139,13 @@ router.post('/test-email', async (req: AuthRequest, res: Response) => {
     if (!sent) {
       return res.status(500).json({
         success: false,
-        error: 'Failed to send test email. Check your email configuration.'
+        error: 'Error al enviar correo de prueba. Verifica tu configuración de email.'
       });
     }
 
     res.json({
       success: true,
-      message: `Test email sent to ${recipientEmail}`
+      message: `Correo de prueba enviado a ${recipientEmail}`
     });
   } catch (error: any) {
     res.status(500).json({

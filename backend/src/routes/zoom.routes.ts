@@ -13,7 +13,7 @@ router.get('/test', async (req: Request, res: Response) => {
     const isConnected = await zoomService.testConnection();
     res.json({ 
       success: isConnected,
-      message: isConnected ? 'Zoom API connected successfully' : 'Failed to connect to Zoom API'
+      message: isConnected ? 'API de Zoom conectada exitosamente' : 'Error al conectar con la API de Zoom'
     });
   } catch (error: any) {
     res.status(500).json({ 
@@ -75,7 +75,7 @@ router.post('/change-password', async (req: Request, res: Response) => {
     if (!userEmail) {
       return res.status(400).json({ 
         success: false, 
-        error: 'userEmail is required' 
+        error: 'El email del usuario es requerido' 
       });
     }
 
@@ -89,7 +89,7 @@ router.post('/change-password', async (req: Request, res: Response) => {
       success: true,
       email: userEmail,
       newPassword: passwordToUse,
-      message: 'Password changed successfully'
+      message: 'Contraseña cambiada exitosamente'
     });
   } catch (error: any) {
     res.status(500).json({ 
@@ -125,7 +125,7 @@ router.post('/bulk-change-password', async (req: Request, res: Response) => {
     if (!Array.isArray(userEmails) || userEmails.length === 0) {
       return res.status(400).json({ 
         success: false, 
-        error: 'userEmails array is required' 
+        error: 'El array de emails de usuarios es requerido' 
       });
     }
 

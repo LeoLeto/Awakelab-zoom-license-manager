@@ -6,7 +6,7 @@ export default function HomePage() {
       <div className="hero">
         <h1>🎯 Gestor de Licencias Zoom</h1>
         <p className="hero-subtitle">
-          Panel de control integral para gestionar 170 licencias de Zoom y sus cuentas Moodle correspondientes
+          Panel de control integral para gestionar licencias de Zoom y sus cuentas Moodle correspondientes
         </p>
       </div>
 
@@ -15,7 +15,7 @@ export default function HomePage() {
           <div className="feature-icon">🔧</div>
           <h3>Panel de Administración</h3>
           <p>
-            Visualiza las 170 licencias, gestiona asignaciones, cambia contraseñas
+            Visualiza las licencias, gestiona asignaciones, cambia contraseñas
             y monitorea la disponibilidad de licencias en tiempo real.
           </p>
           <Link to="/admin" className="btn-primary">
@@ -81,17 +81,6 @@ export default function HomePage() {
               <p>Visualiza la distribución del estado de licencias y análisis de uso</p>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div className="tech-stack">
-        <h3>🛠️ Tecnologías</h3>
-        <div className="tech-badges">
-          <span className="tech-badge">React + TypeScript</span>
-          <span className="tech-badge">Node.js + Express</span>
-          <span className="tech-badge">MongoDB</span>
-          <span className="tech-badge">Zoom API</span>
-          <span className="tech-badge">Vite</span>
         </div>
       </div>
     </div>

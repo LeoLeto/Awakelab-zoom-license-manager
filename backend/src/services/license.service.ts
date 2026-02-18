@@ -17,7 +17,7 @@ export class LicenseService {
    */
   async getLicenseById(id: string): Promise<ILicense | null> {
     if (!Types.ObjectId.isValid(id)) {
-      throw new Error('Invalid license ID');
+      throw new Error('ID de licencia inválido');
     }
     return await License.findById(id);
   }
@@ -43,7 +43,7 @@ export class LicenseService {
     // Check if license with email already exists
     const existingLicense = await this.getLicenseByEmail(licenseData.email!);
     if (existingLicense) {
-      throw new Error(`License with email ${licenseData.email} already exists`);
+      throw new Error(`La licencia con email ${licenseData.email} ya existe`);
     }
 
     const license = new License(licenseData);
@@ -73,13 +73,13 @@ export class LicenseService {
    */
   async updateLicense(id: string, updateData: Partial<ILicense>, actor: string = 'system'): Promise<ILicense | null> {
     if (!Types.ObjectId.isValid(id)) {
-      throw new Error('Invalid license ID');
+      throw new Error('ID de licencia inválido');
     }
 
     // Get the current license state before update
     const oldLicense = await License.findById(id);
     if (!oldLicense) {
-      throw new Error('License not found');
+      throw new Error('Licencia no encontrada');
     }
 
     // Prevent email updates to avoid duplicates
@@ -89,7 +89,7 @@ export class LicenseService {
         _id: { $ne: id }
       });
       if (existingLicense) {
-        throw new Error(`Another license with email ${updateData.email} already exists`);
+        throw new Error(`Otra licencia con email ${updateData.email} ya existe`);
       }
     }
 
@@ -138,7 +138,7 @@ export class LicenseService {
    */
   async deleteLicense(id: string, actor: string = 'system'): Promise<boolean> {
     if (!Types.ObjectId.isValid(id)) {
-      throw new Error('Invalid license ID');
+      throw new Error('ID de licencia inválido');
     }
 
     // Check for active assignments
@@ -148,7 +148,7 @@ export class LicenseService {
     });
 
     if (activeAssignments.length > 0) {
-      throw new Error('Cannot delete license with active assignments');
+      throw new Error('No se puede eliminar una licencia con asignaciones activas');
     }
 
     const license = await License.findById(id);
@@ -216,7 +216,7 @@ export class LicenseService {
    */
   async getLicenseWithAssignment(id: string): Promise<any> {
     if (!Types.ObjectId.isValid(id)) {
-      throw new Error('Invalid license ID');
+      throw new Error('ID de licencia inválido');
     }
 
     const license = await License.findById(id);

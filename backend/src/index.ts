@@ -53,7 +53,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use((err: Error, req: Request, res: Response, next: any) => {
   console.error('Error:', err);
   res.status(500).json({ 
-    error: 'Internal Server Error', 
+    error: 'Error interno del servidor', 
     message: err.message 
   });
 });
