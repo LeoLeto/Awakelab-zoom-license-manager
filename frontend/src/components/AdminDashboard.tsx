@@ -4,9 +4,10 @@ import AssignmentManager from './AssignmentManager';
 import { HistoryViewer } from './HistoryViewer';
 import AdminManagement from './AdminManagement';
 import Settings from './Settings';
+import AnalyticsDashboard from './AnalyticsDashboard';
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'assignments' | 'history' | 'admins' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'assignments' | 'history' | 'admins' | 'analytics' | 'settings'>('overview');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleRefresh = () => {
@@ -47,6 +48,12 @@ export default function AdminDashboard() {
           👥 Administradores
         </button>
         <button
+          className={`tab ${activeTab === 'analytics' ? 'active' : ''}`}
+          onClick={() => setActiveTab('analytics')}
+        >
+          📈 Analytics
+        </button>
+        <button
           className={`tab ${activeTab === 'settings' ? 'active' : ''}`}
           onClick={() => setActiveTab('settings')}
         >
@@ -67,6 +74,9 @@ export default function AdminDashboard() {
         )}
         {activeTab === 'admins' && (
           <AdminManagement />
+        )}
+        {activeTab === 'analytics' && (
+          <AnalyticsDashboard />
         )}
         {activeTab === 'settings' && (
           <Settings onSettingsChange={handleRefresh} />

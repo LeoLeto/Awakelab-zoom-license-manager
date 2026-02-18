@@ -15,8 +15,8 @@ router.post('/login', async (req: Request, res: Response) => {
       return;
     }
 
-    // Find admin by username
-    const admin = await Admin.findOne({ username });
+    // Find admin by username (case-insensitive)
+    const admin = await Admin.findOne({ username: username.toLowerCase() });
     if (!admin) {
       res.status(401).json({ error: 'Invalid username or password' });
       return;

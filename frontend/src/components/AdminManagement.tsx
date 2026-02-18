@@ -20,6 +20,7 @@ const AdminManagement: React.FC = () => {
   const [newPassword, setNewPassword] = useState('');
   const [formError, setFormError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const fetchAdmins = async () => {
     try {
@@ -31,7 +32,7 @@ const AdminManagement: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch admins');
+        throw new Error('Error al cargar administradores');
       }
 
       const data = await response.json();
@@ -65,10 +66,10 @@ const AdminManagement: React.FC = () => {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to create admin');
+        throw new Error(error.error || 'Error al crear administrador');
       }
 
-      setSuccessMessage('Admin created successfully');
+      setSuccessMessage('Administrador creado exitosamente');
       setNewUsername('');
       setNewPassword('');
       setShowCreateForm(false);
@@ -79,7 +80,7 @@ const AdminManagement: React.FC = () => {
   };
 
   const handleDeleteAdmin = async (id: string, username: string) => {
-    if (!confirm(`Are you sure you want to delete admin "${username}"?`)) {
+    if (!confirm(`¿Está seguro de que desea eliminar al administrador "${username}"?`)) {
       return;
     }
 
@@ -94,10 +95,10 @@ const AdminManagement: React.FC = () => {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to delete admin');
+        throw new Error(error.error || 'Error al eliminar administrador');
       }
 
-      setSuccessMessage('Admin deleted successfully');
+      setSuccessMessage('Administrador eliminado exitosamente');
       fetchAdmins();
     } catch (err: any) {
       setError(err.message);
@@ -105,18 +106,18 @@ const AdminManagement: React.FC = () => {
   };
 
   if (isLoading) {
-    return <div className="container"><p>Loading admins...</p></div>;
+    return <div className="container"><p>Cargando administradores...</p></div>;
   }
 
   return (
     <div className="container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2>Administrator Management</h2>
+        <h2>Gestión de Administradores</h2>
         <button
           className="btn btn-primary"
           onClick={() => setShowCreateForm(!showCreateForm)}
         >
-          {showCreateForm ? 'Cancel' : 'Add New Admin'}
+          {showCreateForm ? 'Cancelar' : 'Agregar Nuevo Administrador'}
         </button>
       </div>
 
@@ -134,36 +135,59 @@ const AdminManagement: React.FC = () => {
 
       {showCreateForm && (
         <div className="card" style={{ marginBottom: '20px' }}>
-          <h3>Create New Administrator</h3>
+          <h3>Crear Nuevo Administrador</h3>
           <form onSubmit={handleCreateAdmin}>
             <div style={{ marginBottom: '15px' }}>
-              <label htmlFor="newUsername" style={{ display: 'block', marginBottom: '5px' }}>
-                Username (minimum 3 characters)
+              <label htmlFor="newUsername" style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>
+                Nombre de usuario (mínimo 3 caracteres)
               </label>
               <input
                 type="text"
                 id="newUsername"
-                className="input"
+                className="setting-input"
                 value={newUsername}
                 onChange={(e) => setNewUsername(e.target.value)}
                 required
                 minLength={3}
+                style={{ width: '100%', maxWidth: '400px' }}
               />
             </div>
 
             <div style={{ marginBottom: '15px' }}>
-              <label htmlFor="newPassword" style={{ display: 'block', marginBottom: '5px' }}>
-                Password (minimum 6 characters)
+              <label htmlFor="newPassword" style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>
+                Contraseña (mínimo 6 caracteres)
               </label>
-              <input
-                type="password"
-                id="newPassword"
-                className="input"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                minLength={6}
-              />
+              <div style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="newPassword"
+                  className="setting-input"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  style={{ width: '100%', paddingRight: '40px' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '8px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '4px 8px',
+                    color: 'var(--gray-600)',
+                    fontSize: '0.875rem'
+                  }}
+                  title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                >
+                  {showPassword ? '👁️' : '👁️‍🗨️'}
+                </button>
+              </div>
             </div>
 
             {formError && (
@@ -173,22 +197,22 @@ const AdminManagement: React.FC = () => {
             )}
 
             <button type="submit" className="btn btn-primary">
-              Create Admin
+              Crear Administrador
             </button>
           </form>
         </div>
       )}
 
       <div className="card">
-        <h3>Current Administrators ({admins.length})</h3>
+        <h3>Administradores Actuales ({admins.length})</h3>
         <table className="table">
           <thead>
             <tr>
-              <th>Username</th>
-              <th>Created</th>
-              <th>Created By</th>
-              <th>Last Login</th>
-              <th>Actions</th>
+              <th>Nombre de Usuario</th>
+              <th>Creado</th>
+              <th>Creado Por</th>
+              <th>Último Acceso</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -196,27 +220,27 @@ const AdminManagement: React.FC = () => {
               <tr key={admin._id}>
                 <td>
                   <strong>{admin.username}</strong>
-                  {admin.username === 'Superadmin' && (
+                  {admin.username === 'superadmin' && (
                     <span style={{ marginLeft: '10px', color: '#666', fontSize: '0.9em' }}>
-                      (System)
+                      (Sistema)
                     </span>
                   )}
                 </td>
                 <td>{new Date(admin.createdAt).toLocaleDateString()}</td>
-                <td>{admin.createdBy?.username || 'System'}</td>
+                <td>{admin.createdBy?.username || 'Sistema'}</td>
                 <td>
                   {admin.lastLogin
                     ? new Date(admin.lastLogin).toLocaleString()
-                    : 'Never'}
+                    : 'Nunca'}
                 </td>
                 <td>
-                  {admin.username !== 'Superadmin' && (
+                  {admin.username !== 'superadmin' && (
                     <button
                       className="btn btn-danger"
                       onClick={() => handleDeleteAdmin(admin._id, admin.username)}
                       style={{ fontSize: '0.9em', padding: '5px 10px' }}
                     >
-                      Delete
+                      Eliminar
                     </button>
                   )}
                 </td>

@@ -182,3 +182,30 @@ export const historyApi = {
     return apiCall(`${API_BASE_URL}/history/assignment/${assignmentId}?limit=${limit}`);
   },
 };
+
+export const analyticsApi = {
+  async getAnalyticsOverview(): Promise<any> {
+    return apiCall(`${API_BASE_URL}/analytics/overview`);
+  },
+
+  async getAnalyticsLicenses(limit: number = 10): Promise<any> {
+    return apiCall(`${API_BASE_URL}/analytics/licenses?limit=${limit}`);
+  },
+
+  async getAnalyticsTeachers(limit: number = 10): Promise<any> {
+    return apiCall(`${API_BASE_URL}/analytics/teachers?limit=${limit}`);
+  },
+
+  async getAnalyticsTrends(days: number = 30): Promise<any> {
+    return apiCall(`${API_BASE_URL}/analytics/trends?days=${days}`);
+  },
+};
+
+const apiService = {
+  ...zoomApi,
+  ...licenseApi,
+  ...historyApi,
+  ...analyticsApi,
+};
+
+export default apiService;

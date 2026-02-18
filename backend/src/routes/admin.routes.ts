@@ -43,8 +43,8 @@ router.post('/', async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    // Check if username already exists
-    const existingAdmin = await Admin.findOne({ username });
+    // Check if username already exists (case-insensitive)
+    const existingAdmin = await Admin.findOne({ username: username.toLowerCase() });
     if (existingAdmin) {
       res.status(409).json({ error: 'Username already exists' });
       return;
@@ -91,7 +91,7 @@ router.delete('/:id', async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    if (adminToDelete.username === 'Superadmin') {
+    if (adminToDelete.username === 'superadmin') {
       res.status(403).json({ error: 'Cannot delete the Superadmin account' });
       return;
     }

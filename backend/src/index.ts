@@ -10,6 +10,7 @@ import historyRoutes from './routes/history.routes';
 import authRoutes from './routes/auth.routes';
 import adminRoutes from './routes/admin.routes';
 import settingsRoutes from './routes/settings.routes';
+import analyticsRoutes from './routes/analytics.routes';
 import { settingsService } from './services/settings.service';
 
 // Load environment variables from backend/.env
@@ -46,6 +47,7 @@ app.use('/api/zoom', zoomRoutes);
 app.use('/api/licenses', licenseRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: any) => {

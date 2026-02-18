@@ -13,8 +13,8 @@ const initializeSuperadmin = async () => {
     await mongoose.connect(mongoUri);
     console.log('✅ Connected to MongoDB');
 
-    // Check if Superadmin already exists
-    const existingSuperadmin = await Admin.findOne({ username: 'Superadmin' });
+    // Check if Superadmin already exists (case-insensitive)
+    const existingSuperadmin = await Admin.findOne({ username: 'superadmin' });
     
     if (existingSuperadmin) {
       console.log('ℹ️  Superadmin account already exists');
@@ -29,15 +29,15 @@ const initializeSuperadmin = async () => {
       throw new Error('SUPERADMIN_PASSWORD environment variable is not set');
     }
 
-    // Create Superadmin account
+    // Create Superadmin account (username will be stored as lowercase)
     const superadmin = new Admin({
-      username: 'Superadmin',
+      username: 'superadmin',
       password: superadminPassword,
     });
 
     await superadmin.save();
     console.log('✅ Superadmin account created successfully');
-    console.log(`   Username: Superadmin`);
+    console.log(`   Username: superadmin`);
     console.log(`   Password: ${superadminPassword}`);
 
     await mongoose.disconnect();

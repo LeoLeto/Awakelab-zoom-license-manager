@@ -17,6 +17,7 @@ const AdminSchema = new Schema<IAdmin>({
     unique: true,
     trim: true,
     minlength: 3,
+    lowercase: true,
   },
   password: {
     type: String,
