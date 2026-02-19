@@ -12,8 +12,9 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [assigningTo, setAssigningTo] = useState<string | null>(null);
+  const [assigningTo, setAssigningTo] = useState<Assignment | null>(null);
   const [selectedLicenseForAssignment, setSelectedLicenseForAssignment] = useState<string>('');
+  const [modalLoading, setModalLoading] = useState(false);
   const [formData, setFormData] = useState({
     licenseId: '',
     nombreApellidos: '',
@@ -111,19 +112,18 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
   };
 
   const handleStartAssigning = async (assignment: Assignment) => {
-    setAssigningTo(assignment._id);
+    setAssigningTo(assignment);
     setSelectedLicenseForAssignment('');
+    setModalLoading(true);
     await loadAvailableLicensesForAssignment(assignment);
+    setModalLoading(false);
   };
 
-  const handleAssignLicense = async (assignmentId: string) => {
-    if (!selectedLicenseForAssignment) {
-      setError('Por favor, selecciona una licencia');
-      return;
-    }
+  const handleAssignLicense = async () => {
+    if (!assigningTo || !selectedLicenseForAssignment) return;
 
     try {
-      await assignmentApi.updateAssignment(assignmentId, {
+      await assignmentApi.updateAssignment(assigningTo._id, {
         licenseId: selectedLicenseForAssignment
       });
       setAssigningTo(null);
@@ -148,6 +148,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
   }
 
   return (
+    <>
     <div className="assignment-manager">
       <div className="section-header">
         <h2>📋 Solicitudes y Nuevas Asignaciones</h2>
@@ -327,46 +328,18 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
                     <td>{new Date(assignment.fechaInicioUso).toLocaleDateString()}</td>
                     <td>{new Date(assignment.fechaFinUso).toLocaleDateString()}</td>
                     <td>
-                      {assigningTo === assignment._id ? (
-                        <div className="assign-license-form">
-                          <select
-                            value={selectedLicenseForAssignment}
-                            onChange={(e) => setSelectedLicenseForAssignment(e.target.value)}
-                            className="license-select"
-                          >
-                            <option value="">
-                              {availableLicenses.length === 0
-                                ? 'No hay licencias disponibles'
-                                : 'Selecciona una licencia...'}
-                            </option>
-                            {availableLicenses.map((license) => (
-                              <option key={license._id} value={license._id}>
-                                {license.email} - {license.usuarioMoodle}
-                              </option>
-                            ))}
-                          </select>
-                          <button
-                            className="btn-primary btn-small"
-                            onClick={() => handleAssignLicense(assignment._id)}
-                            disabled={!selectedLicenseForAssignment}
-                          >
-                            ✓ Asignar
-                          </button>
-                          <button
-                            className="btn-secondary btn-small"
-                            onClick={handleCancelAssigning}
-                          >
-                            ✖
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          className="btn-primary btn-small"
-                          onClick={() => handleStartAssigning(assignment)}
-                        >
-                          Asignar Licencia
-                        </button>
-                      )}
+                      <button
+                        className="btn-primary btn-small"
+                        onClick={() => handleStartAssigning(assignment)}
+                      >
+                        Asignar Licencia
+                      </button>
+                      <button
+                        className="btn-danger btn-small"
+                        onClick={() => handleCancelAssignment(assignment._id)}
+                      >
+                        Cancelar
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -376,5 +349,81 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
         )}
       </div>
     </div>
+
+      {/* Assign License Modal */}
+      {assigningTo && (
+        <div className="modal-overlay" onClick={handleCancelAssigning}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="assign-modal-header">
+              <h3>🎫 Asignar Licencia</h3>
+              <button className="close-button" onClick={handleCancelAssigning}>×</button>
+            </div>
+
+            <div className="assign-modal-info">
+              <div className="assign-modal-info-row">
+                <span className="assign-modal-label">Profesor</span>
+                <span>{assigningTo.nombreApellidos}</span>
+              </div>
+              <div className="assign-modal-info-row">
+                <span className="assign-modal-label">Email</span>
+                <span>{assigningTo.correocorporativo}</span>
+              </div>
+              <div className="assign-modal-info-row">
+                <span className="assign-modal-label">Plataforma</span>
+                <span>{assigningTo.tipoUso}</span>
+              </div>
+              <div className="assign-modal-info-row">
+                <span className="assign-modal-label">Período</span>
+                <span>
+                  {new Date(assigningTo.fechaInicioUso).toLocaleDateString()} →{' '}
+                  {new Date(assigningTo.fechaFinUso).toLocaleDateString()}
+                </span>
+              </div>
+            </div>
+
+            <p className="assign-modal-subtitle">Selecciona una licencia disponible:</p>
+
+            {modalLoading ? (
+              <div className="assign-modal-empty">Cargando licencias...</div>
+            ) : availableLicenses.length === 0 ? (
+              <div className="assign-modal-empty">⚠️ No hay licencias disponibles para este período.</div>
+            ) : (
+              <div className="assign-license-list">
+                {availableLicenses.map((license) => (
+                  <div
+                    key={license._id}
+                    className={`assign-license-card${
+                      selectedLicenseForAssignment === license._id ? ' selected' : ''
+                    }`}
+                    onClick={() => setSelectedLicenseForAssignment(license._id)}
+                  >
+                    <div className="assign-license-card-check">
+                      {selectedLicenseForAssignment === license._id ? '●' : '○'}
+                    </div>
+                    <div>
+                      <div className="assign-license-card-email">{license.email}</div>
+                      <div className="assign-license-card-user">{license.usuarioMoodle}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="assign-modal-footer">
+              <button className="btn-secondary" onClick={handleCancelAssigning}>
+                Cancelar
+              </button>
+              <button
+                className="btn-primary"
+                onClick={handleAssignLicense}
+                disabled={!selectedLicenseForAssignment}
+              >
+                ✓ Confirmar Asignación
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
