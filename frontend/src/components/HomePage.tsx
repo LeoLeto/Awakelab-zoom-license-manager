@@ -50,7 +50,7 @@ export default function HomePage() {
             <span className="feature-bullet">📅</span>
             <div>
               <strong>Seguimiento de Asignaciones</strong>
-              <p>Monitorea qué profesores están usando qué licencias y cuándo</p>
+              <p>Monitorea qué usuarios están usando qué licencias y cuándo</p>
             </div>
           </div>
           <div className="feature-item">

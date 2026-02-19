@@ -56,35 +56,23 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
     }
   };
 
-  const getActionIcon = (action: string) => {
-    switch (action) {
-      case 'create':
-        return '➕';
-      case 'update':
-        return '✏️';
-      case 'delete':
-        return '🗑️';
-      case 'assign':
-        return '🔗';
-      case 'unassign':
-        return '🔓';
-      case 'status_change':
-        return '🔄';
-      default:
-        return '📝';
-    }
-  };
-
-  const getActionLabel = (action: string) => {
-    const labels: { [key: string]: string } = {
-      create: 'Creado',
-      update: 'Actualizado',
-      delete: 'Eliminado',
-      assign: 'Asignado',
-      unassign: 'Desasignado',
-      status_change: 'Cambio de Estado',
+  const getEventDescription = (action: string, entityType: string): { icon: string; label: string } => {
+    const key = `${action}:${entityType}`;
+    const map: Record<string, { icon: string; label: string }> = {
+      'create:license':        { icon: '➕', label: 'Licencia creada' },
+      'create:assignment':     { icon: '➕', label: 'Solicitud de asignación creada' },
+      'update:license':        { icon: '✏️', label: 'Licencia actualizada' },
+      'update:assignment':     { icon: '✏️', label: 'Asignación actualizada' },
+      'delete:license':        { icon: '🗑️', label: 'Licencia eliminada' },
+      'delete:assignment':     { icon: '🗑️', label: 'Asignación eliminada' },
+      'assign:license':        { icon: '🔗', label: 'Licencia asignada a un usuario' },
+      'assign:assignment':     { icon: '🔗', label: 'Asignación confirmada' },
+      'unassign:license':      { icon: '🔓', label: 'Licencia liberada' },
+      'unassign:assignment':   { icon: '🔓', label: 'Asignación cancelada' },
+      'status_change:license': { icon: '🔄', label: 'Estado de licencia cambiado' },
+      'status_change:assignment': { icon: '🔄', label: 'Estado de asignación cambiado' },
     };
-    return labels[action] || action;
+    return map[key] ?? { icon: '📝', label: action };
   };
 
   const formatFieldName = (field: string) => {
@@ -262,11 +250,15 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
             .map((entry) => (
             <div key={entry._id} className="history-entry">
               <div className="entry-header">
-                <span className="entry-icon">{getActionIcon(entry.action)}</span>
-                <span className="entry-action">{getActionLabel(entry.action)}</span>
-                <span className="entry-type">
-                  {entry.entityType === 'license' ? '📋 Licencia' : '👤 Asignación'}
-                </span>
+                {(() => {
+                  const { icon, label } = getEventDescription(entry.action, entry.entityType);
+                  return (
+                    <>
+                      <span className="entry-icon">{icon}</span>
+                      <span className="entry-action">{label}</span>
+                    </>
+                  );
+                })()}
                 <span className="entry-timestamp">{formatTimestamp(entry.timestamp)}</span>
               </div>
 

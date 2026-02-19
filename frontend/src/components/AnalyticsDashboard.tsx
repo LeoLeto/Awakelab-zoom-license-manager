@@ -38,7 +38,7 @@ const AnalyticsDashboard: React.FC = () => {
 
       const [overviewData, teachersData] = await Promise.all([
         apiService.getAnalyticsOverview(),
-        apiService.getAnalyticsTeachers(10)
+        apiService.getAnalyticsTeachers(50)
       ]);
 
       setOverview(overviewData);
@@ -129,7 +129,7 @@ const AnalyticsDashboard: React.FC = () => {
           <div className="stat-card">
             <div className="stat-icon">👥</div>
             <div className="stat-content">
-              <div className="stat-label">Profesores Activos</div>
+              <div className="stat-label">Usuarios Activos</div>
               <div className="stat-value">{overview.totalTeachers}</div>
             </div>
           </div>
@@ -147,14 +147,14 @@ const AnalyticsDashboard: React.FC = () => {
       {/* Top Teachers */}
       {teachers.length > 0 && (
         <div className="analytics-section">
-          <h3>👨‍🏫 Licencias por Profesor</h3>
+          <h3>👨‍🏫 Licencias por Usuario</h3>
           <div className="analytics-table">
             <table>
               <thead>
                 <tr>
-                  <th>Profesor</th>
+                  <th>Usuario</th>
                   <th>Email</th>
-                  <th>Asignaciones Actuales</th>
+                  <th>Asignaciones Activas</th>
                   <th>Total Asignaciones</th>
                   <th>Última Actividad</th>
                 </tr>

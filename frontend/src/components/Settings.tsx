@@ -325,7 +325,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
           <p>
             <strong>¿Qué hace la rotación automática?</strong><br />
             Cuando una licencia expira, el sistema automáticamente cambia la contraseña 
-            de Zoom para esa cuenta, asegurando que los profesores no puedan seguir 
+            de Zoom para esa cuenta, asegurando que los usuarios no puedan seguir 
             usándola después de que termine su período asignado.
           </p>
           <p>

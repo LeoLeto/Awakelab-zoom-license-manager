@@ -170,7 +170,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
           <form onSubmit={handleCreateAssignment} className="assignment-form">
             <div className="form-row">
               <div className="form-group">
-                <label>Nombre del Profesor *</label>
+                <label>Nombre del Usuario *</label>
                 <input
                   type="text"
                   required
@@ -308,7 +308,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
             <table>
               <thead>
                 <tr>
-                  <th>Profesor</th>
+                  <th>Usuario</th>
                   <th>Email</th>
                   <th>Área</th>
                   <th>Comunidad</th>
@@ -362,7 +362,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
 
             <div className="assign-modal-info">
               <div className="assign-modal-info-row">
-                <span className="assign-modal-label">Profesor</span>
+                <span className="assign-modal-label">Usuario</span>
                 <span>{assigningTo.nombreApellidos}</span>
               </div>
               <div className="assign-modal-info-row">

@@ -161,8 +161,10 @@ class AnalyticsService {
       lastActivity: t.lastActivity
     }));
 
-    // Ordenar por total de asignaciones
-    return metrics.sort((a, b) => b.totalAssignments - a.totalAssignments).slice(0, limit);
+    // Ordenar por asignaciones activas primero, luego por total histórico
+    return metrics.sort((a, b) =>
+      b.currentAssignments - a.currentAssignments || b.totalAssignments - a.totalAssignments
+    ).slice(0, limit);
   }
 
   /**
