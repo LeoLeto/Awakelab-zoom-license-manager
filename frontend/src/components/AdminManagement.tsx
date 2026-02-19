@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../App.css';
+import { formatDate } from '../utils/date';
 
 interface Admin {
   _id: string;
@@ -226,7 +227,7 @@ const AdminManagement: React.FC = () => {
                     </span>
                   )}
                 </td>
-                <td>{new Date(admin.createdAt).toLocaleDateString()}</td>
+                <td>{formatDate(admin.createdAt)}</td>
                 <td>{admin.createdBy?.username || 'Sistema'}</td>
                 <td>
                   {admin.lastLogin

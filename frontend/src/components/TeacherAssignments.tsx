@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { assignmentApi } from '../services/api.service';
 import { Assignment } from '../types/license.types';
+import { formatDate } from '../utils/date';
 
 interface TeacherAssignmentsProps {
   teacherEmail?: string;
@@ -176,8 +177,8 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
                       <div className="detail-row">
                         <span className="label">📅 Período:</span>
                         <span className="value">
-                          {new Date(assignment.fechaInicioUso).toLocaleDateString()} - 
-                          {new Date(assignment.fechaFinUso).toLocaleDateString()}
+                          {formatDate(assignment.fechaInicioUso)} - 
+                          {formatDate(assignment.fechaFinUso)}
                         </span>
                       </div>
                     </div>
@@ -216,8 +217,8 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
                       </td>
                       <td>{assignment.nombreApellidos}</td>
                       <td>{assignment.area}</td>
-                      <td>{new Date(assignment.fechaInicioUso).toLocaleDateString()}</td>
-                      <td>{new Date(assignment.fechaFinUso).toLocaleDateString()}</td>
+                      <td>{formatDate(assignment.fechaInicioUso)}</td>
+                      <td>{formatDate(assignment.fechaFinUso)}</td>
                     </tr>
                   );
                 })}

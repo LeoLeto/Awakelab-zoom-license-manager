@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { licenseApi } from '../services/api.service';
 import { LicenseWithAssignment } from '../types/license.types';
+import { formatDate } from '../utils/date';
 import PasswordChangeModal from './PasswordChangeModal';
 import LicenseDetailsModal from './LicenseDetailsModal';
 import { ZoomUser } from '../types/zoom.types';
@@ -179,8 +180,8 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
                 <td>
                   {item.assignment ? (
                     <small>
-                      {new Date(item.assignment.fechaInicioUso).toLocaleDateString()} -{' '}
-                      {new Date(item.assignment.fechaFinUso).toLocaleDateString()}
+                      {formatDate(item.assignment.fechaInicioUso)} -{' '}
+                      {formatDate(item.assignment.fechaFinUso)}
                     </small>
                   ) : (
                     <span className="text-muted">—</span>

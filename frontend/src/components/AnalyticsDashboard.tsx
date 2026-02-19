@@ -53,8 +53,8 @@ const AnalyticsDashboard: React.FC = () => {
 
   const formatDate = (dateString?: string): string => {
     if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-CL');
+    const d = new Date(dateString);
+    return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' });
   };
 
   if (loading) {

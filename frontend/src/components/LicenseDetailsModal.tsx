@@ -1,6 +1,7 @@
 import { LicenseWithAssignment } from '../types/license.types';
 import { useState } from 'react';
 import { HistoryViewer } from './HistoryViewer';
+import { formatDate } from '../utils/date';
 
 interface LicenseDetailsModalProps {
   licenseData: LicenseWithAssignment;
@@ -121,12 +122,12 @@ export default function LicenseDetailsModal({ licenseData, onClose }: LicenseDet
                 
                 <div className="detail-item">
                   <label>Fecha Inicio Uso:</label>
-                  <span>{new Date(assignment.fechaInicioUso).toLocaleDateString()}</span>
+                  <span>{formatDate(assignment.fechaInicioUso)}</span>
                 </div>
                 
                 <div className="detail-item">
                   <label>Fecha Fin Uso:</label>
-                  <span>{new Date(assignment.fechaFinUso).toLocaleDateString()}</span>
+                  <span>{formatDate(assignment.fechaFinUso)}</span>
                 </div>
                 
                 <div className="detail-item">

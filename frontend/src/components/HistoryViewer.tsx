@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { historyApi } from '../services/api.service';
 import { HistoryEntry, HistoryFilters } from '../types/history.types';
+import { formatDateTime } from '../utils/date';
 
 interface HistoryViewerProps {
   entityType?: 'license' | 'assignment';
@@ -115,26 +116,14 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
       return value ? 'Sí' : 'No';
     }
     if (value instanceof Date) {
-      return value.toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
+      return formatDateTime(value);
     }
     if (typeof value === 'string') {
       // ISO date strings (e.g. "2026-02-25T21:00:00.000Z")
       if (/^\d{4}-\d{2}-\d{2}T/.test(value)) {
         const d = new Date(value);
         if (!isNaN(d.getTime())) {
-          return d.toLocaleDateString('es-ES', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          });
+          return formatDateTime(d);
         }
       }
       return value;

@@ -14,7 +14,7 @@ export default function TeacherPortal() {
   return (
     <div className="teacher-portal">
       <div className="dashboard-header">
-        <h1>👨‍🏫 Portal del Profesor</h1>
+        <h1>👨‍🏫 Portal de asignaciones</h1>
         <p className="subtitle">Solicita y gestiona tus licencias de Zoom</p>
       </div>
 

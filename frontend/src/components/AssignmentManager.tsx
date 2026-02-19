@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { assignmentApi, licenseApi } from '../services/api.service';
 import { Assignment, License } from '../types/license.types';
+import { formatDate } from '../utils/date';
 
 interface AssignmentManagerProps {
   onAssignmentChange?: () => void;
@@ -325,8 +326,8 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
                     <td>{assignment.area}</td>
                     <td>{assignment.comunidadAutonoma}</td>
                     <td>{assignment.tipoUso}</td>
-                    <td>{new Date(assignment.fechaInicioUso).toLocaleDateString()}</td>
-                    <td>{new Date(assignment.fechaFinUso).toLocaleDateString()}</td>
+                    <td>{formatDate(assignment.fechaInicioUso)}</td>
+                    <td>{formatDate(assignment.fechaFinUso)}</td>
                     <td>
                       <button
                         className="btn-primary btn-small"
@@ -375,8 +376,8 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
               <div className="assign-modal-info-row">
                 <span className="assign-modal-label">Período</span>
                 <span>
-                  {new Date(assigningTo.fechaInicioUso).toLocaleDateString()} →{' '}
-                  {new Date(assigningTo.fechaFinUso).toLocaleDateString()}
+                  {formatDate(assigningTo.fechaInicioUso)} →{' '}
+                  {formatDate(assigningTo.fechaFinUso)}
                 </span>
               </div>
             </div>

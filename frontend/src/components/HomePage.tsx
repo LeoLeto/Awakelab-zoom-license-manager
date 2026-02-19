@@ -25,13 +25,13 @@ export default function HomePage() {
 
         <div className="feature-card">
           <div className="feature-icon">👨‍🏫</div>
-          <h3>Portal del Profesor</h3>
+          <h3>Portal de asignaciones</h3>
           <p>
             Solicita licencias de Zoom para rangos de fechas específicos,
             visualiza tus asignaciones actuales y gestiona tu acceso.
           </p>
           <Link to="/teacher" className="btn-primary">
-            Ir al Portal del Profesor →
+            Ir al Portal de asignaciones →
           </Link>
         </div>
       </div>

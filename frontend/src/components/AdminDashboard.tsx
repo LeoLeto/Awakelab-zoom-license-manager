@@ -1,14 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import LicenseOverview from './LicenseOverview';
 import AssignmentManager from './AssignmentManager';
 import { HistoryViewer } from './HistoryViewer';
 import AdminManagement from './AdminManagement';
 import Settings from './Settings';
 import AnalyticsDashboard from './AnalyticsDashboard';
+import { assignmentApi } from '../services/api.service';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'overview' | 'assignments' | 'history' | 'admins' | 'analytics' | 'settings'>('overview');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    const fetchPendingCount = async () => {
+      try {
+        const response = await assignmentApi.getPendingAssignments();
+        setPendingCount(response.assignments.length);
+      } catch {
+        // silently ignore
+      }
+    };
+    fetchPendingCount();
+  }, [refreshTrigger]);
 
   const handleRefresh = () => {
     setRefreshTrigger((prev) => prev + 1);
@@ -34,6 +48,9 @@ export default function AdminDashboard() {
           onClick={() => setActiveTab('assignments')}
         >
           📋 Solicitudes
+          {pendingCount > 0 && (
+            <span className="tab-badge">{pendingCount}</span>
+          )}
         </button>
         <button
           className={`tab ${activeTab === 'history' ? 'active' : ''}`}

@@ -34,7 +34,7 @@ export default function Navigation() {
             to="/teacher" 
             className={location.pathname === '/teacher' ? 'active' : ''}
           >
-            👨‍🏫 Portal del Profesor
+            👨‍🏫 Portal de asignaciones
           </Link>
           
           {isAuthenticated && (
