@@ -381,9 +381,9 @@ npm run dev
 
 ### 3. Read the Documentation
 
-- **[QUICKSTART.md](QUICKSTART.md)** - Complete setup guide
+- **[QUICKSTART.md](../QUICKSTART.md)** - Complete setup guide
 - **[AUTH_SETUP.md](AUTH_SETUP.md)** - Authentication configuration
-- **[backend/API_DOCS.md](backend/API_DOCS.md)** - Complete API reference
+- **[backend/API_DOCS.md](../backend/API_DOCS.md)** - Complete API reference
 - **[HISTORY_FEATURE_GUIDE.md](HISTORY_FEATURE_GUIDE.md)** - History tracking details
 - **[PHASE3_COMPLETE.md](PHASE3_COMPLETE.md)** - Frontend documentation
 - **[TESTING_CHECKLIST.md](TESTING_CHECKLIST.md)** - Testing procedures
@@ -822,9 +822,9 @@ All templates are fully responsive, professionally styled, and in Spanish:
 
 ## 🆘 Getting Help
 
-- **Setup Issues**: See [QUICKSTART.md](QUICKSTART.md)
+- **Setup Issues**: See [QUICKSTART.md](../QUICKSTART.md)
 - **Authentication**: See [AUTH_SETUP.md](AUTH_SETUP.md)
-- **API Questions**: See [backend/API_DOCS.md](backend/API_DOCS.md)
+- **API Questions**: See [backend/API_DOCS.md](../backend/API_DOCS.md)
 - **History Feature**: See [HISTORY_FEATURE_GUIDE.md](HISTORY_FEATURE_GUIDE.md)
 - **Frontend**: See [PHASE3_COMPLETE.md](PHASE3_COMPLETE.md)
 - **Testing**: Follow [TESTING_CHECKLIST.md](TESTING_CHECKLIST.md)

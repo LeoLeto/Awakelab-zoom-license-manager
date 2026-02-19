@@ -105,7 +105,7 @@ Choose one:
 - **Local**: Install MongoDB Community Server
 - **Cloud**: Create MongoDB Atlas account (free tier available)
 
-See [QUICKSTART.md](QUICKSTART.md) for detailed instructions.
+See [QUICKSTART.md](../QUICKSTART.md) for detailed instructions.
 
 ### 2. Update Environment Variables
 ```bash
@@ -216,9 +216,9 @@ Invoke-RestMethod -Uri "http://localhost:3001/api/licenses" `
 
 ## Support
 
-- **Database Setup**: See [backend/DATABASE_SETUP.md](backend/DATABASE_SETUP.md)
-- **Quick Start**: See [QUICKSTART.md](QUICKSTART.md)
-- **API Documentation**: See [backend/API_DOCS.md](backend/API_DOCS.md)
+- **Database Setup**: See [backend/DATABASE_SETUP.md](../backend/DATABASE_SETUP.md)
+- **Quick Start**: See [QUICKSTART.md](../QUICKSTART.md)
+- **API Documentation**: See [backend/API_DOCS.md](../backend/API_DOCS.md)
 
 ## MongoDB Resources
 

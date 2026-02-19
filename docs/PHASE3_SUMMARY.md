@@ -130,7 +130,7 @@ npm run dev
 - **[PHASE3_COMPLETE.md](PHASE3_COMPLETE.md)** - Complete feature documentation
 - **[PHASE3_QUICKSTART.md](PHASE3_QUICKSTART.md)** - Step-by-step testing guide
 - **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Overall project status
-- **[README.md](README.md)** - Updated project readme
+- **[README.md](../README.md)** - Updated project readme
 
 ## ✨ Highlights
 

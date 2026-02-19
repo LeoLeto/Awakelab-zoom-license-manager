@@ -104,7 +104,7 @@ zoom-license-manager/
 - [x] Navigation and routing
 - [x] Responsive design
 
-See [PHASE3_COMPLETE.md](PHASE3_COMPLETE.md) for detailed Phase 3 documentation.
+See [PHASE3_COMPLETE.md](docs/PHASE3_COMPLETE.md) for detailed Phase 3 documentation.
 
 ### Phase 4: Automation (Planned)
 - [ ] Scheduled password rotation
