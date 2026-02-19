@@ -15,6 +15,7 @@ interface SettingsProps {
 
 export default function Settings({ onSettingsChange }: SettingsProps) {
   const [settings, setSettings] = useState<Setting[]>([]);
+  const [localValues, setLocalValues] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +26,18 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
   useEffect(() => {
     fetchSettings();
   }, []);
+
+  // Keep localValues in sync when settings are (re)loaded,
+  // but don't overwrite keys the user is currently editing
+  useEffect(() => {
+    setLocalValues(prev => {
+      const next = { ...prev };
+      settings.forEach(s => {
+        if (!(s.key in next)) next[s.key] = s.value;
+      });
+      return next;
+    });
+  }, [settings]);
 
   const fetchSettings = async () => {
     try {
@@ -78,13 +91,18 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
         throw new Error('Error al actualizar configuración');
       }
 
-      // Refresh settings
-      await fetchSettings();
+      const updated = await response.json();
+
+      // Update only the changed setting in-place — no full refetch, no scroll jump
+      setSettings(prev =>
+        prev.map(s => s.key === key ? { ...s, value, updatedAt: updated.setting?.updatedAt || s.updatedAt } : s)
+      );
+      setLocalValues(prev => { const n = { ...prev }; delete n[key]; return n; });
       setSuccessMessage('Configuración actualizada correctamente');
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(null), 3000);
-      
+
       if (onSettingsChange) {
         onSettingsChange();
       }
@@ -120,14 +138,13 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
         }),
       });
 
+      const data = await response.json();
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al enviar correo de prueba');
+        throw new Error(data.error || data.message || 'Error al enviar correo de prueba');
       }
 
       setSuccessMessage(`✅ Correo de prueba enviado a ${testEmailAddress}`);
-      setTestEmailAddress('');
-      
+      // Do NOT clear the address so the button stays enabled for re-testing
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err: any) {
       setError(err.message);
@@ -158,29 +175,27 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
         return (
           <input
             type="number"
-            value={setting.value}
-            onChange={(e) => updateSetting(setting.key, parseInt(e.target.value))}
+            value={localValues[setting.key] ?? setting.value}
+            onChange={(e) => setLocalValues(prev => ({ ...prev, [setting.key]: e.target.value }))}
+            onBlur={(e) => updateSetting(setting.key, parseInt(e.target.value))}
             disabled={isSaving}
             className="setting-input"
             min="0"
-            style={{ minWidth: '100px', maxWidth: '150px' }}
           />
         );
       
       case 'string':
         const inputType = setting.key === 'emailPassword' ? 'password' : 'text';
-        const isLongText = ['emailHost', 'emailUser', 'emailFrom', 'adminNotificationEmails'].includes(setting.key);
         
         return (
           <input
             type={inputType}
-            value={setting.value}
-            onChange={(e) => updateSetting(setting.key, e.target.value)}
+            value={localValues[setting.key] ?? setting.value}
+            onChange={(e) => setLocalValues(prev => ({ ...prev, [setting.key]: e.target.value }))}
             onBlur={(e) => updateSetting(setting.key, e.target.value)}
             disabled={isSaving}
             className="setting-input"
             placeholder={setting.key === 'adminNotificationEmails' ? 'admin1@example.com, admin2@example.com' : ''}
-            style={{ minWidth: isLongText ? '300px' : '200px' }}
           />
         );
       
@@ -254,20 +269,25 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
       <div className="settings-section">
         <div className="section-card">
           <h3 className="section-card-title">🔧 Configuración General</h3>
-          <div className="settings-table">
-            {settings.filter(s => getSettingCategory(s.key) === 'general').map((setting) => (
-              <div key={setting.key} className="setting-row">
-                <div className="setting-label">
-                  <span className="label-text">{getSettingLabel(setting.key)}</span>
-                  <span className="label-description">{setting.description}</span>
-                </div>
-                <div className="setting-value">
-                  {renderSettingControl(setting)}
-                  {saving === setting.key && <span className="saving-indicator">💾</span>}
-                </div>
+          {(() => {
+            const wideKeys = ['adminNotificationEmails'];
+            return (
+              <div className="settings-table">
+                {settings.filter(s => getSettingCategory(s.key) === 'general').map((setting) => (
+                  <div key={setting.key} className={`setting-row${wideKeys.includes(setting.key) ? ' setting-row--full' : ''}`}>
+                    <div className="setting-label">
+                      <span className="label-text">{getSettingLabel(setting.key)}</span>
+                      <span className="label-description">{setting.description}</span>
+                    </div>
+                    <div className="setting-value">
+                      {renderSettingControl(setting)}
+                      {saving === setting.key && <span className="saving-indicator">💾</span>}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            );
+          })()}
         </div>
       </div>
 
@@ -277,20 +297,25 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
           <h3 className="section-card-title">📧 Configuración de Correo Electrónico</h3>
           <p className="section-card-subtitle">Configure los parámetros SMTP para el envío de notificaciones automáticas</p>
           
-          <div className="settings-table">
-            {settings.filter(s => getSettingCategory(s.key) === 'email').map((setting) => (
-              <div key={setting.key} className="setting-row">
-                <div className="setting-label">
-                  <span className="label-text">{getSettingLabel(setting.key)}</span>
-                  <span className="label-description">{setting.description}</span>
-                </div>
-                <div className="setting-value">
-                  {renderSettingControl(setting)}
-                  {saving === setting.key && <span className="saving-indicator">💾</span>}
-                </div>
+          {(() => {
+            const wideKeys = ['adminNotificationEmails'];
+            return (
+              <div className="settings-table">
+                {settings.filter(s => getSettingCategory(s.key) === 'email').map((setting) => (
+                  <div key={setting.key} className={`setting-row${wideKeys.includes(setting.key) ? ' setting-row--full' : ''}`}>
+                    <div className="setting-label">
+                      <span className="label-text">{getSettingLabel(setting.key)}</span>
+                      <span className="label-description">{setting.description}</span>
+                    </div>
+                    <div className="setting-value">
+                      {renderSettingControl(setting)}
+                      {saving === setting.key && <span className="saving-indicator">💾</span>}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            );
+          })()}
           
           {/* Test Email Section */}
           <div className="test-email-section">

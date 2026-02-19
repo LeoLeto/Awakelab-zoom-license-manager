@@ -41,7 +41,7 @@ export class EmailService {
   private async initTransporter(): Promise<void> {
     const host = await settingsService.getSetting('emailHost');
     const port = await settingsService.getSetting('emailPort');
-    const secure = await settingsService.getSetting('emailSecure');
+    const secureRaw = await settingsService.getSetting('emailSecure');
     const user = await settingsService.getSetting('emailUser');
     const password = await settingsService.getSetting('emailPassword');
     const from = await settingsService.getSetting('emailFrom');
@@ -51,13 +51,31 @@ export class EmailService {
       return;
     }
 
+    const portNumber = parseInt(port);
+    // Port 465 → implicit TLS (secure: true)
+    // Port 587 → STARTTLS (secure: MUST be false, then upgraded via requireTLS)
+    //   Office365/Gmail label this as "SSL/TLS" in their UI but it is STARTTLS.
+    //   Setting secure:true on port 587 causes the "wrong version number" SSL error.
+    // Any other port → honour the stored setting.
+    const secureFlag =
+      portNumber === 465
+        ? true
+        : portNumber === 587
+        ? false
+        : secureRaw === true || secureRaw === 'true';
+
     this.transporter = nodemailer.createTransport({
       host,
-      port: parseInt(port),
-      secure: secure === true,
+      port: portNumber,
+      secure: secureFlag,
+      // Force STARTTLS upgrade on port 587 (and 25)
+      ...(portNumber !== 465 && { requireTLS: true }),
       auth: {
         user,
         pass: password,
+      },
+      tls: {
+        rejectUnauthorized: false,
       },
     });
   }
@@ -82,10 +100,13 @@ export class EmailService {
       }
 
       const from = await settingsService.getSetting('emailFrom');
+      const user = await settingsService.getSetting('emailUser');
       const recipients = Array.isArray(options.to) ? options.to.join(', ') : options.to;
 
       await this.transporter.sendMail({
-        from: from || 'noreply@awakelab.cl',
+        // Office365 (and most providers) require from === authenticated user
+        // unless explicit "Send As" permission is granted in Exchange.
+        from: from || user || '',
         to: recipients,
         subject: options.subject,
         html: options.html,
@@ -372,7 +393,8 @@ export class EmailService {
   }
 
   /**
-   * Test email configuration
+   * Test email configuration — bypasses the notificationsEnabled gate
+   * so it always attempts delivery regardless of the setting.
    */
   async sendTestEmail(recipientEmail: string): Promise<boolean> {
     const html = `
@@ -414,11 +436,33 @@ export class EmailService {
       </html>
     `;
 
-    return await this.sendEmail({
-      to: recipientEmail,
-      subject: '✅ Prueba de Configuración de Email - Sistema de Licencias Zoom',
-      html,
-    });
+    // Bypass the notifyOnExpiration toggle — always send the test email.
+    try {
+      await this.initTransporter();
+
+      if (!this.transporter) {
+        console.error('⚠️  Email transporter not configured — check host/port/user/password settings');
+        return false;
+      }
+
+      const from = await settingsService.getSetting('emailFrom');
+      const user = await settingsService.getSetting('emailUser');
+
+      await this.transporter.sendMail({
+        // Must match the authenticated account on Office365
+        from: from || user || '',
+        to: recipientEmail,
+        subject: '✅ Prueba de Configuración de Email - Sistema de Licencias Zoom',
+        html,
+        text: this.stripHtml(html),
+      });
+
+      console.log(`✅ Test email sent to: ${recipientEmail}`);
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error sending test email:', error.message);
+      throw error; // Re-throw so the route returns the real error message
+    }
   }
 }
 
