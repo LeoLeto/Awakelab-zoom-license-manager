@@ -24,6 +24,19 @@ export class HistoryService {
    */
   static async recordChange(options: RecordChangeOptions): Promise<IHistoryEntry> {
     try {
+      // Filter out changes where both sides are empty/null/undefined string
+      const meaningfulChanges = options.changes.filter((c) => {
+        const oldEmpty = c.oldValue === null || c.oldValue === undefined || c.oldValue === '';
+        const newEmpty = c.newValue === null || c.newValue === undefined || c.newValue === '';
+        return !(oldEmpty && newEmpty);
+      });
+
+      // Skip recording if there are no meaningful changes
+      if (meaningfulChanges.length === 0) {
+        // Return a dummy entry (not saved) to satisfy the return type
+        return new History({ ...options, changes: [] });
+      }
+
       const historyEntry = new History({
         entityType: options.entityType,
         entityId: typeof options.entityId === 'string' 
@@ -31,7 +44,7 @@ export class HistoryService {
           : options.entityId,
         action: options.action,
         actor: options.actor || 'system',
-        changes: options.changes,
+        changes: meaningfulChanges,
         metadata: options.metadata,
         timestamp: new Date(),
       });
@@ -133,12 +146,16 @@ export class HistoryService {
       const licenseHistory = await this.getEntityHistory('license', objectId, limit);
       
       // Get assignments history that reference this license
+      // Match both ObjectId form and string form (normalizeValue stores IDs as strings)
+      const licenseIdStr = objectId.toString();
       const assignmentHistory = await History.find({
         entityType: 'assignment',
         'changes.field': 'licenseId',
         $or: [
           { 'changes.oldValue': objectId },
-          { 'changes.newValue': objectId }
+          { 'changes.newValue': objectId },
+          { 'changes.oldValue': licenseIdStr },
+          { 'changes.newValue': licenseIdStr },
         ]
       })
         .sort({ timestamp: -1 })
@@ -158,6 +175,24 @@ export class HistoryService {
   }
 
   /**
+   * Normalize a value for history storage.
+   * Converts ObjectIds and populated Mongoose documents to their string _id,
+   * so that history entries always store plain scalars rather than full objects.
+   */
+  static normalizeValue(value: any): any {
+    if (value === null || value === undefined) return value;
+    // ObjectId instance (has a .toString that returns the hex string)
+    if (value && typeof value === 'object' && value.constructor?.name === 'ObjectId') {
+      return value.toString();
+    }
+    // Populated Mongoose document / plain object with _id  →  keep only the id
+    if (value && typeof value === 'object' && !Array.isArray(value) && value._id) {
+      return value._id.toString();
+    }
+    return value;
+  }
+
+  /**
    * Compare two objects and extract changes
    */
   static extractChanges(
@@ -168,8 +203,8 @@ export class HistoryService {
     const changes: { field: string; oldValue: any; newValue: any }[] = [];
 
     for (const field of fieldsToTrack) {
-      const oldValue = oldObj?.[field];
-      const newValue = newObj?.[field];
+      const oldValue = HistoryService.normalizeValue(oldObj?.[field]);
+      const newValue = HistoryService.normalizeValue(newObj?.[field]);
 
       // Convert to string for comparison to handle different types
       const oldStr = JSON.stringify(oldValue);

@@ -151,6 +151,12 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
                   <div className="card-body">
                     <h4>{assignment.nombreApellidos}</h4>
                     <div className="assignment-details">
+                      {assignment.licenseId && typeof assignment.licenseId === 'object' && (
+                        <div className="detail-row">
+                          <span className="label">🔑 Licencia Zoom:</span>
+                          <span className="value">{(assignment.licenseId as any).email}</span>
+                        </div>
+                      )}
                       <div className="detail-row">
                         <span className="label">📧 Email:</span>
                         <span className="value">{assignment.correocorporativo}</span>

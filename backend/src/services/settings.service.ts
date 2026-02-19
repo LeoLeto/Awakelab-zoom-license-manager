@@ -1,5 +1,4 @@
 import { Settings, ISettings } from '../models/Settings.model';
-import { HistoryService } from './history.service';
 
 export class SettingsService {
   /**
@@ -24,28 +23,10 @@ export class SettingsService {
     const existingSetting = await Settings.findOne({ key });
     
     if (existingSetting) {
-      // Record history before update
-      const oldValue = existingSetting.value;
-      
       existingSetting.value = value;
       existingSetting.description = description;
       existingSetting.updatedBy = actor;
       await existingSetting.save();
-
-      // Record history
-      await HistoryService.recordChange({
-        entityType: 'setting',
-        entityId: existingSetting._id.toString(),
-        action: 'update',
-        changes: [
-          {
-            field: 'value',
-            oldValue: oldValue,
-            newValue: value
-          }
-        ],
-        actor
-      });
 
       return existingSetting;
     } else {
@@ -57,20 +38,6 @@ export class SettingsService {
         updatedBy: actor
       });
       await newSetting.save();
-
-      // Record history
-      await HistoryService.recordChange({
-        entityType: 'setting',
-        entityId: newSetting._id.toString(),
-        action: 'create',
-        changes: [
-          {
-            field: 'value',
-            newValue: value
-          }
-        ],
-        actor
-      });
 
       return newSetting;
     }
@@ -84,20 +51,6 @@ export class SettingsService {
     if (!setting) {
       return false;
     }
-
-    // Record history before deletion
-    await HistoryService.recordChange({
-      entityType: 'setting',
-      entityId: setting._id.toString(),
-      action: 'delete',
-      changes: [
-        {
-          field: 'value',
-          oldValue: setting.value
-        }
-      ],
-      actor
-    });
 
     await Settings.deleteOne({ key });
     return true;

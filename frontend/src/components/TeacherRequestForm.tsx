@@ -22,6 +22,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
     nuevaFechaFin: '',
   });
   const [availableLicenses, setAvailableLicenses] = useState<License[]>([]);
+  const [hasChecked, setHasChecked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -38,9 +39,11 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
         formData.fechaFinUso
       );
       setAvailableLicenses(response.availableLicenses);
+      setHasChecked(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al verificar disponibilidad');
       setAvailableLicenses([]);
+      setHasChecked(true);
     } finally {
       setCheckingAvailability(false);
     }
@@ -72,6 +75,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
         nuevaFechaFin: '',
       });
       setAvailableLicenses([]);
+      setHasChecked(false);
       
       onSuccess?.();
     } catch (err) {
@@ -301,6 +305,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                   onChange={(e) => {
                     setFormData({ ...formData, fechaInicioUso: e.target.value });
                     setAvailableLicenses([]);
+                    setHasChecked(false);
                   }}
                   min={new Date().toISOString().split('T')[0]}
                 />
@@ -315,6 +320,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                   onChange={(e) => {
                     setFormData({ ...formData, fechaFinUso: e.target.value });
                     setAvailableLicenses([]);
+                    setHasChecked(false);
                   }}
                   min={formData.fechaInicioUso || new Date().toISOString().split('T')[0]}
                 />
@@ -339,13 +345,13 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
           </div>
 
           {/* Availability Information (Optional) */}
-          {availableLicenses.length > 0 && (
+          {hasChecked && availableLicenses.length > 0 && (
             <div className="info" style={{ padding: '12px', backgroundColor: '#d4edda', border: '1px solid #c3e6cb', borderRadius: '4px', color: '#155724' }}>
               ✅ Hay {availableLicenses.length} licencia(s) disponible(s) para tu período seleccionado. El administrador asignará una de ellas a tu solicitud.
             </div>
           )}
 
-          {availableLicenses.length === 0 && formData.fechaInicioUso && formData.fechaFinUso && !checkingAvailability && (
+          {hasChecked && availableLicenses.length === 0 && formData.fechaInicioUso && formData.fechaFinUso && !checkingAvailability && (
             <div className="warning" style={{ padding: '12px', backgroundColor: '#fff3cd', border: '1px solid #ffeeba', borderRadius: '4px', color: '#856404' }}>
               ℹ️ Actualmente no hay licencias disponibles para el período seleccionado, pero puedes enviar tu solicitud de todos modos. El administrador gestionará la asignación.
             </div>

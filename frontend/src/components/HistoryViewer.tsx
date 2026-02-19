@@ -44,6 +44,8 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
         });
       }
 
+      // Exclude configuration/settings entries
+      data = data.filter((e) => e.entityType !== 'setting' as any);
       setHistory(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar el historial');
@@ -100,6 +102,7 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
       area: 'Área',
       comunidadAutonoma: 'Comunidad Autónoma',
       tipoUso: 'Tipo de Uso',
+      value: 'Valor',
     };
     return fieldNames[field] || field;
   };
@@ -111,8 +114,8 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
     if (typeof value === 'boolean') {
       return value ? 'Sí' : 'No';
     }
-    if (value instanceof Date || (typeof value === 'string' && !isNaN(Date.parse(value)) && value.includes('-'))) {
-      return new Date(value).toLocaleDateString('es-ES', {
+    if (value instanceof Date) {
+      return value.toLocaleDateString('es-ES', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -120,8 +123,34 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
         minute: '2-digit',
       });
     }
+    if (typeof value === 'string') {
+      // ISO date strings (e.g. "2026-02-25T21:00:00.000Z")
+      if (/^\d{4}-\d{2}-\d{2}T/.test(value)) {
+        const d = new Date(value);
+        if (!isNaN(d.getTime())) {
+          return d.toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          });
+        }
+      }
+      return value;
+    }
     if (typeof value === 'object') {
-      return JSON.stringify(value);
+      // Populated license/assignment document – show meaningful label
+      if (value.email || value.cuenta) {
+        return `${value.email || ''}${value.cuenta ? ` (${value.cuenta})` : ''}`;
+      }
+      // ObjectId-like hex string stored as object with _id
+      if (value._id) {
+        return String(value._id);
+      }
+      // Fallback: compact JSON (truncated)
+      const json = JSON.stringify(value);
+      return json.length > 80 ? json.slice(0, 80) + '…' : json;
     }
     return String(value);
   };
@@ -231,7 +260,17 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
         {history.length === 0 ? (
           <div className="no-history">No hay historial disponible</div>
         ) : (
-          history.map((entry) => (
+          history
+            .filter((entry) => {
+              // Hide entries where every change would render as empty
+              const hasVisibleChange = entry.changes.some((change) => {
+                const oldFormatted = change.oldValue !== undefined ? formatValue(change.oldValue) : null;
+                const newFormatted = change.newValue !== undefined ? formatValue(change.newValue) : null;
+                return (oldFormatted !== null && oldFormatted !== '') || (newFormatted !== null && newFormatted !== '');
+              });
+              return hasVisibleChange || entry.changes.length === 0;
+            })
+            .map((entry) => (
             <div key={entry._id} className="history-entry">
               <div className="entry-header">
                 <span className="entry-icon">{getActionIcon(entry.action)}</span>
@@ -257,23 +296,36 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
               )}
 
               <div className="entry-changes">
-                {entry.changes.map((change, idx) => (
-                  <div key={idx} className="change-item">
-                    <span className="change-field">{formatFieldName(change.field)}:</span>
-                    {change.oldValue !== undefined && (
-                      <span className="change-old-value">
-                        <span className="value-label">Anterior:</span>
-                        <span className="value">{formatValue(change.oldValue)}</span>
-                      </span>
-                    )}
-                    {change.newValue !== undefined && (
-                      <span className="change-new-value">
-                        <span className="value-label">Nuevo:</span>
-                        <span className="value">{formatValue(change.newValue)}</span>
-                      </span>
-                    )}
-                  </div>
-                ))}
+                {entry.changes
+                  .filter((change) => {
+                    const oldFormatted = change.oldValue !== undefined ? formatValue(change.oldValue) : null;
+                    const newFormatted = change.newValue !== undefined ? formatValue(change.newValue) : null;
+                    // Skip changes where both sides are empty/blank
+                    const hasOld = oldFormatted !== null && oldFormatted !== '';
+                    const hasNew = newFormatted !== null && newFormatted !== '';
+                    return hasOld || hasNew;
+                  })
+                  .map((change, idx) => {
+                    const oldFormatted = change.oldValue !== undefined ? formatValue(change.oldValue) : null;
+                    const newFormatted = change.newValue !== undefined ? formatValue(change.newValue) : null;
+                    return (
+                      <div key={idx} className="change-item">
+                        <span className="change-field">{formatFieldName(change.field)}:</span>
+                        {oldFormatted !== null && oldFormatted !== '' && (
+                          <span className="change-old-value">
+                            <span className="value-label">Anterior:</span>
+                            <span className="value">{oldFormatted}</span>
+                          </span>
+                        )}
+                        {newFormatted !== null && newFormatted !== '' && (
+                          <span className="change-new-value">
+                            <span className="value-label">Nuevo:</span>
+                            <span className="value">{newFormatted}</span>
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
               </div>
 
               <div className="entry-footer">
@@ -347,60 +399,82 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
         }
 
         .history-timeline {
-          display: flex;
-          flex-direction: column;
-          gap: 15px;
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 12px;
+        }
+
+        @media (max-width: 1100px) {
+          .history-timeline {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        @media (max-width: 680px) {
+          .history-timeline {
+            grid-template-columns: 1fr;
+          }
         }
 
         .history-entry {
           background: white;
           border-left: 4px solid #007bff;
           border-radius: 8px;
-          padding: 15px;
+          padding: 10px 12px;
           box-shadow: 0 2px 4px rgba(0,0,0,0.1);
           transition: transform 0.2s, box-shadow 0.2s;
+          font-size: 13px;
+          min-width: 0;
         }
 
         .history-entry:hover {
-          transform: translateX(5px);
+          transform: translateY(-2px);
           box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .change-item .value {
+          word-break: break-word;
+          overflow-wrap: anywhere;
+          white-space: normal;
         }
 
         .entry-header {
           display: flex;
           align-items: center;
-          gap: 10px;
-          margin-bottom: 10px;
+          gap: 6px;
+          margin-bottom: 8px;
           font-weight: 600;
+          flex-wrap: wrap;
         }
 
         .entry-icon {
-          font-size: 20px;
+          font-size: 15px;
         }
 
         .entry-action {
           color: #007bff;
-          font-size: 16px;
+          font-size: 13px;
         }
 
         .entry-type {
           color: #666;
-          font-size: 14px;
+          font-size: 13px;
         }
 
         .entry-timestamp {
           margin-left: auto;
           color: #999;
-          font-size: 12px;
+          font-size: 13px;
           font-weight: normal;
+          white-space: nowrap;
         }
 
         .entry-metadata {
           display: flex;
           flex-wrap: wrap;
-          gap: 10px;
-          margin-bottom: 10px;
-          padding: 8px;
+          gap: 6px;
+          margin-bottom: 8px;
+          padding: 5px 8px;
           background: #f0f8ff;
           border-radius: 4px;
         }
@@ -419,19 +493,19 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
         .entry-changes {
           display: flex;
           flex-direction: column;
-          gap: 8px;
-          padding: 10px;
+          gap: 4px;
+          padding: 8px;
           background: #f8f9fa;
           border-radius: 4px;
-          margin-bottom: 10px;
+          margin-bottom: 8px;
         }
 
         .change-item {
           display: flex;
           flex-wrap: wrap;
-          gap: 10px;
-          font-size: 14px;
-          padding: 5px 0;
+          gap: 6px;
+          font-size: 13px;
+          padding: 3px 0;
           border-bottom: 1px solid #e9ecef;
         }
 
@@ -442,27 +516,32 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
         .change-field {
           font-weight: 600;
           color: #333;
-          min-width: 150px;
+          min-width: 100px;
         }
 
         .change-old-value, .change-new-value {
           display: flex;
           gap: 5px;
+          align-items: flex-start;
         }
 
         .value-label {
-          font-size: 12px;
+          font-size: 13px;
           color: #666;
         }
 
         .change-old-value .value {
           color: #dc3545;
           text-decoration: line-through;
+          word-break: break-word;
+          overflow-wrap: anywhere;
         }
 
         .change-new-value .value {
           color: #28a745;
           font-weight: 500;
+          word-break: break-word;
+          overflow-wrap: anywhere;
         }
 
         .entry-footer {

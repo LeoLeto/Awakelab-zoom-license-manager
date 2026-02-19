@@ -6,7 +6,7 @@ export interface IAssignment extends Document {
   nombreApellidos: string;
   correocorporativo: string;
   area: string;
-  comunidadAutonoma: string;
+  comunidadAutonoma?: string;
   tipoUso: string;
   fechaInicioUso: Date;
   fechaFinUso: Date;
@@ -41,7 +41,7 @@ const AssignmentSchema = new Schema<IAssignment>(
     },
     comunidadAutonoma: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
     },
     tipoUso: {

@@ -15,11 +15,11 @@ export interface License {
 
 export interface Assignment {
   _id: string;
-  licenseId?: string;
+  licenseId?: string | License;
   nombreApellidos: string;
   correocorporativo: string;
   area: string;
-  comunidadAutonoma: string;
+  comunidadAutonoma?: string;
   tipoUso: string;
   fechaInicioUso: string;
   fechaFinUso: string;
@@ -50,7 +50,7 @@ export interface CreateAssignmentDto {
   nombreApellidos: string;
   correocorporativo: string;
   area: string;
-  comunidadAutonoma: string;
+  comunidadAutonoma?: string;
   tipoUso: string;
   fechaInicioUso: string;
   fechaFinUso: string;

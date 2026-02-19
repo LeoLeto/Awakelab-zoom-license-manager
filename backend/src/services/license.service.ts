@@ -249,7 +249,6 @@ export class LicenseService {
         const currentAssignment = await Assignment.findOne({
           licenseId: license._id,
           estado: 'activo',
-          fechaInicioUso: { $lte: now },
           fechaFinUso: { $gte: now }
         });
 
