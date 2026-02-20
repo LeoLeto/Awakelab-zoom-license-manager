@@ -157,6 +157,27 @@ export const assignmentApi = {
       method: 'POST',
     });
   },
+
+  async getAssignmentsByEmail(email: string): Promise<{ success: boolean; count: number; assignments: Assignment[] }> {
+    return apiCall(
+      `${API_BASE_URL}/licenses/assignments/by-email?email=${encodeURIComponent(email)}`
+    );
+  },
+
+  async getAllAssignmentsByTeacher(email: string): Promise<{ success: boolean; count: number; assignments: Assignment[] }> {
+    return apiCall(
+      `${API_BASE_URL}/licenses/assignments/all-by-email?email=${encodeURIComponent(email)}`
+    );
+  },
+
+  async checkExtensionAvailability(
+    assignmentId: string,
+    newEndDate: string
+  ): Promise<{ success: boolean; available: boolean; message?: string }> {
+    return apiCall(
+      `${API_BASE_URL}/licenses/check-extension?assignmentId=${assignmentId}&newEndDate=${newEndDate}`
+    );
+  },
 };
 
 export const historyApi = {

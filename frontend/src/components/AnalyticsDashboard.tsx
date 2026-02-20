@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import apiService from '../services/api.service';
+import apiService, { assignmentApi } from '../services/api.service';
+import { Assignment } from '../types/license.types';
 
 interface OverviewStats {
   totalLicenses: number;
@@ -27,6 +28,13 @@ const AnalyticsDashboard: React.FC = () => {
   const [showExpiringModal, setShowExpiringModal] = useState(false);
   const [showPendingModal, setShowPendingModal] = useState(false);
 
+  // Assignment detail modal
+  const [selectedTeacher, setSelectedTeacher] = useState<TeacherMetric | null>(null);
+  const [assignmentFilter, setAssignmentFilter] = useState<'active' | 'all'>('all');
+  const [teacherAssignments, setTeacherAssignments] = useState<Assignment[]>([]);
+  const [assignmentModalLoading, setAssignmentModalLoading] = useState(false);
+  const [assignmentModalError, setAssignmentModalError] = useState<string | null>(null);
+
   useEffect(() => {
     loadAnalytics();
   }, []);
@@ -48,6 +56,41 @@ const AnalyticsDashboard: React.FC = () => {
       setError('Error al cargar las estadísticas');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOpenAssignmentsModal = async (teacher: TeacherMetric, filter: 'active' | 'all') => {
+    setSelectedTeacher(teacher);
+    setAssignmentFilter(filter);
+    setTeacherAssignments([]);
+    setAssignmentModalError(null);
+    setAssignmentModalLoading(true);
+    try {
+      const result = await assignmentApi.getAllAssignmentsByTeacher(teacher.teacherEmail);
+      const assignments = filter === 'active'
+        ? result.assignments.filter(a => a.estado === 'activo')
+        : result.assignments;
+      setTeacherAssignments(assignments);
+    } catch (err) {
+      setAssignmentModalError('Error al cargar las asignaciones');
+    } finally {
+      setAssignmentModalLoading(false);
+    }
+  };
+
+  const handleCloseAssignmentsModal = () => {
+    setSelectedTeacher(null);
+    setTeacherAssignments([]);
+    setAssignmentModalError(null);
+  };
+
+  const getEstadoBadgeClass = (estado: string): string => {
+    switch (estado) {
+      case 'activo': return 'badge-active';
+      case 'expirado': return 'badge-expired';
+      case 'cancelado': return 'badge-cancelled';
+      case 'pendiente': return 'badge-pending';
+      default: return '';
     }
   };
 
@@ -165,16 +208,104 @@ const AnalyticsDashboard: React.FC = () => {
                     <td className="teacher-name">{teacher.teacherName}</td>
                     <td className="teacher-email">{teacher.teacherEmail}</td>
                     <td>
-                      <span className="badge badge-current">{teacher.currentAssignments}</span>
+                      <span
+                        className="badge badge-current clickable-badge"
+                        onClick={() => handleOpenAssignmentsModal(teacher, 'active')}
+                        title="Ver asignaciones activas"
+                      >
+                        {teacher.currentAssignments}
+                      </span>
                     </td>
                     <td>
-                      <span className="badge badge-count">{teacher.totalAssignments}</span>
+                      <span
+                        className="badge badge-count clickable-badge"
+                        onClick={() => handleOpenAssignmentsModal(teacher, 'all')}
+                        title="Ver todas las asignaciones"
+                      >
+                        {teacher.totalAssignments}
+                      </span>
                     </td>
                     <td>{formatDate(teacher.lastActivity)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Teacher Assignments Modal */}
+      {selectedTeacher && (
+        <div className="modal-overlay" onClick={handleCloseAssignmentsModal}>
+          <div className="modal-content modal-wide" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <h3>
+                  {assignmentFilter === 'active' ? '✅ Asignaciones Activas' : '📋 Todas las Asignaciones'}
+                </h3>
+                <p className="modal-subtitle">{selectedTeacher.teacherName} — {selectedTeacher.teacherEmail}</p>
+              </div>
+              <button className="modal-close" onClick={handleCloseAssignmentsModal}>✕</button>
+            </div>
+            <div className="modal-body">
+              {assignmentModalLoading ? (
+                <div className="loading">Cargando asignaciones...</div>
+              ) : assignmentModalError ? (
+                <div className="error-message">{assignmentModalError}</div>
+              ) : teacherAssignments.length === 0 ? (
+                <p className="text-muted">No hay asignaciones {assignmentFilter === 'active' ? 'activas' : ''} para este usuario.</p>
+              ) : (
+                <div className="table-container">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Estado</th>
+                        <th>Área</th>
+                        <th>Comunidad</th>
+                        <th>Plataforma</th>
+                        <th>Licencia Zoom</th>
+                        <th>Fecha Inicio</th>
+                        <th>Fecha Fin</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {teacherAssignments.map((assignment) => {
+                        const license = assignment.licenseId && typeof assignment.licenseId === 'object'
+                          ? assignment.licenseId as import('../types/license.types').License
+                          : null;
+                        return (
+                        <tr key={assignment._id}>
+                          <td>
+                            <span className={`badge ${getEstadoBadgeClass(assignment.estado)}`}>
+                              {assignment.estado}
+                            </span>
+                          </td>
+                          <td>{assignment.area}</td>
+                          <td>{assignment.comunidadAutonoma || '—'}</td>
+                          <td>{assignment.tipoUso}</td>
+                          <td>
+                            {license ? (
+                              <div className="license-cell">
+                                <span className="license-email">{license.email}</span>
+                                <span className="license-user">{license.usuarioMoodle}</span>
+                                {license.cuenta && (
+                                  <span className="license-account">Cuenta: {license.cuenta}</span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted">—</span>
+                            )}
+                          </td>
+                          <td>{formatDate(assignment.fechaInicioUso)}</td>
+                          <td>{formatDate(assignment.fechaFinUso)}</td>
+                        </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

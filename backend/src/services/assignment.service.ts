@@ -460,6 +460,55 @@ export class AssignmentService {
   }
 
   /**
+   * Check if the license from an existing assignment is available for an extension period.
+   * The extension window is from the current assignment's end date to the new requested end date.
+   */
+  async checkExtensionAvailability(
+    assignmentId: string,
+    newEndDate: Date
+  ): Promise<{ available: boolean; assignment: IAssignment; message?: string }> {
+    if (!Types.ObjectId.isValid(assignmentId)) {
+      throw new Error('ID de asignación inválido');
+    }
+
+    const assignment = await Assignment.findById(assignmentId).populate('licenseId');
+    if (!assignment) {
+      throw new Error('Asignación no encontrada');
+    }
+
+    if (!assignment.licenseId) {
+      throw new Error(
+        'La asignación seleccionada aún no tiene una licencia asignada (está pendiente). No es posible solicitar una ampliación.'
+      );
+    }
+
+    if (newEndDate <= assignment.fechaFinUso) {
+      throw new Error('La nueva fecha de fin debe ser posterior a la fecha de fin actual de la asignación');
+    }
+
+    // Check whether any OTHER active assignment for the same license overlaps
+    // with the extension window [assignment.fechaFinUso, newEndDate].
+    const conflicting = await Assignment.find({
+      licenseId: assignment.licenseId,
+      estado: 'activo',
+      _id: { $ne: assignment._id },
+      fechaInicioUso: { $lte: newEndDate },
+      fechaFinUso: { $gte: assignment.fechaFinUso },
+    });
+
+    if (conflicting.length > 0) {
+      return {
+        available: false,
+        assignment,
+        message:
+          'La licencia ya está asignada a otro usuario durante ese período. Debes solicitar una nueva licencia.',
+      };
+    }
+
+    return { available: true, assignment };
+  }
+
+  /**
    * Get assignments expiring soon (within X days)
    */
   async getExpiringAssignments(daysAhead: number = 7): Promise<IAssignment[]> {

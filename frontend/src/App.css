@@ -2248,3 +2248,69 @@ button {
   font-weight: 600;
 }
 
+/* Wide modal variant */
+.modal-wide {
+  max-width: 900px;
+}
+
+.modal-subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  color: var(--gray-500);
+  font-weight: 400;
+}
+
+/* Clickable badges in analytics table */
+.clickable-badge {
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.clickable-badge:hover {
+  filter: brightness(0.9);
+  transform: scale(1.08);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Assignment estado badges in modal */
+.badge-active {
+  background: var(--success-light);
+  color: var(--success-dark);
+}
+
+.badge-expired {
+  background: var(--warning-light, #fef3c7);
+  color: var(--warning-dark, #92400e);
+}
+
+.badge-cancelled {
+  background: var(--danger-light, #fee2e2);
+  color: var(--danger-dark, #991b1b);
+}
+
+.badge-pending {
+  background: var(--gray-100);
+  color: var(--gray-600);
+}
+/* License info cell inside assignment modal */
+.license-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.license-email {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.license-user {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+
+.license-account {
+  font-size: 0.7rem;
+  color: var(--gray-400);
+}

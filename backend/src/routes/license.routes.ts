@@ -166,6 +166,95 @@ router.delete('/:id', async (req: Request, res: Response) => {
 });
 
 /**
+ * Get all assignments by teacher corporate email (for detail view)
+ * GET /api/licenses/assignments/all-by-email?email=xxx
+ */
+router.get('/assignments/all-by-email', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.query;
+
+    if (!email || typeof email !== 'string' || !email.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: 'El email corporativo es requerido',
+      });
+    }
+
+    const assignments = await assignmentService.getAssignmentsByTeacher(email.trim());
+
+    res.json({
+      success: true,
+      count: assignments.length,
+      assignments,
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * Get assignments by teacher corporate email (for Ampliación lookup)
+ * GET /api/licenses/assignments/by-email?email=xxx
+ */
+router.get('/assignments/by-email', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.query;
+
+    if (!email || typeof email !== 'string' || !email.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: 'El email corporativo es requerido',
+      });
+    }
+
+    const assignments = await assignmentService.getAssignmentsByTeacher(email.trim());
+    // Only return assignments that already have a license linked (can be extended)
+    const extensibleAssignments = assignments.filter(
+      (a) => a.licenseId && (a.estado === 'activo' || a.estado === 'expirado')
+    );
+
+    res.json({
+      success: true,
+      count: extensibleAssignments.length,
+      assignments: extensibleAssignments,
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * Check whether a license is available for an extension of an existing assignment
+ * GET /api/licenses/check-extension?assignmentId=xxx&newEndDate=yyyy-mm-dd
+ */
+router.get('/check-extension', async (req: Request, res: Response) => {
+  try {
+    const { assignmentId, newEndDate } = req.query;
+
+    if (!assignmentId || !newEndDate) {
+      return res.status(400).json({
+        success: false,
+        error: 'El ID de asignación y la nueva fecha de fin son requeridos',
+      });
+    }
+
+    const parsedDate = new Date(newEndDate as string);
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ success: false, error: 'Formato de fecha inválido' });
+    }
+
+    const result = await assignmentService.checkExtensionAvailability(
+      assignmentId as string,
+      parsedDate
+    );
+
+    res.json({ success: true, ...result });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * Create a new assignment (license request)
  * POST /api/licenses/assignments
  */
