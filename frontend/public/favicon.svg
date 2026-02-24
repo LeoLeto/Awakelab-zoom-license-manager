@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="32" fill="#2D8CFF"/>
+  <!-- Video camera body -->
+  <rect x="10" y="22" width="30" height="20" rx="4" ry="4" fill="white"/>
+  <!-- Camera lens -->
+  <circle cx="25" cy="32" r="6" fill="#2D8CFF"/>
+  <circle cx="25" cy="32" r="3" fill="white"/>
+  <!-- Video triangle (play/record indicator) -->
+  <polygon points="44,24 54,32 44,40" fill="white"/>
+</svg>

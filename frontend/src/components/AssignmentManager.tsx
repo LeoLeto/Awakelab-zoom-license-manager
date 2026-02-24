@@ -329,18 +329,20 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
                     <td>{formatDate(assignment.fechaInicioUso)}</td>
                     <td>{formatDate(assignment.fechaFinUso)}</td>
                     <td>
-                      <button
-                        className="btn-primary btn-small"
-                        onClick={() => handleStartAssigning(assignment)}
-                      >
-                        Asignar Licencia
-                      </button>
-                      <button
-                        className="btn-danger btn-small"
-                        onClick={() => handleCancelAssignment(assignment._id)}
-                      >
-                        Cancelar
-                      </button>
+                      <div className="table-actions">
+                        <button
+                          className="btn-primary btn-small"
+                          onClick={() => handleStartAssigning(assignment)}
+                        >
+                          Asignar Licencia
+                        </button>
+                        <button
+                          className="btn-danger btn-small"
+                          onClick={() => handleCancelAssignment(assignment._id)}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -597,11 +597,14 @@ button {
   background: var(--gray-100);
   color: var(--gray-700);
   border-radius: var(--border-radius);
-  margin-right: 0.5rem;
 }
 
-.btn-small:last-child {
-  margin-right: 0;
+.table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .btn-small:hover {

@@ -14,7 +14,7 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
   const [licenses, setLicenses] = useState<LicenseWithAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'libre' | 'ocupado' | 'mantenimiento'>('all');
+  const [filter, setFilter] = useState<'all' | 'libre' | 'ocupado' | 'mantenimiento'>('libre');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<ZoomUser | null>(null);
   const [selectedLicenseForDetails, setSelectedLicenseForDetails] = useState<LicenseWithAssignment | null>(null);
@@ -188,20 +188,22 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
                   )}
                 </td>
                 <td>
-                  <button
-                    className="btn-small"
-                    onClick={() => setSelectedLicenseForDetails(item)}
-                    title="Ver detalles"
-                  >
-                    📋
-                  </button>
-                  <button
-                    className="btn-small"
-                    onClick={() => handlePasswordChange(item)}
-                    title="Cambiar contraseña de Zoom"
-                  >
-                    🔐
-                  </button>
+                  <div className="table-actions">
+                    <button
+                      className="btn-small"
+                      onClick={() => setSelectedLicenseForDetails(item)}
+                      title="Ver detalles"
+                    >
+                      📋
+                    </button>
+                    <button
+                      className="btn-small"
+                      onClick={() => handlePasswordChange(item)}
+                      title="Cambiar contraseña de Zoom"
+                    >
+                      🔐
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
