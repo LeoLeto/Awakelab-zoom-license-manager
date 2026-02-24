@@ -2,7 +2,7 @@ import cron from 'node-cron';
 import { assignmentService } from '../services/assignment.service';
 import { settingsService } from '../services/settings.service';
 import { licenseService } from '../services/license.service';
-import { zoomService } from '../services/zoom.service';
+import zoomService from '../services/zoom.service';
 import { emailService } from '../services/email.service';
 
 /**
@@ -57,7 +57,7 @@ export const initCronJobs = () => {
           await licenseService.updateLicense(
             license._id.toString(),
             { 
-              password: newPassword,
+              passwordZoom: newPassword,
               passwordEmail: newPassword // Also update passwordEmail if needed
             },
             'system-cron'

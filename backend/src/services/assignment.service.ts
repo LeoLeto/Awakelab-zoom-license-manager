@@ -302,7 +302,7 @@ export class AssignmentService {
                 licenseEmail: license.email,
                 startDate: new Date(updatedAssignment.fechaInicioUso).toLocaleDateString('es-CL'),
                 endDate: new Date(updatedAssignment.fechaFinUso).toLocaleDateString('es-CL'),
-                platform: license.plataforma,
+                platform: updatedAssignment.tipoUso,
                 password: license.passwordEmail
               });
             }
