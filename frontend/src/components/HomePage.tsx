@@ -4,7 +4,7 @@ export default function HomePage() {
   return (
     <div className="home-page">
       <div className="hero">
-        <h1>🎯 Gestor de Licencias Zoom</h1>
+        <h1>🎯 Gestor de Licencias Zoom <span className="version-badge">v1.0.0</span></h1>
         <p className="hero-subtitle">
           Panel de control integral para gestionar licencias de Zoom y sus cuentas Moodle correspondientes
         </p>
