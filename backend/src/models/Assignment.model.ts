@@ -82,4 +82,7 @@ AssignmentSchema.index({
   fechaFinUso: 1 
 });
 
+// Optimized index for bulk active-assignment lookup (getAllLicensesWithAssignments)
+AssignmentSchema.index({ estado: 1, fechaFinUso: 1 });
+
 export const Assignment = mongoose.model<IAssignment>('Assignment', AssignmentSchema);

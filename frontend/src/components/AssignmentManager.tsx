@@ -199,7 +199,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
                   required
                   value={formData.area}
                   onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                  placeholder="Matemáticas"
+                  placeholder="Gerencia territorial"
                 />
               </div>
               <div className="form-group">

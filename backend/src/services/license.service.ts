@@ -241,25 +241,23 @@ export class LicenseService {
    * Get all licenses with their current assignments
    */
   async getAllLicensesWithAssignments(): Promise<any[]> {
-    const licenses = await License.find().sort({ createdAt: -1 });
     const now = new Date();
 
-    const licensesWithAssignments = await Promise.all(
-      licenses.map(async (license) => {
-        const currentAssignment = await Assignment.findOne({
-          licenseId: license._id,
-          estado: 'activo',
-          fechaFinUso: { $gte: now }
-        });
+    // Fetch licenses and active assignments in parallel (2 queries total, instead of N+1)
+    const [licenses, activeAssignments] = await Promise.all([
+      License.find().sort({ createdAt: -1 }),
+      Assignment.find({ estado: 'activo', fechaFinUso: { $gte: now } })
+    ]);
 
-        return {
-          license: license.toObject(),
-          assignment: currentAssignment?.toObject() || null
-        };
-      })
+    // Build a Map from licenseId -> assignment for O(1) lookup
+    const assignmentByLicenseId = new Map(
+      activeAssignments.map((a) => [a.licenseId.toString(), a.toObject()])
     );
 
-    return licensesWithAssignments;
+    return licenses.map((license) => ({
+      license: license.toObject(),
+      assignment: assignmentByLicenseId.get(license._id.toString()) ?? null
+    }));
   }
 }
 
