@@ -1,0 +1,54 @@
+# Changelog
+
+All notable changes to **Gestor de Licencias Zoom** are documented here.
+
+Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html)  
+(`MAJOR.MINOR.PATCH`):
+
+| Bump | When to use |
+|------|------------|
+| `PATCH` (1.0.**x**) | Bug fixes, copy changes, small UI tweaks |
+| `MINOR` (1.**x**.0) | New features, non-breaking API changes |
+| `MAJOR` (**x**.0.0) | Breaking changes, major redesigns |
+
+---
+
+## How to release a new version
+
+1. Update `APP_VERSION` in [`frontend/src/version.ts`](frontend/src/version.ts).
+2. Update `"version"` in [`frontend/package.json`](frontend/package.json) to match.
+3. Add a new `## [x.y.z] – YYYY-MM-DD` section **at the top** of this file.
+4. Commit with message: `chore: bump version to x.y.z`.
+
+---
+
+## [1.0.2] – 2026-03-04
+
+### Fixed
+- Guard against `undefined` `licenseId` on active assignments when building the license map in `LicenseService` (TS18048).
+
+---
+
+## [1.0.1] – 2026-03-04
+
+### Removed
+- "Uso de la licencia" field removed from the license form.
+
+---
+
+## [1.0.0] – 2026-03-04
+
+### Added
+- Initial release of Gestor de Licencias Zoom.
+- Admin dashboard with license overview and assignment management.
+- Teacher portal for requesting and viewing Zoom license assignments.
+- Automated daily expiration of assignments via cron job.
+- Password management with secure random generation and Zoom API integration.
+- Conflict detection to prevent duplicate reservations.
+- Analytics dashboard with real-time license usage statistics.
+- History viewer for auditing past assignment events.
+- Role-based authentication (superadmin / admin).
+- Email notifications for assignment and expiration events.
+- MongoDB persistence with full data-integrity scripts.
+- REST API documented in [`backend/API_DOCS.md`](backend/API_DOCS.md).

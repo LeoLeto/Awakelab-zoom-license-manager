@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { APP_VERSION } from '../version';
 
 export default function Navigation() {
   const location = useLocation();
@@ -15,7 +16,7 @@ export default function Navigation() {
     <nav className="main-nav">
       <div className="nav-container">
         <div className="nav-brand">
-          <h1>🎯 Gestor de Licencias Zoom <span className="version-badge">v1.0.0</span></h1>
+          <h1>🎯 Gestor de Licencias Zoom <span className="version-badge">v{APP_VERSION}</span></h1>
         </div>
         <div className="nav-links">
           <Link 

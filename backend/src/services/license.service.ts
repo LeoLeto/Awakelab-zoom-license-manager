@@ -251,7 +251,9 @@ export class LicenseService {
 
     // Build a Map from licenseId -> assignment for O(1) lookup
     const assignmentByLicenseId = new Map(
-      activeAssignments.map((a) => [a.licenseId.toString(), a.toObject()])
+      activeAssignments
+        .filter((a) => a.licenseId != null)
+        .map((a) => [a.licenseId!.toString(), a.toObject()])
     );
 
     return licenses.map((license) => ({

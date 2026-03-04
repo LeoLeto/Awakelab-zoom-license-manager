@@ -11,7 +11,6 @@ const EMPTY_NUEVA_FORM = {
   correocorporativo: '',
   area: '',
   comunidadAutonoma: '',
-  tipoUso: '',
   fechaInicioUso: '',
   fechaFinUso: '',
 };
@@ -172,7 +171,6 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
           correocorporativo: selectedAssignment.correocorporativo,
           area: selectedAssignment.area,
           comunidadAutonoma: selectedAssignment.comunidadAutonoma,
-          tipoUso: selectedAssignment.tipoUso,
           fechaInicioUso: extensionStart,
           fechaFinUso: nuevaFechaFin,
         });
@@ -357,7 +355,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                             onChange={() => handleSelectAssignment(a)}
                           />
                           <span>
-                            <strong>{a.tipoUso}</strong> — {a.area}
+                            <strong>{a.area}</strong>
                             {a.comunidadAutonoma ? ` (${a.comunidadAutonoma})` : ''}{' '}
                             &nbsp;|&nbsp; {formatDate(a.fechaInicioUso)} → {formatDate(a.fechaFinUso)}{' '}
                             &nbsp;|&nbsp;{' '}
@@ -418,10 +416,6 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                           <strong>{selectedAssignment.comunidadAutonoma}</strong>
                         </div>
                       )}
-                      <div>
-                        <span style={{ color: '#6c757d' }}>Tipo de uso:</span>{' '}
-                        <strong>{selectedAssignment.tipoUso}</strong>
-                      </div>
                       <div>
                         <span style={{ color: '#6c757d' }}>Período actual:</span>{' '}
                         <strong>
@@ -590,26 +584,6 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                       <option value="Valencia">Valencia</option>
                     </select>
                   </div>
-                </div>
-                <div className="form-group">
-                  <label htmlFor="tipoUso">Uso de la licencia *</label>
-                  <select
-                    id="tipoUso"
-                    required
-                    value={formData.tipoUso}
-                    onChange={(e) => setFormData({ ...formData, tipoUso: e.target.value })}
-                  >
-                    <option value="">Seleccionar...</option>
-                    <option value="USO NO ASOCIADO A PLATAFORMA">
-                      USO NO ASOCIADO A PLATAFORMA
-                    </option>
-                    <option value="USO PARA UNA PLATAFORMA MOODLE DE GRUPO ASPASIA">
-                      USO PARA UNA PLATAFORMA MOODLE DE GRUPO ASPASIA
-                    </option>
-                    <option value="WEBINAR para más de 300 personas">
-                      WEBINAR para más de 300 personas
-                    </option>
-                  </select>
                 </div>
               </div>
 
