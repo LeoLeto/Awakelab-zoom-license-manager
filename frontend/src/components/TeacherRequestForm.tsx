@@ -11,6 +11,7 @@ const EMPTY_NUEVA_FORM = {
   correocorporativo: '',
   area: '',
   comunidadAutonoma: '',
+  tipoUso: '',
   fechaInicioUso: '',
   fechaFinUso: '',
 };
@@ -171,6 +172,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
           correocorporativo: selectedAssignment.correocorporativo,
           area: selectedAssignment.area,
           comunidadAutonoma: selectedAssignment.comunidadAutonoma,
+          tipoUso: selectedAssignment.tipoUso,
           fechaInicioUso: extensionStart,
           fechaFinUso: nuevaFechaFin,
         });
@@ -553,6 +555,28 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                       <option value="Otras">Otras</option>
                     </select>
                   </div>
+                  <div className="form-group">
+                    <label htmlFor="tipoUso">Tipo de Uso *</label>
+                    <select
+                      id="tipoUso"
+                      required
+                      value={formData.tipoUso}
+                      onChange={(e) => setFormData({ ...formData, tipoUso: e.target.value })}
+                    >
+                      <option value="">Seleccionar...</option>
+                      <option value="Docencia">Docencia</option>
+                      <option value="Reunión">Reunión</option>
+                      <option value="Seminario web">Seminario web</option>
+                      <option value="Otro">Otro</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Autonomous community */}
+              <div className="form-section">
+                <div className="form-row">
+                  <div className="form-group" style={{ flex: 1 }} />
                   <div className="form-group">
                     <label htmlFor="comunidadAutonoma">
                       Comunidad Autónoma (Sólo en el caso de Gerencias Territoriales)

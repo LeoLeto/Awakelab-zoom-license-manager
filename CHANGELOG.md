@@ -23,6 +23,14 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [1.0.3] – 2026-03-04
+
+### Fixed
+- Added missing `tipoUso` field to `TeacherRequestForm`: new `Tipo de Uso` select in the "Información Laboral" section satisfies the required `CreateAssignmentDto.tipoUso` field (TS2345).
+- Extension branch now carries `tipoUso` from the selected assignment, resolving the second TS2345 error.
+
+---
+
 ## [1.0.2] – 2026-03-04
 
 ### Fixed
