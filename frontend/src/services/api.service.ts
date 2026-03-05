@@ -222,6 +222,19 @@ export const analyticsApi = {
   },
 };
 
+export const settingsApi = {
+  async getSetting(key: string): Promise<{ success: boolean; key: string; value: any }> {
+    return apiCall(`${API_BASE_URL}/settings/${key}`);
+  },
+
+  async updateSetting(key: string, value: any, description?: string): Promise<{ success: boolean; setting: any }> {
+    return apiCall(`${API_BASE_URL}/settings/${key}`, {
+      method: 'PUT',
+      body: JSON.stringify({ value, ...(description !== undefined && { description }) }),
+    });
+  },
+};
+
 const apiService = {
   ...zoomApi,
   ...licenseApi,

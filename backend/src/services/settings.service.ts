@@ -125,6 +125,26 @@ export class SettingsService {
         key: 'notifyOnNewRequest',
         value: true,
         description: 'Notificar administradores de nuevas solicitudes pendientes'
+      },
+      {
+        key: 'areaDepartamento',
+        value: [
+          'DIRECCIÓN ESTRATÉGICA',
+          'DIRECCIÓN ESTATAL',
+          'DIRECCIÓN AUTONÓMICO',
+          'DIRECCIÓN NEGOCIO',
+          'ADMINISTRACIÓN',
+          'DIRECCIÓN F.PRIVADA',
+          'DIRECCIÓN MARKETING',
+          'GERENCIA TRANSVERSAL',
+          'GERENCIA TERRITORIAL',
+          'LATAM',
+          'AWAKELAB',
+          'TALENTO E INOVACIÓN',
+          'FP-ASPASIA',
+          'Otras'
+        ],
+        description: 'Lista de áreas/departamentos disponibles en el formulario de solicitud'
       }
     ];
 

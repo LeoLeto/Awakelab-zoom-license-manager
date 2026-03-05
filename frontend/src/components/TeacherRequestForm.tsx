@@ -1,5 +1,5 @@
-﻿import { useState } from 'react';
-import { assignmentApi, licenseApi } from '../services/api.service';
+﻿import { useState, useEffect } from 'react';
+import { assignmentApi, licenseApi, settingsApi } from '../services/api.service';
 import { License, Assignment } from '../types/license.types';
 
 interface TeacherRequestFormProps {
@@ -35,6 +35,21 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
   const [checkingExtension, setCheckingExtension] = useState(false);
   const [extensionAvailable, setExtensionAvailable] = useState<boolean | null>(null);
   const [extensionMessage, setExtensionMessage] = useState('');
+
+  // ── Area/Departamento options (loaded from settings) ─────────────────────
+  const [areaOptions, setAreaOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    settingsApi.getSetting('areaDepartamento')
+      .then((res) => {
+        if (Array.isArray(res.value)) setAreaOptions(res.value);
+      })
+      .catch(() => {
+        // Fall back to a minimal default so the form still works if the
+        // setting hasn't been seeded yet
+        setAreaOptions(['Otras']);
+      });
+  }, []);
 
   // ── Shared state ──────────────────────────────────────────────────────────
   const [loading, setLoading] = useState(false);
@@ -539,20 +554,9 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                       onChange={(e) => setFormData({ ...formData, area: e.target.value })}
                     >
                       <option value="">Seleccionar...</option>
-                      <option value="DIRECCIÓN ESTRATÉGICA">DIRECCIÓN ESTRATÉGICA</option>
-                      <option value="DIRECCIÓN ESTATAL">DIRECCIÓN ESTATAL</option>
-                      <option value="DIRECCIÓN AUTONÓMICO">DIRECCIÓN AUTONÓMICO</option>
-                      <option value="DIRECCIÓN NEGOCIO">DIRECCIÓN NEGOCIO</option>
-                      <option value="ADMINISTRACIÓN">ADMINISTRACIÓN</option>
-                      <option value="DIRECCIÓN F.PRIVADA">DIRECCIÓN F.PRIVADA</option>
-                      <option value="DIRECCIÓN MARKETING">DIRECCIÓN MARKETING</option>
-                      <option value="GERENCIA TRANSVERSAL">GERENCIA TRANSVERSAL</option>
-                      <option value="GERENCIA TERRITORIAL">GERENCIA TERRITORIAL</option>
-                      <option value="LATAM">LATAM</option>
-                      <option value="AWAKELAB">AWAKELAB</option>
-                      <option value="TALENTO E INOVACIÓN">TALENTO E INOVACIÓN</option>
-                      <option value="FP-ASPASIA">FP-ASPASIA</option>
-                      <option value="Otras">Otras</option>
+                      {areaOptions.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
                     </select>
                   </div>
                   <div className="form-group">

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { settingsApi } from '../services/api.service';
 
 interface Setting {
   _id: string;
@@ -22,6 +23,8 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [testingEmail, setTestingEmail] = useState(false);
   const [testEmailAddress, setTestEmailAddress] = useState('');
+  const [newArea, setNewArea] = useState('');
+  const [savingAreas, setSavingAreas] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -154,6 +157,53 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
     }
   };
 
+  // ── Area/Departamento helpers ─────────────────────────────────────────────
+  const getCurrentAreas = (): string[] => {
+    const s = settings.find(s => s.key === 'areaDepartamento');
+    return Array.isArray(s?.value) ? s.value : [];
+  };
+
+  const saveAreas = async (updatedList: string[]) => {
+    try {
+      setSavingAreas(true);
+      setError(null);
+      const updated = await settingsApi.updateSetting(
+        'areaDepartamento',
+        updatedList,
+        'Lista de áreas/departamentos disponibles en el formulario de solicitud'
+      );
+      setSettings(prev =>
+        prev.map(s =>
+          s.key === 'areaDepartamento'
+            ? { ...s, value: updatedList, updatedAt: updated.setting?.updatedAt || s.updatedAt }
+            : s
+        )
+      );
+      setSuccessMessage('Lista de áreas actualizada correctamente');
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSavingAreas(false);
+    }
+  };
+
+  const handleAddArea = () => {
+    const trimmed = newArea.trim().toUpperCase();
+    if (!trimmed) return;
+    const current = getCurrentAreas();
+    if (current.includes(trimmed)) {
+      setError('Esa área ya existe en la lista');
+      return;
+    }
+    setNewArea('');
+    saveAreas([...current, trimmed]);
+  };
+
+  const handleRemoveArea = (area: string) => {
+    saveAreas(getCurrentAreas().filter(a => a !== area));
+  };
+
   const renderSettingControl = (setting: Setting) => {
     const isSaving = saving === setting.key;
     
@@ -218,12 +268,14 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
       emailFrom: '📤 Remitente',
       adminNotificationEmails: '👥 Correos Administradores',
       notifyOnPasswordChange: '🔐 Notificar Cambio de Contraseña',
-      notifyOnNewRequest: '📋 Notificar Nuevas Solicitudes'
+      notifyOnNewRequest: '📋 Notificar Nuevas Solicitudes',
+      areaDepartamento: '🏢 Áreas / Departamentos'
     };
     return labels[key] || key;
   };
   
   const getSettingCategory = (key: string): string => {
+    if (key === 'areaDepartamento') return 'areas';
     const emailKeys = [
       'emailHost', 'emailPort', 'emailSecure', 'emailUser', 
       'emailPassword', 'emailFrom', 'adminNotificationEmails',
@@ -340,6 +392,82 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
                 {testingEmail ? '📤 Enviando...' : '📧 Enviar Correo de Prueba'}
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Áreas / Departamentos ── */}
+      <div className="settings-section">
+        <div className="section-card">
+          <h3 className="section-card-title">🏢 Áreas / Departamentos</h3>
+          <p className="section-card-subtitle">
+            Administra la lista de áreas disponibles en el formulario de solicitud de licencia
+          </p>
+
+          {/* Current list */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+            {getCurrentAreas().map((area) => (
+              <span
+                key={area}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '4px 10px',
+                  backgroundColor: '#e8f0fe',
+                  border: '1px solid #c5d5f5',
+                  borderRadius: '16px',
+                  fontSize: '0.85rem',
+                  fontWeight: 500,
+                }}
+              >
+                {area}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveArea(area)}
+                  disabled={savingAreas}
+                  title="Eliminar"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#721c24',
+                    padding: '0',
+                    lineHeight: 1,
+                    fontSize: '1rem',
+                  }}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+            {getCurrentAreas().length === 0 && (
+              <span style={{ color: '#6c757d', fontSize: '0.9rem' }}>
+                No hay áreas configuradas.
+              </span>
+            )}
+          </div>
+
+          {/* Add new area */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <input
+              type="text"
+              value={newArea}
+              onChange={(e) => setNewArea(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddArea(); } }}
+              placeholder="Nueva área o departamento..."
+              disabled={savingAreas}
+              className="setting-input"
+              style={{ flex: 1 }}
+            />
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleAddArea}
+              disabled={savingAreas || !newArea.trim()}
+            >
+              {savingAreas ? '💾 Guardando...' : '+ Añadir'}
+            </button>
           </div>
         </div>
       </div>

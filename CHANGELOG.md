@@ -23,6 +23,16 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [1.1.0] – 2026-03-05
+
+### Added
+- **Dynamic Áreas/Departamentos**: The "Área/Departamento" dropdown in `TeacherRequestForm` now loads its options from the `areaDepartamento` setting stored in the database instead of a hardcoded list.
+- **Areas management in Settings**: A new "Áreas / Departamentos" section in the Settings page lets administrators add or remove department values that appear in the request form.
+- **`settingsApi`**: Added `getSetting` and `updateSetting` helpers to `api.service.ts` for reading and writing individual settings from the frontend.
+- **Backend default**: `areaDepartamento` is now seeded via `initializeDefaults()` with the original list of 14 departments.
+
+---
+
 ## [1.0.6] – 2026-03-05
 
 ### Fixed
