@@ -7,6 +7,11 @@ All notable changes to **Gestor de Licencias Zoom** are documented here.
 ### Fixed
 - Styled the **Buscar** button in the "🔍 Ingresa tu Email Corporativo" field with a white background, primary-color text, and matching height/padding so it integrates correctly with the blue gradient card.
 
+## [1.1.5] – 2026-03-05
+
+### Changed
+- Deleting a domain or an area/department in Settings now prompts for confirmation before removing the item.
+
 ## [1.1.4] – 2026-03-05
 
 ### Fixed

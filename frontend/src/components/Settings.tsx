@@ -205,6 +205,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
   };
 
   const handleRemoveArea = (area: string) => {
+    if (!window.confirm(`¿Eliminar el área "${area}"?`)) return;
     saveAreas(getCurrentAreas().filter(a => a !== area));
   };
 
@@ -314,6 +315,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
   };
 
   const handleRemoveDomain = (domain: string) => {
+    if (!window.confirm(`¿Eliminar el dominio "@${domain}"?`)) return;
     saveDomains(getCurrentDomains().filter(d => d !== domain));
   };
 
