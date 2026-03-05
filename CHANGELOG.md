@@ -2,6 +2,21 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.1.2] – 2026-03-05
+
+### Added
+- New **Dominios Aceptados** tag-list section in Settings: manage the whitelist of corporate email domains that may submit license requests.
+- Backend `acceptedDomains` setting seeded with the nine initial domains (adalidinmark.com, adalidsc.com, awakelab.world, cntm.es, grupoaspasia.com, grupoinsem.com, hoppers.academy, ibecon.org, miformacion.org).
+- Domain validation in `TeacherRequestForm`: both the “Nueva Aula” email field and the “Ampliación” lookup field now show an inline warning and block submission when the domain is not on the accepted list.
+
+## [1.1.1] – 2026-03-05
+
+### Fixed
+- `adminNotificationEmails` setting now saves reliably via explicit API call instead of onBlur on a text input.
+
+### Changed
+- Replaced comma-separated text input for 👥 Correos Administradores with a tag-list UI (add/remove individual emails), matching the Áreas/Departamentos pattern.
+
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html)  
 (`MAJOR.MINOR.PATCH`):

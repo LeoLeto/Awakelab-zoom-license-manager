@@ -37,8 +37,9 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
   const [extensionMessage, setExtensionMessage] = useState('');
 
   // ── Area/Departamento options (loaded from settings) ─────────────────────
-  const [areaOptions, setAreaOptions] = useState<string[]>([]);
-
+  const [areaOptions, setAreaOptions] = useState<string[]>([]);  const [acceptedDomains, setAcceptedDomains] = useState<string[]>([]);
+  const [emailDomainError, setEmailDomainError] = useState<string | null>(null);
+  const [ampliacionDomainError, setAmpliacionDomainError] = useState<string | null>(null);
   useEffect(() => {
     settingsApi.getSetting('areaDepartamento')
       .then((res) => {
@@ -49,13 +50,29 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
         // setting hasn't been seeded yet
         setAreaOptions(['Otras']);
       });
+    settingsApi.getSetting('acceptedDomains')
+      .then((res) => {
+        if (Array.isArray(res.value)) setAcceptedDomains(res.value);
+        else if (typeof res.value === 'string' && res.value)
+          setAcceptedDomains(res.value.split(',').map((d: string) => d.trim()).filter(Boolean));
+      })
+      .catch(() => { /* no restriction if setting unavailable */ });
   }, []);
 
   // ── Shared state ──────────────────────────────────────────────────────────
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  // ── Domain validation helper ─────────────────────────────────────
+  const isDomainAccepted = (email: string): boolean => {
+    if (acceptedDomains.length === 0) return true; // no restriction
+    const parts = email.trim().toLowerCase().split('@');
+    if (parts.length !== 2) return false;
+    return acceptedDomains.includes(parts[1]);
+  };
 
+  const DOMAIN_ERROR_MSG =
+    'Por favor usa tu correo corporativo. Si crees que es un error, contáctate con un administrador.';
   // ── Helpers ───────────────────────────────────────────────────────────────
   const resetAmpliacionState = () => {
     setAmpliacionEmail('');
@@ -76,6 +93,8 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
   const handleTipoChange = (value: string) => {
     setTipoSolicitud(value);
     setError(null);
+    setEmailDomainError(null);
+    setAmpliacionDomainError(null);
     resetAmpliacionState();
     resetNuevaState();
   };
@@ -83,6 +102,13 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
   // ── Ampliación: search assignments by email ───────────────────────────────
   const searchAssignments = async () => {
     if (!ampliacionEmail.trim()) return;
+
+    // Domain validation
+    if (!isDomainAccepted(ampliacionEmail)) {
+      setAmpliacionDomainError(DOMAIN_ERROR_MSG);
+      return;
+    }
+    setAmpliacionDomainError(null);
 
     try {
       setSearchingAssignments(true);
@@ -176,6 +202,10 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
 
       if (tipoSolicitud === 'Ampliación o modificación de un aula Zoom previamente asignada') {
         if (!selectedAssignment || !nuevaFechaFin) return;
+        if (!isDomainAccepted(selectedAssignment.correocorporativo)) {
+          setError(DOMAIN_ERROR_MSG);
+          return;
+        }
 
         // Compute fechaInicioUso for the extension: day after the existing assignment ends
         const currentEnd = new Date(selectedAssignment.fechaFinUso);
@@ -192,6 +222,10 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
           fechaFinUso: nuevaFechaFin,
         });
       } else {
+        if (!isDomainAccepted(formData.correocorporativo)) {
+          setError(DOMAIN_ERROR_MSG);
+          return;
+        }
         await assignmentApi.createAssignment(formData);
       }
 
@@ -300,11 +334,18 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                       value={ampliacionEmail}
                       onChange={(e) => {
                         setAmpliacionEmail(e.target.value);
+                        setAmpliacionDomainError(null);
                         setAssignmentSearchDone(false);
                         setFoundAssignments([]);
                         setSelectedAssignment(null);
                         setNuevaFechaFin('');
                         setExtensionAvailable(null);
+                      }}
+                      onBlur={(e) => {
+                        if (e.target.value && !isDomainAccepted(e.target.value))
+                          setAmpliacionDomainError(DOMAIN_ERROR_MSG);
+                        else
+                          setAmpliacionDomainError(null);
                       }}
                       placeholder="tu.nombre@empresa.com"
                     />
@@ -314,12 +355,29 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                       type="button"
                       className="btn-secondary"
                       onClick={searchAssignments}
-                      disabled={searchingAssignments || !ampliacionEmail.trim()}
+                      disabled={searchingAssignments || !ampliacionEmail.trim() || !!ampliacionDomainError}
                     >
                       {searchingAssignments ? 'Buscando...' : '🔍 Buscar'}
                     </button>
                   </div>
                 </div>
+
+                {/* Domain error */}
+                {ampliacionDomainError && (
+                  <div
+                    style={{
+                      padding: '12px',
+                      backgroundColor: '#f8d7da',
+                      border: '1px solid #f5c6cb',
+                      borderRadius: '4px',
+                      color: '#721c24',
+                      marginTop: '8px',
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    ⚠️ {ampliacionDomainError}
+                  </div>
+                )}
 
                 {/* No results */}
                 {assignmentSearchDone && foundAssignments.length === 0 && (
@@ -532,11 +590,33 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                       type="email"
                       required
                       value={formData.correocorporativo}
-                      onChange={(e) =>
-                        setFormData({ ...formData, correocorporativo: e.target.value })
-                      }
+                      onChange={(e) => {
+                        setEmailDomainError(null);
+                        setFormData({ ...formData, correocorporativo: e.target.value });
+                      }}
+                      onBlur={(e) => {
+                        if (e.target.value && !isDomainAccepted(e.target.value))
+                          setEmailDomainError(DOMAIN_ERROR_MSG);
+                        else
+                          setEmailDomainError(null);
+                      }}
                       placeholder="juan.perez@ejemplo.com"
                     />
+                    {emailDomainError && (
+                      <div
+                        style={{
+                          marginTop: '6px',
+                          padding: '8px 12px',
+                          backgroundColor: '#f8d7da',
+                          border: '1px solid #f5c6cb',
+                          borderRadius: '4px',
+                          color: '#721c24',
+                          fontSize: '0.875rem',
+                        }}
+                      >
+                        ⚠️ {emailDomainError}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

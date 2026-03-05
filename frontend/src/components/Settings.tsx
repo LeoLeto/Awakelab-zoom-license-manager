@@ -25,6 +25,10 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
   const [testEmailAddress, setTestEmailAddress] = useState('');
   const [newArea, setNewArea] = useState('');
   const [savingAreas, setSavingAreas] = useState(false);
+  const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [savingAdminEmails, setSavingAdminEmails] = useState(false);
+  const [newDomain, setNewDomain] = useState('');
+  const [savingDomains, setSavingDomains] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -204,6 +208,115 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
     saveAreas(getCurrentAreas().filter(a => a !== area));
   };
 
+  // ── Admin Notification Emails helpers ─────────────────────────────────────
+  const getCurrentAdminEmails = (): string[] => {
+    const s = settings.find(s => s.key === 'adminNotificationEmails');
+    if (Array.isArray(s?.value)) return s.value;
+    if (typeof s?.value === 'string' && s.value)
+      return s.value.split(',').map((e: string) => e.trim()).filter(Boolean);
+    return [];
+  };
+
+  const saveAdminEmails = async (updatedList: string[]) => {
+    try {
+      setSavingAdminEmails(true);
+      setError(null);
+      const updated = await settingsApi.updateSetting(
+        'adminNotificationEmails',
+        updatedList,
+        'Correos de administradores que reciben notificaciones del sistema'
+      );
+      setSettings(prev =>
+        prev.map(s =>
+          s.key === 'adminNotificationEmails'
+            ? { ...s, value: updatedList, updatedAt: updated.setting?.updatedAt || s.updatedAt }
+            : s
+        )
+      );
+      setSuccessMessage('Lista de correos actualizada correctamente');
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSavingAdminEmails(false);
+    }
+  };
+
+  const handleAddAdminEmail = () => {
+    const trimmed = newAdminEmail.trim().toLowerCase();
+    if (!trimmed) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setError('Por favor ingresa un correo electrónico válido');
+      return;
+    }
+    const current = getCurrentAdminEmails();
+    if (current.includes(trimmed)) {
+      setError('Ese correo ya está en la lista');
+      return;
+    }
+    setNewAdminEmail('');
+    saveAdminEmails([...current, trimmed]);
+  };
+
+  const handleRemoveAdminEmail = (email: string) => {
+    saveAdminEmails(getCurrentAdminEmails().filter(e => e !== email));
+  };
+
+  // ── Accepted Domains helpers ─────────────────────────────────────────────
+  const getCurrentDomains = (): string[] => {
+    const s = settings.find(s => s.key === 'acceptedDomains');
+    if (Array.isArray(s?.value)) return s.value;
+    if (typeof s?.value === 'string' && s.value)
+      return s.value.split(',').map((d: string) => d.trim()).filter(Boolean);
+    return [];
+  };
+
+  const saveDomains = async (updatedList: string[]) => {
+    try {
+      setSavingDomains(true);
+      setError(null);
+      const updated = await settingsApi.updateSetting(
+        'acceptedDomains',
+        updatedList,
+        'Dominios corporativos aceptados en el formulario de solicitud de licencia'
+      );
+      setSettings(prev =>
+        prev.map(s =>
+          s.key === 'acceptedDomains'
+            ? { ...s, value: updatedList, updatedAt: updated.setting?.updatedAt || s.updatedAt }
+            : s
+        )
+      );
+      setSuccessMessage('Lista de dominios actualizada correctamente');
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSavingDomains(false);
+    }
+  };
+
+  const handleAddDomain = () => {
+    // Accept formats: "empresa.com" or "@empresa.com"
+    const raw = newDomain.trim().toLowerCase().replace(/^@/, '');
+    if (!raw) return;
+    if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z]{2,})+$/.test(raw)) {
+      setError('Por favor ingresa un dominio válido (ej: empresa.com)');
+      return;
+    }
+    const current = getCurrentDomains();
+    if (current.includes(raw)) {
+      setError('Ese dominio ya está en la lista');
+      return;
+    }
+    setNewDomain('');
+    saveDomains([...current, raw]);
+  };
+
+  const handleRemoveDomain = (domain: string) => {
+    saveDomains(getCurrentDomains().filter(d => d !== domain));
+  };
+
   const renderSettingControl = (setting: Setting) => {
     const isSaving = saving === setting.key;
     
@@ -269,13 +382,15 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
       adminNotificationEmails: '👥 Correos Administradores',
       notifyOnPasswordChange: '🔐 Notificar Cambio de Contraseña',
       notifyOnNewRequest: '📋 Notificar Nuevas Solicitudes',
-      areaDepartamento: '🏢 Áreas / Departamentos'
+      areaDepartamento: '🏢 Áreas / Departamentos',
+      acceptedDomains: '🌐 Dominios Aceptados'
     };
     return labels[key] || key;
   };
   
   const getSettingCategory = (key: string): string => {
     if (key === 'areaDepartamento') return 'areas';
+    if (key === 'acceptedDomains') return 'domains';
     const emailKeys = [
       'emailHost', 'emailPort', 'emailSecure', 'emailUser', 
       'emailPassword', 'emailFrom', 'adminNotificationEmails',
@@ -350,11 +465,10 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
           <p className="section-card-subtitle">Configure los parámetros SMTP para el envío de notificaciones automáticas</p>
           
           {(() => {
-            const wideKeys = ['adminNotificationEmails'];
             return (
               <div className="settings-table">
-                {settings.filter(s => getSettingCategory(s.key) === 'email').map((setting) => (
-                  <div key={setting.key} className={`setting-row${wideKeys.includes(setting.key) ? ' setting-row--full' : ''}`}>
+                {settings.filter(s => getSettingCategory(s.key) === 'email' && s.key !== 'adminNotificationEmails').map((setting) => (
+                  <div key={setting.key} className="setting-row">
                     <div className="setting-label">
                       <span className="label-text">{getSettingLabel(setting.key)}</span>
                       <span className="label-description">{setting.description}</span>
@@ -369,6 +483,80 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
             );
           })()}
           
+          {/* Admin Notification Emails */}
+          <div className="setting-row setting-row--full" style={{ marginTop: '16px', borderTop: '1px solid #e9ecef', paddingTop: '16px' }}>
+            <div className="setting-label" style={{ marginBottom: '10px' }}>
+              <span className="label-text">👥 Correos Administradores</span>
+              <span className="label-description">
+                {settings.find(s => s.key === 'adminNotificationEmails')?.description || 'Correos de administradores que reciben notificaciones del sistema'}
+              </span>
+            </div>
+            <div>
+              {/* Email tag list */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
+                {getCurrentAdminEmails().map((email) => (
+                  <span
+                    key={email}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '4px 10px',
+                      backgroundColor: '#e8f4fd',
+                      border: '1px solid #b8daee',
+                      borderRadius: '16px',
+                      fontSize: '0.85rem',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {email}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveAdminEmail(email)}
+                      disabled={savingAdminEmails}
+                      title="Eliminar"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: '#721c24',
+                        padding: '0',
+                        lineHeight: 1,
+                        fontSize: '1rem',
+                      }}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                {getCurrentAdminEmails().length === 0 && (
+                  <span style={{ color: '#6c757d', fontSize: '0.9rem' }}>No hay correos configurados.</span>
+                )}
+              </div>
+              {/* Add new email */}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input
+                  type="email"
+                  value={newAdminEmail}
+                  onChange={(e) => setNewAdminEmail(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddAdminEmail(); } }}
+                  placeholder="admin@ejemplo.com"
+                  disabled={savingAdminEmails}
+                  className="setting-input"
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={handleAddAdminEmail}
+                  disabled={savingAdminEmails || !newAdminEmail.trim()}
+                >
+                  {savingAdminEmails ? '💾 Guardando...' : '+ Añadir'}
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Test Email Section */}
           <div className="test-email-section">
             <h4>🧪 Probar Configuración de Correo</h4>
@@ -392,6 +580,84 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
                 {testingEmail ? '📤 Enviando...' : '📧 Enviar Correo de Prueba'}
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Dominios Aceptados ── */}
+      <div className="settings-section">
+        <div className="section-card">
+          <h3 className="section-card-title">🌐 Dominios Aceptados</h3>
+          <p className="section-card-subtitle">
+            Solo los correos con estos dominios podrán enviar solicitudes de licencia.
+            Si la lista está vacía se aceptarán todos los dominios.
+          </p>
+
+          {/* Current list */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+            {getCurrentDomains().map((domain) => (
+              <span
+                key={domain}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '4px 10px',
+                  backgroundColor: '#e8f5e9',
+                  border: '1px solid #b2dfdb',
+                  borderRadius: '16px',
+                  fontSize: '0.85rem',
+                  fontWeight: 500,
+                  fontFamily: 'monospace',
+                }}
+              >
+                @{domain}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveDomain(domain)}
+                  disabled={savingDomains}
+                  title="Eliminar"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#721c24',
+                    padding: '0',
+                    lineHeight: 1,
+                    fontSize: '1rem',
+                  }}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+            {getCurrentDomains().length === 0 && (
+              <span style={{ color: '#6c757d', fontSize: '0.9rem' }}>
+                No hay dominios configurados — se aceptarán todos.
+              </span>
+            )}
+          </div>
+
+          {/* Add new domain */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <input
+              type="text"
+              value={newDomain}
+              onChange={(e) => setNewDomain(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddDomain(); } }}
+              placeholder="empresa.com"
+              disabled={savingDomains}
+              className="setting-input"
+              style={{ flex: 1 }}
+            />
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleAddDomain}
+              disabled={savingDomains || !newDomain.trim()}
+            >
+              {savingDomains ? '💾 Guardando...' : '+ Añadir'}
+            </button>
           </div>
         </div>
       </div>

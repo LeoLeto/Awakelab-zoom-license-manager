@@ -127,6 +127,21 @@ export class SettingsService {
         description: 'Notificar administradores de nuevas solicitudes pendientes'
       },
       {
+        key: 'acceptedDomains',
+        value: [
+          'adalidinmark.com',
+          'adalidsc.com',
+          'awakelab.world',
+          'cntm.es',
+          'grupoaspasia.com',
+          'grupoinsem.com',
+          'hoppers.academy',
+          'ibecon.org',
+          'miformacion.org'
+        ],
+        description: 'Dominios corporativos aceptados en el formulario de solicitud de licencia'
+      },
+      {
         key: 'areaDepartamento',
         value: [
           'DIRECCIÓN ESTRATÉGICA',
