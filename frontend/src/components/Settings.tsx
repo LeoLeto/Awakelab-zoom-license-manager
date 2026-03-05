@@ -594,6 +594,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
           </p>
 
           {/* Current list */}
+          <div style={{ padding: '1.25rem 1.5rem' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
             {getCurrentDomains().map((domain) => (
               <span
@@ -659,6 +660,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
               {savingDomains ? '💾 Guardando...' : '+ Añadir'}
             </button>
           </div>
+          </div>
         </div>
       </div>
 
@@ -671,6 +673,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
           </p>
 
           {/* Current list */}
+          <div style={{ padding: '1.25rem 1.5rem' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
             {getCurrentAreas().map((area) => (
               <span
@@ -734,6 +737,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
             >
               {savingAreas ? '💾 Guardando...' : '+ Añadir'}
             </button>
+          </div>
           </div>
         </div>
       </div>

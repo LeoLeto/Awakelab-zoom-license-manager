@@ -13,16 +13,19 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filterEmail, setFilterEmail] = useState(teacherEmail || '');
-  const [debouncedEmail, setDebouncedEmail] = useState(teacherEmail || '');
+  const [searchEmail, setSearchEmail] = useState(teacherEmail || '');
 
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedEmail(filterEmail), 500);
-    return () => clearTimeout(timer);
-  }, [filterEmail]);
+  const handleSearch = () => {
+    setSearchEmail(filterEmail);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') handleSearch();
+  };
 
   const loadAssignments = async () => {
     // Don't load if no email is provided
-    if (!debouncedEmail.trim()) {
+    if (!searchEmail.trim()) {
       setAssignments([]);
       setLoading(false);
       return;
@@ -35,7 +38,7 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
       
       // Filter assignments by email - only show matching assignments
       const filteredAssignments = response.assignments.filter(
-        (a) => a.correocorporativo.toLowerCase() === debouncedEmail.toLowerCase().trim()
+        (a) => a.correocorporativo.toLowerCase() === searchEmail.toLowerCase().trim()
       );
       
       // Sort by start date, most recent first
@@ -53,7 +56,7 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
 
   useEffect(() => {
     loadAssignments();
-  }, [debouncedEmail, refreshTrigger]);
+  }, [searchEmail, refreshTrigger]);
 
   const getStatusInfo = (assignment: Assignment) => {
     const now = new Date();
@@ -113,22 +116,26 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
           <label htmlFor="emailFilter">
             <strong>🔍 Ingresa tu Email Corporativo</strong>
           </label>
-          <input
-            id="emailFilter"
-            type="email"
-            value={filterEmail}
-            onChange={(e) => setFilterEmail(e.target.value)}
-            placeholder="ejemplo@awakelab.cl"
-            autoFocus
-          />
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <input
+              id="emailFilter"
+              type="email"
+              value={filterEmail}
+              onChange={(e) => setFilterEmail(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="ejemplo@awakelab.cl"
+              autoFocus
+              style={{ flex: 1 }}
+            />
+            <button type="button" onClick={handleSearch} className="btn-search">
+              🔍 Buscar
+            </button>
+          </div>
           <small>Ingresa tu email para ver tus asignaciones de licencias Zoom</small>
-          {filterEmail.trim() && filterEmail !== debouncedEmail && (
-            <small style={{ color: '#888' }}>Buscando...</small>
-          )}
         </div>
       )}
 
-      {!filterEmail.trim() ? (
+      {!searchEmail.trim() ? (
         <div className="info-message">
           <p>👆 Por favor ingresa tu email corporativo arriba para ver tus asignaciones</p>
         </div>

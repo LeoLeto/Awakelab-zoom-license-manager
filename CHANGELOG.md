@@ -2,6 +2,16 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.1.4] – 2026-03-05
+
+### Fixed
+- Added `1.25rem 1.5rem` padding wrapper around the tag list and input row in the **Dominios Aceptados** and **Áreas / Departamentos** Settings cards so content no longer bleeds to the card edges.
+
+## [1.1.3] – 2026-03-05
+
+### Changed
+- Email search in TeacherAssignments now requires an explicit button click (or pressing Enter) instead of triggering automatically while typing, preventing premature API calls for slow typers.
+
 ## [1.1.2] – 2026-03-05
 
 ### Added
