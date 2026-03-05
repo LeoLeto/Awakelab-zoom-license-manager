@@ -23,6 +23,17 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [1.0.4] – 2026-03-05
+
+### Fixed
+- Replaced N+1 MongoDB queries in `LicenseService.getAllLicensesWithAssignments` with 2 parallel queries (1 for licenses, 1 for all active assignments), then join in memory — eliminates the per-license `Assignment.findOne` round-trips that caused slow loading in production.
+- Added `.lean()` to all read queries in `getAllLicensesWithAssignments` and `getLicenseWithAssignment`; returns plain JS objects instead of full Mongoose Documents, removing unnecessary serialisation overhead.
+- Parallelised `getLicenseWithAssignment` — `License.findById` and `Assignment.findOne` now run concurrently instead of sequentially.
+- Tuned MongoDB connection options (`maxPoolSize: 10`, `serverSelectionTimeoutMS: 10000`, `connectTimeoutMS: 10000`, `socketTimeoutMS: 45000`) to prevent indefinite hangs on slow or cold Atlas clusters.
+- Added `{ estado: 1, fechaFinUso: 1 }` compound index on `AssignmentSchema` to accelerate the new bulk active-assignment query.
+
+---
+
 ## [1.0.3] – 2026-03-04
 
 ### Fixed

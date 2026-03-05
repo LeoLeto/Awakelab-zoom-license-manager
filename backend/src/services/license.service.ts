@@ -219,21 +219,23 @@ export class LicenseService {
       throw new Error('ID de licencia inválido');
     }
 
-    const license = await License.findById(id);
+    const [license, currentAssignment] = await Promise.all([
+      License.findById(id).lean(),
+      Assignment.findOne({
+        licenseId: new Types.ObjectId(id),
+        estado: 'activo',
+        fechaInicioUso: { $lte: new Date() },
+        fechaFinUso: { $gte: new Date() }
+      }).lean()
+    ]);
+
     if (!license) {
       return null;
     }
 
-    const currentAssignment = await Assignment.findOne({
-      licenseId: new Types.ObjectId(id),
-      estado: 'activo',
-      fechaInicioUso: { $lte: new Date() },
-      fechaFinUso: { $gte: new Date() }
-    });
-
     return {
-      license: license.toObject(),
-      assignment: currentAssignment?.toObject() || null
+      license,
+      assignment: currentAssignment || null
     };
   }
 
@@ -244,21 +246,22 @@ export class LicenseService {
     const now = new Date();
 
     // Fetch licenses and active assignments in parallel (2 queries total, instead of N+1)
+    // .lean() returns plain JS objects instead of Mongoose Documents — significantly faster
     const [licenses, activeAssignments] = await Promise.all([
-      License.find().sort({ createdAt: -1 }),
-      Assignment.find({ estado: 'activo', fechaFinUso: { $gte: now } })
+      License.find().sort({ createdAt: -1 }).lean(),
+      Assignment.find({ estado: 'activo', fechaFinUso: { $gte: now } }).lean()
     ]);
 
     // Build a Map from licenseId -> assignment for O(1) lookup
     const assignmentByLicenseId = new Map(
       activeAssignments
         .filter((a) => a.licenseId != null)
-        .map((a) => [a.licenseId!.toString(), a.toObject()])
+        .map((a) => [a.licenseId!.toString(), a])
     );
 
     return licenses.map((license) => ({
-      license: license.toObject(),
-      assignment: assignmentByLicenseId.get(license._id.toString()) ?? null
+      license,
+      assignment: assignmentByLicenseId.get((license._id as any).toString()) ?? null
     }));
   }
 }

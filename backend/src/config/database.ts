@@ -22,7 +22,16 @@ export class Database {
     const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/zoom_licenses';
 
     try {
-      await mongoose.connect(mongoUri);
+      await mongoose.connect(mongoUri, {
+        // Larger pool for concurrent requests
+        maxPoolSize: 10,
+        // How long to wait for a connection from the pool
+        serverSelectionTimeoutMS: 10000,
+        // How long a send/receive on the socket can take
+        socketTimeoutMS: 45000,
+        // How long to wait when initiating a new connection
+        connectTimeoutMS: 10000,
+      });
       this.isConnected = true;
       console.log('✅ Successfully connected to MongoDB');
       
