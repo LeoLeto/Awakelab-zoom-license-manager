@@ -23,6 +23,13 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [1.0.6] – 2026-03-05
+
+### Fixed
+- Debounced the email input in `TeacherAssignments`: API calls now fire 500 ms after the user stops typing instead of on every keystroke, preventing excessive re-renders and network requests.
+
+---
+
 ## [1.0.5] – 2026-03-05
 
 ### Fixed

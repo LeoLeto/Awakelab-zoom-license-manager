@@ -13,10 +13,16 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filterEmail, setFilterEmail] = useState(teacherEmail || '');
+  const [debouncedEmail, setDebouncedEmail] = useState(teacherEmail || '');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedEmail(filterEmail), 500);
+    return () => clearTimeout(timer);
+  }, [filterEmail]);
 
   const loadAssignments = async () => {
     // Don't load if no email is provided
-    if (!filterEmail.trim()) {
+    if (!debouncedEmail.trim()) {
       setAssignments([]);
       setLoading(false);
       return;
@@ -29,7 +35,7 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
       
       // Filter assignments by email - only show matching assignments
       const filteredAssignments = response.assignments.filter(
-        (a) => a.correocorporativo.toLowerCase() === filterEmail.toLowerCase().trim()
+        (a) => a.correocorporativo.toLowerCase() === debouncedEmail.toLowerCase().trim()
       );
       
       // Sort by start date, most recent first
@@ -47,7 +53,7 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
 
   useEffect(() => {
     loadAssignments();
-  }, [filterEmail, refreshTrigger]);
+  }, [debouncedEmail, refreshTrigger]);
 
   const getStatusInfo = (assignment: Assignment) => {
     const now = new Date();
@@ -116,6 +122,9 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
             autoFocus
           />
           <small>Ingresa tu email para ver tus asignaciones de licencias Zoom</small>
+          {filterEmail.trim() && filterEmail !== debouncedEmail && (
+            <small style={{ color: '#888' }}>Buscando...</small>
+          )}
         </div>
       )}
 
