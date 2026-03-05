@@ -23,6 +23,13 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [1.0.5] – 2026-03-05
+
+### Fixed
+- Eliminated second N+1 query pattern in `LicenseService.getAvailableLicenses`: the previous `for...of` loop issued one sequential `Assignment.find()` per occupied license. Replaced with 3 parallel queries (free licenses, occupied licenses, all conflicting assignment IDs) and an in-memory `Set` lookup — reduces DB round-trips from `2 + N` to `3` regardless of how many occupied licenses exist. Also added `.lean()` and field projection (`{ licenseId: 1 }`) to minimise data transfer on the assignments query.
+
+---
+
 ## [1.0.4] – 2026-03-05
 
 ### Fixed

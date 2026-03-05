@@ -183,32 +183,33 @@ export class LicenseService {
    * Get available licenses for a date range
    */
   async getAvailableLicenses(startDate: Date, endDate: Date): Promise<ILicense[]> {
-    // Get all free licenses
-    const freeLicenses = await License.find({ estado: 'libre' });
-
-    // Get licenses that are occupied but don't have overlapping assignments
-    const occupiedLicenses = await License.find({ estado: 'ocupado' });
-
-    const availableLicenses: ILicense[] = [...freeLicenses];
-
-    for (const license of occupiedLicenses) {
-      const overlappingAssignments = await Assignment.find({
-        licenseId: license._id,
+    // Run all three queries in parallel instead of N+1 sequential round-trips:
+    // 1. All libre licenses
+    // 2. All ocupado licenses
+    // 3. All occupied license IDs that have a conflicting active assignment (single query)
+    const [freeLicenses, occupiedLicenses, conflictingAssignments] = await Promise.all([
+      License.find({ estado: 'libre' }).lean(),
+      License.find({ estado: 'ocupado' }).lean(),
+      Assignment.find({
         estado: 'activo',
-        $or: [
-          {
-            fechaInicioUso: { $lte: endDate },
-            fechaFinUso: { $gte: startDate }
-          }
-        ]
-      });
+        fechaInicioUso: { $lte: endDate },
+        fechaFinUso: { $gte: startDate }
+      }, { licenseId: 1 }).lean()  // only fetch licenseId — minimises data transfer
+    ]);
 
-      if (overlappingAssignments.length === 0) {
-        availableLicenses.push(license);
-      }
-    }
+    // Build a Set of occupied licenseIds for O(1) lookup
+    const conflictingIds = new Set(
+      conflictingAssignments
+        .filter((a) => a.licenseId != null)
+        .map((a) => a.licenseId!.toString())
+    );
 
-    return availableLicenses;
+    // Occupied licenses with NO conflicting assignment are also available
+    const occupiedButAvailable = occupiedLicenses.filter(
+      (l) => !conflictingIds.has((l._id as any).toString())
+    );
+
+    return [...freeLicenses, ...occupiedButAvailable] as unknown as ILicense[];
   }
 
   /**
