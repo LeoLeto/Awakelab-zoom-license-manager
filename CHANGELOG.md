@@ -2,6 +2,12 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.1.8] – 2026-03-10
+
+### Fixed
+- Replaced the `Área/Departamento` free-text input in "Crear nueva asignación" with a `<select>` populated from the `areaDepartamento` settings (matching the teacher request form).
+- Replaced the `Comunidad Autónoma` free-text input with the same `<select>` dropdown of Spanish autonomous communities used in the teacher request form (field is optional, as per reference).
+
 ## [1.1.7] – 2026-03-10
 
 ### Fixed

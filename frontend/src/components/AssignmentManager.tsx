@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { assignmentApi, licenseApi } from '../services/api.service';
+import { assignmentApi, licenseApi, settingsApi } from '../services/api.service';
 import { Assignment, License } from '../types/license.types';
 import { formatDate } from '../utils/date';
 
@@ -16,6 +16,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
   const [assigningTo, setAssigningTo] = useState<Assignment | null>(null);
   const [selectedLicenseForAssignment, setSelectedLicenseForAssignment] = useState<string>('');
   const [modalLoading, setModalLoading] = useState(false);
+  const [areaOptions, setAreaOptions] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     licenseId: '',
     nombreApellidos: '',
@@ -70,6 +71,11 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
 
   useEffect(() => {
     loadPendingAssignments();
+    settingsApi.getSetting('areaDepartamento')
+      .then((res) => {
+        if (Array.isArray(res.value)) setAreaOptions(res.value);
+      })
+      .catch(() => setAreaOptions(['Otras']));
   }, []);
 
   useEffect(() => {
@@ -194,23 +200,42 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
             <div className="form-row">
               <div className="form-group">
                 <label>Área/Departamento *</label>
-                <input
-                  type="text"
+                <select
                   required
                   value={formData.area}
                   onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                  placeholder="Gerencia territorial"
-                />
+                >
+                  <option value="">Seleccionar...</option>
+                  {areaOptions.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
               </div>
               <div className="form-group">
-                <label>Comunidad Autónoma *</label>
-                <input
-                  type="text"
-                  required
+                <label>Comunidad Autónoma (Sólo en el caso de Gerencias Territoriales)</label>
+                <select
                   value={formData.comunidadAutonoma}
                   onChange={(e) => setFormData({ ...formData, comunidadAutonoma: e.target.value })}
-                  placeholder="Madrid"
-                />
+                >
+                  <option value="">Seleccionar...</option>
+                  <option value="Andalucía">Andalucía</option>
+                  <option value="Aragón">Aragón</option>
+                  <option value="Asturias">Asturias</option>
+                  <option value="Baleares">Baleares</option>
+                  <option value="Canarias">Canarias</option>
+                  <option value="Cantabria">Cantabria</option>
+                  <option value="Castilla-La Mancha">Castilla-La Mancha</option>
+                  <option value="Castilla y León">Castilla y León</option>
+                  <option value="Cataluña">Cataluña</option>
+                  <option value="Extremadura">Extremadura</option>
+                  <option value="Galicia">Galicia</option>
+                  <option value="La Rioja">La Rioja</option>
+                  <option value="Madrid">Madrid</option>
+                  <option value="Murcia">Murcia</option>
+                  <option value="Navarra">Navarra</option>
+                  <option value="País Vasco">País Vasco</option>
+                  <option value="Valencia">Valencia</option>
+                </select>
               </div>
             </div>
 
