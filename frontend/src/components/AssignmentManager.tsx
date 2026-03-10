@@ -216,16 +216,15 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
 
             <div className="form-row">
               <div className="form-group">
-                <label>Tipo de Plataforma *</label>
+                <label>Tipo de Uso *</label>
                 <select
                   required
                   value={formData.tipoUso}
                   onChange={(e) => setFormData({ ...formData, tipoUso: e.target.value })}
                 >
                   <option value="">Seleccionar...</option>
-                  <option value="Zoom Meetings">Zoom Meetings</option>
-                  <option value="Zoom Webinar">Zoom Webinar</option>
-                  <option value="Both">Ambos</option>
+                  <option value="Uso no asociado a plataforma">Uso no asociado a plataforma</option>
+                  <option value="Uso para una plataforma Moodle de Grupo Aspasia">Uso para una plataforma Moodle de Grupo Aspasia</option>
                 </select>
               </div>
             </div>

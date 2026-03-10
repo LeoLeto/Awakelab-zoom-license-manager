@@ -2,6 +2,11 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.1.7] – 2026-03-10
+
+### Fixed
+- Replaced the `Tipo de Plataforma` dropdown (with Zoom Meetings / Zoom Webinar / Ambos) in the "Crear nueva asignación" form with the correct `Tipo de Uso` field and the same two values used in the teacher request form.
+
 ## [1.1.6] – 2026-03-10
 
 ### Fixed
