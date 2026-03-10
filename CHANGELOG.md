@@ -2,6 +2,11 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.1.6] – 2026-03-10
+
+### Fixed
+- Corrected the `Tipo de Uso *` dropdown options in the teacher request form: replaced legacy values with `Uso no asociado a plataforma` and `Uso para una plataforma Moodle de Grupo Aspasia` (proper sentence case instead of all-caps).
+
 ## [1.1.5] – 2026-03-05
 
 ### Fixed

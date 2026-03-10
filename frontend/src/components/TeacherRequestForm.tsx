@@ -648,10 +648,8 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                       onChange={(e) => setFormData({ ...formData, tipoUso: e.target.value })}
                     >
                       <option value="">Seleccionar...</option>
-                      <option value="Docencia">Docencia</option>
-                      <option value="Reunión">Reunión</option>
-                      <option value="Seminario web">Seminario web</option>
-                      <option value="Otro">Otro</option>
+                      <option value="Uso no asociado a plataforma">Uso no asociado a plataforma</option>
+                      <option value="Uso para una plataforma Moodle de Grupo Aspasia">Uso para una plataforma Moodle de Grupo Aspasia</option>
                     </select>
                   </div>
                 </div>
