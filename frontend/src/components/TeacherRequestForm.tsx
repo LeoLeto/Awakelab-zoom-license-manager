@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect } from 'react';
 import { assignmentApi, licenseApi, settingsApi } from '../services/api.service';
-import { License, Assignment, TIPO_USO_OPTIONS } from '../types/license.types';
+import { License, Assignment, TipoUso, TIPO_USO_OPTIONS } from '../types/license.types';
 
 interface TeacherRequestFormProps {
   onSuccess?: (email: string) => void;
@@ -217,7 +217,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
           correocorporativo: selectedAssignment.correocorporativo,
           area: selectedAssignment.area,
           comunidadAutonoma: selectedAssignment.comunidadAutonoma,
-          tipoUso: selectedAssignment.tipoUso,
+          tipoUso: selectedAssignment.tipoUso as TipoUso,
           fechaInicioUso: extensionStart,
           fechaFinUso: nuevaFechaFin,
         });
@@ -226,7 +226,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
           setError(DOMAIN_ERROR_MSG);
           return;
         }
-        await assignmentApi.createAssignment(formData);
+        await assignmentApi.createAssignment({ ...formData, tipoUso: formData.tipoUso as TipoUso });
       }
 
       const submittedEmail = isAmpliacion
