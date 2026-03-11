@@ -106,6 +106,28 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
         </div>
       </div>
 
+      {stats.libre < 10 && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          padding: '12px 16px',
+          margin: '12px 0',
+          backgroundColor: '#fff3cd',
+          border: '1px solid #f59e0b',
+          borderLeft: '4px solid #f59e0b',
+          borderRadius: '6px',
+          color: '#92400e',
+          fontSize: '0.9rem',
+        }}>
+          <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+          <span>
+            <strong>Stock bajo:</strong> solo {stats.libre === 0 ? 'quedan 0 licencias disponibles' : `queda${stats.libre === 1 ? '' : 'n'} ${stats.libre} licencia${stats.libre === 1 ? '' : 's'} disponible${stats.libre === 1 ? '' : 's'}`}.
+            Considera liberar licencias ocupadas o agregar nuevas.
+          </span>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="filters">
         <div className="filter-group">

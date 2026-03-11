@@ -2,6 +2,21 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.2.1] – 2026-03-11
+
+### Changed
+- **Resumen de Licencias**: shows an amber warning banner when fewer than 10 licenses are available.
+- **Solicitudes y Nuevas Asignaciones**: renamed the `Plataforma` column and modal label to `Tipo de Uso` to reflect the current data model.
+- **Solicitar una Licencia de Zoom**: reordered the "Información Laboral" fields — *Comunidad Autónoma* now appears next to *Área/Departamento*, and *Tipo de Uso* is placed in the row below, left-aligned under the *Área/Departamento* column.
+
+## [1.2.0] – 2026-03-11
+
+### Added
+- Assignment confirmation email now includes separate **Zoom credentials** section (email + password) and, when present, a **Moodle credentials** section (Moodle user + Moodle password).
+- Warning block in the Zoom section explaining that the Zoom password will be changed automatically at license end, that an extension can be requested, and that a reminder email will be sent a few days before expiration.
+- Prominent danger notice in the Moodle section instructing users **never to change the Moodle password**.
+- New “📋 Enviar Muestra de Asignación” button in the “🧪 Probar Configuración de Correo” settings section, which sends a fully populated sample assignment email (bypassing the notifications-enabled gate).
+
 ## [1.1.8] – 2026-03-10
 
 ### Fixed

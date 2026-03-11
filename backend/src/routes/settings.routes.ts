@@ -156,6 +156,36 @@ router.post('/test-email', async (req: AuthRequest, res: Response) => {
 });
 
 /**
+ * Send a sample assignment confirmation email (for preview/testing)
+ * POST /api/settings/test-assignment-email
+ * Body: { recipientEmail: string }
+ */
+router.post('/test-assignment-email', async (req: AuthRequest, res: Response) => {
+  try {
+    const { recipientEmail } = req.body;
+
+    if (!recipientEmail) {
+      return res.status(400).json({
+        success: false,
+        error: 'El email del destinatario es requerido'
+      });
+    }
+
+    await emailService.sendAssignmentSample(recipientEmail);
+
+    res.json({
+      success: true,
+      message: `Correo de muestra (asignación) enviado a ${recipientEmail}`
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
  * Initialize default settings
  * POST /api/settings/initialize
  */

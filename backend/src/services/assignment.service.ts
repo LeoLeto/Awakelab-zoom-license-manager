@@ -303,7 +303,9 @@ export class AssignmentService {
                 startDate: new Date(updatedAssignment.fechaInicioUso).toLocaleDateString('es-CL'),
                 endDate: new Date(updatedAssignment.fechaFinUso).toLocaleDateString('es-CL'),
                 platform: updatedAssignment.tipoUso,
-                password: license.passwordEmail
+                zoomPassword: license.passwordEmail,
+                moodleUser: license.usuarioMoodle,
+                moodlePassword: license.claveUsuarioMoodle,
               });
             }
           } catch (error: any) {

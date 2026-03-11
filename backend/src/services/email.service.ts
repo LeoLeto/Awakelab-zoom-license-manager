@@ -15,7 +15,9 @@ interface AssignmentEmailData {
   startDate: string;
   endDate: string;
   platform: string;
-  password?: string;
+  zoomPassword?: string;
+  moodleUser?: string;
+  moodlePassword?: string;
 }
 
 interface ExpirationWarningData {
@@ -129,10 +131,10 @@ export class EmailService {
   }
 
   /**
-   * Send assignment confirmation email to teacher
+   * Build HTML body for the license assignment confirmation email
    */
-  async sendAssignmentConfirmation(data: AssignmentEmailData): Promise<boolean> {
-    const html = `
+  private buildAssignmentEmailHtml(data: AssignmentEmailData): string {
+    return `
       <!DOCTYPE html>
       <html>
       <head>
@@ -143,8 +145,13 @@ export class EmailService {
           .content { background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
           .info-box { background: white; padding: 15px; margin: 15px 0; border-left: 4px solid #2563eb; }
           .footer { background: #f3f4f6; padding: 15px; text-align: center; font-size: 12px; color: #6b7280; }
-          .credentials { background: #fef3c7; padding: 15px; margin: 15px 0; border-radius: 5px; border: 1px solid #f59e0b; }
+          .section-heading { font-size: 16px; font-weight: bold; margin: 20px 0 8px 0; padding-bottom: 6px; }
+          .zoom-credentials { background: #eff6ff; padding: 15px; margin: 10px 0; border-radius: 5px; border: 1px solid #bfdbfe; }
+          .moodle-credentials { background: #f0fdf4; padding: 15px; margin: 10px 0; border-radius: 5px; border: 1px solid #bbf7d0; }
+          .warning-box { background: #fef3c7; padding: 12px 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #f59e0b; font-size: 13px; }
+          .danger-box { background: #fef2f2; padding: 12px 15px; margin: 10px 0; border-radius: 5px; border: 2px solid #dc2626; font-size: 13px; }
           strong { color: #1f2937; }
+          code { background: #e5e7eb; padding: 2px 6px; border-radius: 3px; font-family: monospace; font-size: 14px; }
         </style>
       </head>
       <body>
@@ -154,32 +161,43 @@ export class EmailService {
           </div>
           <div class="content">
             <p>Hola <strong>${data.teacherName}</strong>,</p>
-            
-            <p>Tu solicitud de licencia de Zoom ha sido aprobada y asignada. A continuación encontrarás los detalles:</p>
-            
+
+            <p>Tu solicitud de licencia de Zoom ha sido aprobada y asignada. A continuación encontrarás los datos de acceso:</p>
+
             <div class="info-box">
-              <p><strong>📧 Email de la Licencia:</strong> ${data.licenseEmail}</p>
               <p><strong>📅 Fecha de Inicio:</strong> ${data.startDate}</p>
               <p><strong>📅 Fecha de Fin:</strong> ${data.endDate}</p>
-              <p><strong>🖥️ Plataforma:</strong> ${data.platform}</p>
+              <p><strong>🖥️ Tipo de Uso:</strong> ${data.platform}</p>
             </div>
-            
-            ${data.password ? `
-            <div class="credentials">
-              <p><strong>🔐 Contraseña:</strong> ${data.password}</p>
-              <p style="font-size: 12px; margin-top: 10px;">⚠️ Guarda esta contraseña de forma segura. No vuelvas a compartirla por email.</p>
+
+            <p class="section-heading" style="color: #1d4ed8; border-bottom: 2px solid #1d4ed8;">🎥 Acceso a Zoom</p>
+            <div class="zoom-credentials">
+              <p><strong>📧 Email Zoom:</strong> ${data.licenseEmail}</p>
+              ${data.zoomPassword ? `<p><strong>🔑 Contraseña Zoom:</strong> <code>${data.zoomPassword}</code></p>` : ''}
+            </div>
+            <div class="warning-box">
+              <p style="margin: 0 0 6px 0;"><strong>⚠️ Sobre la contraseña Zoom:</strong></p>
+              <ul style="margin: 0; padding-left: 20px;">
+                <li>Al finalizar tu licencia el <strong>${data.endDate}</strong>, la contraseña Zoom será cambiada automáticamente por razones de seguridad y perderás el acceso a la cuenta.</li>
+                <li>Si necesitas extender el período de uso, puedes solicitar una prórroga al administrador antes de la fecha de vencimiento.</li>
+                <li>Recibirás un correo de recordatorio unos días antes de que expire la licencia.</li>
+              </ul>
+            </div>
+
+            ${(data.moodleUser || data.moodlePassword) ? `
+            <p class="section-heading" style="color: #059669; border-bottom: 2px solid #059669;">📚 Acceso a Moodle</p>
+            <div class="moodle-credentials">
+              ${data.moodleUser ? `<p><strong>👤 Usuario Moodle:</strong> <code>${data.moodleUser}</code></p>` : ''}
+              ${data.moodlePassword ? `<p><strong>🔒 Contraseña Moodle:</strong> <code>${data.moodlePassword}</code></p>` : ''}
+            </div>
+            <div class="danger-box">
+              <p style="margin: 0 0 6px 0;"><strong>🚫 MUY IMPORTANTE — NO CAMBIES LA CONTRASEÑA DE MOODLE</strong></p>
+              <p style="margin: 0;">La contraseña de Moodle <strong>NO debe ser modificada bajo ningún concepto</strong>. Esta cuenta está vinculada al sistema de gestión de licencias y cualquier cambio de contraseña afectará el acceso de otros usuarios. Si tienes algún inconveniente con el acceso a Moodle, contacta al administrador.</p>
             </div>
             ` : ''}
-            
-            <p><strong>⚠️ Importante:</strong></p>
-            <ul>
-              <li>La licencia estará activa hasta la fecha de fin indicada</li>
-              <li>Después de esa fecha, la contraseña será cambiada automáticamente</li>
-              <li>Si necesitas extender el período, contacta al administrador</li>
-            </ul>
-            
+
             <p>Si tienes alguna pregunta, contacta al equipo de soporte.</p>
-            
+
             <p>Saludos,<br><strong>Sistema de Gestión de Licencias Zoom</strong></p>
           </div>
           <div class="footer">
@@ -189,12 +207,61 @@ export class EmailService {
       </body>
       </html>
     `;
+  }
 
+  /**
+   * Send assignment confirmation email to teacher
+   */
+  async sendAssignmentConfirmation(data: AssignmentEmailData): Promise<boolean> {
+    const html = this.buildAssignmentEmailHtml(data);
     return await this.sendEmail({
       to: data.teacherEmail,
       subject: `✅ Licencia de Zoom Asignada - ${data.startDate} a ${data.endDate}`,
       html,
     });
+  }
+
+  /**
+   * Send a sample assignment confirmation email (bypasses notificationsEnabled gate)
+   */
+  async sendAssignmentSample(recipientEmail: string): Promise<boolean> {
+    const html = this.buildAssignmentEmailHtml({
+      teacherName: 'Juan García López',
+      teacherEmail: recipientEmail,
+      licenseEmail: 'licencia01@example.com',
+      startDate: '11/03/2026',
+      endDate: '11/06/2026',
+      platform: 'Uso para una plataforma Moodle de Grupo Aspasia',
+      zoomPassword: 'Zoom@S3gura!2026',
+      moodleUser: 'jgarcia.moodle',
+      moodlePassword: 'Moodle#Pass2026',
+    });
+
+    try {
+      await this.initTransporter();
+
+      if (!this.transporter) {
+        console.error('⚠️  Email transporter not configured — check host/port/user/password settings');
+        return false;
+      }
+
+      const from = await settingsService.getSetting('emailFrom');
+      const user = await settingsService.getSetting('emailUser');
+
+      await this.transporter.sendMail({
+        from: from || user || '',
+        to: recipientEmail,
+        subject: '[MUESTRA] ✅ Licencia de Zoom Asignada — 11/03/2026 a 11/06/2026',
+        html,
+        text: this.stripHtml(html),
+      });
+
+      console.log(`✅ Assignment sample email sent to: ${recipientEmail}`);
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error sending assignment sample email:', error.message);
+      throw error;
+    }
   }
 
   /**

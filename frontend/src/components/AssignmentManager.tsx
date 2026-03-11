@@ -336,7 +336,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
                   <th>Email</th>
                   <th>Área</th>
                   <th>Comunidad</th>
-                  <th>Plataforma</th>
+                  <th>Tipo de Uso</th>
                   <th>Fecha Inicio</th>
                   <th>Fecha Fin</th>
                   <th>Acciones</th>
@@ -396,7 +396,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
                 <span>{assigningTo.correocorporativo}</span>
               </div>
               <div className="assign-modal-info-row">
-                <span className="assign-modal-label">Plataforma</span>
+                <span className="assign-modal-label">Tipo de Uso</span>
                 <span>{assigningTo.tipoUso}</span>
               </div>
               <div className="assign-modal-info-row">

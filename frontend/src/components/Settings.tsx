@@ -22,6 +22,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [testingEmail, setTestingEmail] = useState(false);
+  const [sendingAssignmentSample, setSendingAssignmentSample] = useState(false);
   const [testEmailAddress, setTestEmailAddress] = useState('');
   const [newArea, setNewArea] = useState('');
   const [savingAreas, setSavingAreas] = useState(false);
@@ -160,7 +161,42 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
       setTestingEmail(false);
     }
   };
+  const sendAssignmentSampleEmail = async () => {
+    if (!testEmailAddress) {
+      setError('Por favor ingresa un correo de destino');
+      return;
+    }
 
+    try {
+      setSendingAssignmentSample(true);
+      setError(null);
+      setSuccessMessage(null);
+
+      const token = localStorage.getItem('authToken');
+
+      const response = await fetch('/api/settings/test-assignment-email', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ recipientEmail: testEmailAddress }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || data.message || 'Error al enviar muestra');
+      }
+
+      setSuccessMessage(`✅ Correo de muestra (asignación) enviado a ${testEmailAddress}`);
+      setTimeout(() => setSuccessMessage(null), 5000);
+    } catch (err: any) {
+      setError(err.message);
+      console.error('Error sending assignment sample:', err);
+    } finally {
+      setSendingAssignmentSample(false);
+    }
+  };
   // ── Area/Departamento helpers ─────────────────────────────────────────────
   const getCurrentAreas = (): string[] => {
     const s = settings.find(s => s.key === 'areaDepartamento');
@@ -572,14 +608,22 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
                 onChange={(e) => setTestEmailAddress(e.target.value)}
                 placeholder="tu@correo.com"
                 className="test-email-input"
-                disabled={testingEmail}
+                disabled={testingEmail || sendingAssignmentSample}
               />
               <button
                 onClick={testEmailConfiguration}
-                disabled={testingEmail || !testEmailAddress}
+                disabled={testingEmail || sendingAssignmentSample || !testEmailAddress}
                 className="test-email-button"
               >
                 {testingEmail ? '📤 Enviando...' : '📧 Enviar Correo de Prueba'}
+              </button>
+              <button
+                onClick={sendAssignmentSampleEmail}
+                disabled={sendingAssignmentSample || testingEmail || !testEmailAddress}
+                className="test-email-button"
+                style={{ marginLeft: '8px', background: '#059669' }}
+              >
+                {sendingAssignmentSample ? '📤 Enviando...' : '📋 Enviar Muestra de Asignación'}
               </button>
             </div>
           </div>
