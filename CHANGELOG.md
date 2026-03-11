@@ -2,6 +2,12 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.2.2] – 2026-03-11
+
+### Added
+- After clicking **Enviar solicitud**, the app automatically switches to the **Mis Asignaciones** tab with the submitted email pre-filled, triggering an immediate search so the new request is visible right away.
+- A dismissable green success banner appears at the top of the Mis Asignaciones tab confirming the request was received (auto-dismisses after 6 s).
+
 ## [1.2.1] – 2026-03-11
 
 ### Changed

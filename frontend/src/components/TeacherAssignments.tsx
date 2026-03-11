@@ -23,6 +23,14 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
     if (e.key === 'Enter') handleSearch();
   };
 
+  // Sync email when navigating here after a successful form submission
+  useEffect(() => {
+    if (teacherEmail) {
+      setFilterEmail(teacherEmail);
+      setSearchEmail(teacherEmail);
+    }
+  }, [teacherEmail]);
+
   const loadAssignments = async () => {
     // Don't load if no email is provided
     if (!searchEmail.trim()) {

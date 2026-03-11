@@ -3,7 +3,7 @@ import { assignmentApi, licenseApi, settingsApi } from '../services/api.service'
 import { License, Assignment } from '../types/license.types';
 
 interface TeacherRequestFormProps {
-  onSuccess?: () => void;
+  onSuccess?: (email: string) => void;
 }
 
 const EMPTY_NUEVA_FORM = {
@@ -229,11 +229,15 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
         await assignmentApi.createAssignment(formData);
       }
 
+      const submittedEmail = isAmpliacion
+        ? (selectedAssignment?.correocorporativo ?? '')
+        : formData.correocorporativo;
+
       setSuccess(true);
       setTipoSolicitud('');
       resetNuevaState();
       resetAmpliacionState();
-      onSuccess?.();
+      onSuccess?.(submittedEmail);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al crear solicitud de licencia');
     } finally {
