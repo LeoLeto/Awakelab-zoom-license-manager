@@ -258,8 +258,20 @@ router.get('/check-extension', async (req: Request, res: Response) => {
  * Create a new assignment (license request)
  * POST /api/licenses/assignments
  */
+const VALID_TIPO_USO = [
+  'Uso no asociado a plataforma',
+  'Uso para una plataforma Moodle de Grupo Aspasia',
+] as const;
+
 router.post('/assignments', async (req: Request, res: Response) => {
   try {
+    const { tipoUso } = req.body;
+    if (!tipoUso || !VALID_TIPO_USO.includes(tipoUso)) {
+      return res.status(400).json({
+        success: false,
+        error: `El campo tipoUso debe ser uno de: ${VALID_TIPO_USO.join(', ')}`,
+      });
+    }
     const assignment = await assignmentService.createAssignment(req.body);
     res.status(201).json({ 
       success: true,

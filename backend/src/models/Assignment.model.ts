@@ -7,7 +7,7 @@ export interface IAssignment extends Document {
   correocorporativo: string;
   area: string;
   comunidadAutonoma?: string;
-  tipoUso: string;
+  tipoUso: 'Uso no asociado a plataforma' | 'Uso para una plataforma Moodle de Grupo Aspasia';
   fechaInicioUso: Date;
   fechaFinUso: Date;
   estado: 'activo' | 'expirado' | 'cancelado' | 'pendiente';
@@ -48,6 +48,10 @@ const AssignmentSchema = new Schema<IAssignment>(
       type: String,
       required: true,
       trim: true,
+      enum: [
+        'Uso no asociado a plataforma',
+        'Uso para una plataforma Moodle de Grupo Aspasia',
+      ],
     },
     fechaInicioUso: {
       type: Date,

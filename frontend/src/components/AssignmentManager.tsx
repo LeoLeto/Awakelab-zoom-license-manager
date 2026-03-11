@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { assignmentApi, licenseApi, settingsApi } from '../services/api.service';
-import { Assignment, License } from '../types/license.types';
+import { Assignment, License, TipoUso, TIPO_USO_OPTIONS, displayTipoUso } from '../types/license.types';
 import { formatDate } from '../utils/date';
 
 interface AssignmentManagerProps {
@@ -87,7 +87,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
   const handleCreateAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await assignmentApi.createAssignment(formData);
+      await assignmentApi.createAssignment({ ...formData, tipoUso: formData.tipoUso as TipoUso });
       setShowCreateForm(false);
       setFormData({
         licenseId: '',
@@ -248,8 +248,9 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
                   onChange={(e) => setFormData({ ...formData, tipoUso: e.target.value })}
                 >
                   <option value="">Seleccionar...</option>
-                  <option value="Uso no asociado a plataforma">Uso no asociado a plataforma</option>
-                  <option value="Uso para una plataforma Moodle de Grupo Aspasia">Uso para una plataforma Moodle de Grupo Aspasia</option>
+                  {TIPO_USO_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -349,7 +350,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
                     <td>{assignment.correocorporativo}</td>
                     <td>{assignment.area}</td>
                     <td>{assignment.comunidadAutonoma}</td>
-                    <td>{assignment.tipoUso}</td>
+                    <td>{displayTipoUso(assignment.tipoUso)}</td>
                     <td>{formatDate(assignment.fechaInicioUso)}</td>
                     <td>{formatDate(assignment.fechaFinUso)}</td>
                     <td>
@@ -397,7 +398,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
               </div>
               <div className="assign-modal-info-row">
                 <span className="assign-modal-label">Tipo de Uso</span>
-                <span>{assigningTo.tipoUso}</span>
+                <span>{displayTipoUso(assigningTo.tipoUso)}</span>
               </div>
               <div className="assign-modal-info-row">
                 <span className="assign-modal-label">Período</span>

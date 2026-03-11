@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect } from 'react';
 import { assignmentApi, licenseApi, settingsApi } from '../services/api.service';
-import { License, Assignment } from '../types/license.types';
+import { License, Assignment, TIPO_USO_OPTIONS } from '../types/license.types';
 
 interface TeacherRequestFormProps {
   onSuccess?: (email: string) => void;
@@ -689,8 +689,9 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                       onChange={(e) => setFormData({ ...formData, tipoUso: e.target.value })}
                     >
                       <option value="">Seleccionar...</option>
-                      <option value="Uso no asociado a plataforma">Uso no asociado a plataforma</option>
-                      <option value="Uso para una plataforma Moodle de Grupo Aspasia">Uso para una plataforma Moodle de Grupo Aspasia</option>
+                      {TIPO_USO_OPTIONS.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
                     </select>
                   </div>
                   <div className="form-group" style={{ flex: 1 }} />

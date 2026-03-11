@@ -2,6 +2,16 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.2.3] – 2026-03-11
+
+### Changed
+- **`TipoUso` type** added to `frontend/src/types/license.types.ts` as a string-literal union with the two canonical values. `Assignment.tipoUso` and `CreateAssignmentDto.tipoUso` now use it — TypeScript will catch wrong values at compile time.
+- **`TIPO_USO_OPTIONS`** constant exported from the same file; all dropdowns (AssignmentManager, TeacherRequestForm) now map over it instead of hardcoding option strings.
+- **`displayTipoUso()`** helper: renders the value as-is for known values; appends `⚠️ valor heredado` for unknown legacy values (e.g. "Both"). Used in the pending-requests table, the assign-license modal, and the teacher assignments cards.
+- **Mongoose schema**: `tipoUso` field now has `enum` validation — the DB will reject any value that isn't one of the two valid options.
+- **Route validation**: `POST /api/licenses/assignments` now returns HTTP 400 if `tipoUso` is missing or not one of the allowed values.
+- **TeacherAssignments**: label renamed from `💻 Plataforma` to `💻 Tipo de Uso`.
+
 ## [1.2.2] – 2026-03-11
 
 ### Added

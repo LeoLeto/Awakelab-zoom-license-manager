@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { assignmentApi } from '../services/api.service';
-import { Assignment } from '../types/license.types';
+import { Assignment, displayTipoUso } from '../types/license.types';
 import { formatDate } from '../utils/date';
 
 interface TeacherAssignmentsProps {
@@ -195,8 +195,8 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
                         <span className="value">{assignment.comunidadAutonoma}</span>
                       </div>
                       <div className="detail-row">
-                        <span className="label">💻 Plataforma:</span>
-                        <span className="value">{assignment.tipoUso}</span>
+                          <span className="label">💻 Tipo de Uso:</span>
+                          <span className="value">{displayTipoUso(assignment.tipoUso)}</span>
                       </div>
                       <div className="detail-row">
                         <span className="label">📅 Período:</span>
