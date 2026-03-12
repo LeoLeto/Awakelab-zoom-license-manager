@@ -2,6 +2,11 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.2.4] – 2026-03-12
+
+### Added
+- Extension confirmation email: when an assignment's end date is pushed forward, the teacher now receives the same credential email as on initial assignment, with the header and opening line changed to "Licencia de Zoom Ampliada" and subject `📅 Licencia de Zoom Ampliada - hasta <date>`. All Zoom and Moodle credentials are included so the teacher always has the current access information.
+
 ## [1.2.3] – 2026-03-11
 
 ### Changed

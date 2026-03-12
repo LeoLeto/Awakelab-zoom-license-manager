@@ -187,6 +187,12 @@ export class AssignmentService {
     const oldLicenseId = existingAssignment.licenseId;
     let isAssigningLicense = false;
 
+    // Detect extension: end date pushed forward on an already-active assignment
+    const isExtension =
+      !!updateData.fechaFinUso &&
+      !!existingAssignment.licenseId &&
+      new Date(updateData.fechaFinUso) > new Date(existingAssignment.fechaFinUso);
+
     // If licenseId is being assigned (for pending requests)
     if (updateData.licenseId && !existingAssignment.licenseId) {
       isAssigningLicense = true;
@@ -310,6 +316,28 @@ export class AssignmentService {
             }
           } catch (error: any) {
             console.error('Failed to send assignment confirmation email:', error.message);
+          }
+        }
+
+        // Send extension confirmation email when end date is pushed forward
+        if (isExtension && updatedAssignment.licenseId) {
+          try {
+            const license = await License.findById(updatedAssignment.licenseId);
+            if (license) {
+              await emailService.sendExtensionConfirmation({
+                teacherName: updatedAssignment.nombreApellidos,
+                teacherEmail: updatedAssignment.correocorporativo,
+                licenseEmail: license.email,
+                startDate: new Date(updatedAssignment.fechaInicioUso).toLocaleDateString('es-CL'),
+                endDate: new Date(updatedAssignment.fechaFinUso).toLocaleDateString('es-CL'),
+                platform: updatedAssignment.tipoUso,
+                zoomPassword: license.passwordEmail,
+                moodleUser: license.usuarioMoodle,
+                moodlePassword: license.claveUsuarioMoodle,
+              });
+            }
+          } catch (error: any) {
+            console.error('Failed to send extension confirmation email:', error.message);
           }
         }
       }

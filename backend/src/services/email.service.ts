@@ -18,6 +18,7 @@ interface AssignmentEmailData {
   zoomPassword?: string;
   moodleUser?: string;
   moodlePassword?: string;
+  isExtension?: boolean;
 }
 
 interface ExpirationWarningData {
@@ -157,12 +158,14 @@ export class EmailService {
       <body>
         <div class="container">
           <div class="header">
-            <h2>✅ Licencia de Zoom Asignada</h2>
+            <h2>${data.isExtension ? '📅 Licencia de Zoom Ampliada' : '✅ Licencia de Zoom Asignada'}</h2>
           </div>
           <div class="content">
             <p>Hola <strong>${data.teacherName}</strong>,</p>
 
-            <p>Tu solicitud de licencia de Zoom ha sido aprobada y asignada. A continuación encontrarás los datos de acceso:</p>
+            <p>${data.isExtension
+              ? 'Tu licencia de Zoom ha sido <strong>ampliada</strong>. A continuación encontrarás los datos de acceso actualizados:'
+              : 'Tu solicitud de licencia de Zoom ha sido aprobada y asignada. A continuación encontrarás los datos de acceso:'}</p>
 
             <div class="info-box">
               <p><strong>📅 Fecha de Inicio:</strong> ${data.startDate}</p>
@@ -217,6 +220,18 @@ export class EmailService {
     return await this.sendEmail({
       to: data.teacherEmail,
       subject: `✅ Licencia de Zoom Asignada - ${data.startDate} a ${data.endDate}`,
+      html,
+    });
+  }
+
+  /**
+   * Send extension confirmation email to teacher (same content, extension-flagged header)
+   */
+  async sendExtensionConfirmation(data: AssignmentEmailData): Promise<boolean> {
+    const html = this.buildAssignmentEmailHtml({ ...data, isExtension: true });
+    return await this.sendEmail({
+      to: data.teacherEmail,
+      subject: `📅 Licencia de Zoom Ampliada - hasta ${data.endDate}`,
       html,
     });
   }
