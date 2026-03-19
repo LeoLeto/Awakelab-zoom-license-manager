@@ -406,11 +406,17 @@ export class EmailService {
     endDate: string,
     area: string
   ): Promise<boolean> {
-    const adminEmails = await settingsService.getSetting('adminNotificationEmails');
-    console.log(`📋 [sendPendingRequestNotification] adminNotificationEmails = ${JSON.stringify(adminEmails)}`);
+    const adminEmailsSetting = await settingsService.getSetting('adminNotificationEmails');
 
-    if (!adminEmails || (typeof adminEmails === 'string' && adminEmails.trim() === '')) {
-      console.log('⚠️  No admin emails configured — set adminNotificationEmails in Settings');
+    // Normalize: DB may store the value as an array or a comma-separated string
+    let emails: string[] = [];
+    if (Array.isArray(adminEmailsSetting)) {
+      emails = adminEmailsSetting.map((e: string) => e.trim()).filter(Boolean);
+    } else if (typeof adminEmailsSetting === 'string' && adminEmailsSetting.trim()) {
+      emails = adminEmailsSetting.split(',').map((e: string) => e.trim()).filter(Boolean);
+    }
+
+    if (emails.length === 0) {
       return false;
     }
 
@@ -459,8 +465,6 @@ export class EmailService {
       </html>
     `;
 
-    const emails = adminEmails.split(',').map((email: string) => email.trim());
-    
     return await this.sendEmail({
       to: emails,
       subject: `📋 Nueva Solicitud de Licencia - ${teacherName}`,

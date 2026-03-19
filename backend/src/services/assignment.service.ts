@@ -153,7 +153,6 @@ export class AssignmentService {
       
       // Send notification to admins about new pending request
       const notifyOnNewRequest = await settingsService.getSetting('notifyOnNewRequest');
-      console.log(`📋 [createAssignment] notifyOnNewRequest = ${JSON.stringify(notifyOnNewRequest)}`);
       if (notifyOnNewRequest) {
         try {
           await emailService.sendPendingRequestNotification(
@@ -166,8 +165,6 @@ export class AssignmentService {
         } catch (error: any) {
           console.error('Failed to send pending request notification:', error.message);
         }
-      } else {
-        console.log('📋 [createAssignment] Skipping admin notification — notifyOnNewRequest is disabled');
       }
     }
 

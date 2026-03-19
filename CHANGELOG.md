@@ -2,6 +2,11 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.2.7] – 2026-03-19
+
+### Fixed
+- **Admin new-request notification always silently failing**: `adminNotificationEmails` is stored as an array in MongoDB, but the code called `.split(',')` on it assuming a string, throwing `adminEmails.split is not a function` and swallowing the error. The service now normalises the value — if it's already an array it's used directly; if it's a string it's split by comma. Empty entries are filtered out in both cases.
+
 ## [1.2.6] – 2026-03-19
 
 ### Fixed
