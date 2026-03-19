@@ -407,9 +407,10 @@ export class EmailService {
     area: string
   ): Promise<boolean> {
     const adminEmails = await settingsService.getSetting('adminNotificationEmails');
-    
-    if (!adminEmails) {
-      console.log('⚠️  No admin emails configured for notifications');
+    console.log(`📋 [sendPendingRequestNotification] adminNotificationEmails = ${JSON.stringify(adminEmails)}`);
+
+    if (!adminEmails || (typeof adminEmails === 'string' && adminEmails.trim() === '')) {
+      console.log('⚠️  No admin emails configured — set adminNotificationEmails in Settings');
       return false;
     }
 
