@@ -2,6 +2,11 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.2.6] – 2026-03-19
+
+### Fixed
+- **Public request form could not load área/departamento options**: `GET /api/settings/:key` was gated behind `authenticateToken` via a global `router.use()`, causing 401 errors for unauthenticated users. The global middleware was removed and auth is now applied per-route. `acceptedDomains` and `areaDepartamento` are now readable without a token; all write routes (PUT, DELETE, POST) and the full-settings GET remain protected.
+
 ## [1.2.5] – 2026-03-19
 
 ### Fixed

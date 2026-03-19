@@ -5,14 +5,15 @@ import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// All settings routes require authentication
-router.use(authenticateToken);
+// Settings that unauthenticated users (e.g. the public request form) may read.
+const PUBLIC_SETTINGS = new Set(['acceptedDomains', 'areaDepartamento']);
 
 /**
  * Get all settings
  * GET /api/settings
+ * Requires authentication (exposes sensitive values like email credentials).
  */
-router.get('/', async (req: AuthRequest, res: Response) => {
+router.get('/', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const settings = await settingsService.getAllSettings();
     res.json({
@@ -30,8 +31,13 @@ router.get('/', async (req: AuthRequest, res: Response) => {
 /**
  * Get a specific setting by key
  * GET /api/settings/:key
+ * Public for whitelisted keys (acceptedDomains, areaDepartamento).
+ * Requires authentication for all other keys.
  */
-router.get('/:key', async (req: AuthRequest, res: Response) => {
+router.get('/:key', (req: AuthRequest, res: Response, next) => {
+  if (PUBLIC_SETTINGS.has(req.params.key)) return next();
+  authenticateToken(req, res, next);
+}, async (req: AuthRequest, res: Response) => {
   try {
     const { key } = req.params;
     const value = await settingsService.getSetting(key);
@@ -61,7 +67,7 @@ router.get('/:key', async (req: AuthRequest, res: Response) => {
  * PUT /api/settings/:key
  * Body: { value: any, description?: string }
  */
-router.put('/:key', async (req: AuthRequest, res: Response) => {
+router.put('/:key', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const { key } = req.params;
     const { value, description } = req.body;
@@ -92,7 +98,7 @@ router.put('/:key', async (req: AuthRequest, res: Response) => {
  * Delete a setting
  * DELETE /api/settings/:key
  */
-router.delete('/:key', async (req: AuthRequest, res: Response) => {
+router.delete('/:key', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const { key } = req.params;
     const actor = req.username || 'admin';
@@ -123,7 +129,7 @@ router.delete('/:key', async (req: AuthRequest, res: Response) => {
  * POST /api/settings/test-email
  * Body: { recipientEmail: string }
  */
-router.post('/test-email', async (req: AuthRequest, res: Response) => {
+router.post('/test-email', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const { recipientEmail } = req.body;
     
@@ -160,7 +166,7 @@ router.post('/test-email', async (req: AuthRequest, res: Response) => {
  * POST /api/settings/test-assignment-email
  * Body: { recipientEmail: string }
  */
-router.post('/test-assignment-email', async (req: AuthRequest, res: Response) => {
+router.post('/test-assignment-email', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const { recipientEmail } = req.body;
 
@@ -189,7 +195,7 @@ router.post('/test-assignment-email', async (req: AuthRequest, res: Response) =>
  * Initialize default settings
  * POST /api/settings/initialize
  */
-router.post('/initialize', async (req: AuthRequest, res: Response) => {
+router.post('/initialize', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     await settingsService.initializeDefaults();
     res.json({
