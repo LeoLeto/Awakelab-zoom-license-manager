@@ -88,13 +88,6 @@ export class EmailService {
    */
   private async sendEmail(options: EmailOptions): Promise<boolean> {
     try {
-      // Check if notifications are enabled
-      const notificationsEnabled = await settingsService.getSetting('notifyOnExpiration');
-      if (!notificationsEnabled) {
-        console.log('📧 Email notifications are disabled');
-        return false;
-      }
-
       await this.initTransporter();
 
       if (!this.transporter) {

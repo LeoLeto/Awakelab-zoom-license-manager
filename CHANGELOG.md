@@ -2,6 +2,11 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.2.5] – 2026-03-19
+
+### Fixed
+- **Admin new-request email was silently dropped**: `sendEmail()` was gated on the `notifyOnExpiration` setting ("send expiry reminders on/off"), which is unrelated to transactional emails. Turning off expiry reminders inadvertently blocked the admin notification, the assignment confirmation, and the extension confirmation. The misplaced gate has been removed from `sendEmail`. Each caller now controls its own condition: the expiry cron already checks `notifyOnExpiration` before calling the email service; the admin notification checks `notifyOnNewRequest`; assignment/extension emails are always sent as transactional messages.
+
 ## [1.2.4] – 2026-03-12
 
 ### Added
