@@ -265,6 +265,20 @@ export class LicenseService {
       assignment: assignmentByLicenseId.get((license._id as any).toString()) ?? null
     }));
   }
+
+  /**
+   * Update passwordZoom and passwordEmail for a license identified by its Zoom email.
+   * Used to keep the DB in sync after a Zoom API password change.
+   */
+  async updatePasswordByEmail(email: string, newPassword: string): Promise<void> {
+    const result = await License.findOneAndUpdate(
+      { email: email.toLowerCase() },
+      { $set: { passwordZoom: newPassword, passwordEmail: newPassword } }
+    );
+    if (!result) {
+      throw new Error(`No license found with email ${email}`);
+    }
+  }
 }
 
 export const licenseService = new LicenseService();

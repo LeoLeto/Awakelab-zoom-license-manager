@@ -16,6 +16,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
   const [assigningTo, setAssigningTo] = useState<Assignment | null>(null);
   const [selectedLicenseForAssignment, setSelectedLicenseForAssignment] = useState<string>('');
   const [modalLoading, setModalLoading] = useState(false);
+  const [assigning, setAssigning] = useState(false);
   const [areaOptions, setAreaOptions] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     licenseId: '',
@@ -129,6 +130,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
   const handleAssignLicense = async () => {
     if (!assigningTo || !selectedLicenseForAssignment) return;
 
+    setAssigning(true);
     try {
       await assignmentApi.updateAssignment(assigningTo._id, {
         licenseId: selectedLicenseForAssignment
@@ -141,6 +143,8 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al asignar licencia');
+    } finally {
+      setAssigning(false);
     }
   };
 
@@ -444,9 +448,9 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
               <button
                 className="btn-primary"
                 onClick={handleAssignLicense}
-                disabled={!selectedLicenseForAssignment}
+                disabled={!selectedLicenseForAssignment || assigning}
               >
-                ✓ Confirmar Asignación
+                {assigning ? '⏳ Asignando...' : '✓ Confirmar Asignación'}
               </button>
             </div>
           </div>

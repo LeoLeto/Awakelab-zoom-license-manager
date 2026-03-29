@@ -64,6 +64,40 @@ router.get('/available', async (req: Request, res: Response) => {
 });
 
 /**
+ * Check whether a license is available for an extension of an existing assignment
+ * GET /api/licenses/check-extension?assignmentId=xxx&newEndDate=yyyy-mm-dd
+ *
+ * NOTE: This route MUST be defined before /:id so Express doesn't match
+ * "check-extension" as a :id parameter.
+ */
+router.get('/check-extension', async (req: Request, res: Response) => {
+  try {
+    const { assignmentId, newEndDate } = req.query;
+
+    if (!assignmentId || !newEndDate) {
+      return res.status(400).json({
+        success: false,
+        error: 'El ID de asignación y la nueva fecha de fin son requeridos',
+      });
+    }
+
+    const parsedDate = new Date(newEndDate as string);
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ success: false, error: 'Formato de fecha inválido' });
+    }
+
+    const result = await assignmentService.checkExtensionAvailability(
+      assignmentId as string,
+      parsedDate
+    );
+
+    res.json({ success: true, ...result });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * Get license by ID
  * GET /api/licenses/:id
  */
@@ -224,37 +258,6 @@ router.get('/assignments/by-email', async (req: Request, res: Response) => {
 });
 
 /**
- * Check whether a license is available for an extension of an existing assignment
- * GET /api/licenses/check-extension?assignmentId=xxx&newEndDate=yyyy-mm-dd
- */
-router.get('/check-extension', async (req: Request, res: Response) => {
-  try {
-    const { assignmentId, newEndDate } = req.query;
-
-    if (!assignmentId || !newEndDate) {
-      return res.status(400).json({
-        success: false,
-        error: 'El ID de asignación y la nueva fecha de fin son requeridos',
-      });
-    }
-
-    const parsedDate = new Date(newEndDate as string);
-    if (isNaN(parsedDate.getTime())) {
-      return res.status(400).json({ success: false, error: 'Formato de fecha inválido' });
-    }
-
-    const result = await assignmentService.checkExtensionAvailability(
-      assignmentId as string,
-      parsedDate
-    );
-
-    res.json({ success: true, ...result });
-  } catch (error: any) {
-    res.status(400).json({ success: false, error: error.message });
-  }
-});
-
-/**
  * Create a new assignment (license request)
  * POST /api/licenses/assignments
  */
@@ -265,13 +268,25 @@ const VALID_TIPO_USO = [
 
 router.post('/assignments', async (req: Request, res: Response) => {
   try {
-    const { tipoUso } = req.body;
+    const { tipoUso, fechaInicioUso, fechaFinUso } = req.body;
     if (!tipoUso || !VALID_TIPO_USO.includes(tipoUso)) {
       return res.status(400).json({
         success: false,
         error: `El campo tipoUso debe ser uno de: ${VALID_TIPO_USO.join(', ')}`,
       });
     }
+
+    // Validate max 1-year period
+    if (fechaInicioUso && fechaFinUso) {
+      const diffMs = new Date(fechaFinUso).getTime() - new Date(fechaInicioUso).getTime();
+      if (diffMs > 365 * 24 * 60 * 60 * 1000) {
+        return res.status(400).json({
+          success: false,
+          error: 'El período máximo de una licencia es de 1 año (365 días). Si necesitas más tiempo, podrás solicitar una ampliación cuando el período esté por terminar.',
+        });
+      }
+    }
+
     const assignment = await assignmentService.createAssignment(req.body);
     res.status(201).json({ 
       success: true,

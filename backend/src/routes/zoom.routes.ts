@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import zoomService from '../services/zoom.service';
+import { licenseService } from '../services/license.service';
 import { PasswordChangeRequest } from '../types/zoom.types';
 
 const router = Router();
@@ -82,8 +83,15 @@ router.post('/change-password', async (req: Request, res: Response) => {
     // Generate password if not provided
     const passwordToUse = newPassword || zoomService.generateSecurePassword();
 
-    // Change the password
+    // Change the password in Zoom
     await zoomService.changeUserPassword(userEmail, passwordToUse);
+
+    // Sync the new password to the database so it stays consistent
+    try {
+      await licenseService.updatePasswordByEmail(userEmail, passwordToUse);
+    } catch (dbError: any) {
+      console.warn(`Password changed in Zoom but DB sync failed for ${userEmail}:`, dbError.message);
+    }
 
     res.json({ 
       success: true,

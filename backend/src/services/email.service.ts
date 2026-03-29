@@ -19,6 +19,7 @@ interface AssignmentEmailData {
   moodleUser?: string;
   moodlePassword?: string;
   isExtension?: boolean;
+  credentialsPending?: boolean;
 }
 
 interface ExpirationWarningData {
@@ -158,7 +159,9 @@ export class EmailService {
 
             <p>${data.isExtension
               ? 'Tu licencia de Zoom ha sido <strong>ampliada</strong>. A continuación encontrarás los datos de acceso actualizados:'
-              : 'Tu solicitud de licencia de Zoom ha sido aprobada y asignada. A continuación encontrarás los datos de acceso:'}</p>
+              : data.credentialsPending
+                ? 'Tu solicitud de licencia de Zoom ha sido <strong>aprobada</strong>. A continuación encontrarás los detalles de tu reserva:'
+                : 'Tu solicitud de licencia de Zoom ha sido aprobada y asignada. A continuación encontrarás los datos de acceso:'}</p>
 
             <div class="info-box">
               <p><strong>📅 Fecha de Inicio:</strong> ${data.startDate}</p>
@@ -166,6 +169,12 @@ export class EmailService {
               <p><strong>🖥️ Tipo de Uso:</strong> ${data.platform}</p>
             </div>
 
+            ${data.credentialsPending ? `
+            <div class="warning-box">
+              <p style="margin: 0 0 6px 0;"><strong>📧 Email Zoom:</strong> ${data.licenseEmail}</p>
+              <p style="margin: 0;">🔑 <strong>Las credenciales de acceso (contraseña) se enviarán automáticamente aproximadamente 48 horas antes de tu fecha de inicio (<u>${data.startDate}</u>)</strong>. Esto garantiza que recibas una contraseña válida y actualizada.</p>
+            </div>
+            ` : `
             <p class="section-heading" style="color: #1d4ed8; border-bottom: 2px solid #1d4ed8;">🎥 Acceso a Zoom</p>
             <div class="zoom-credentials">
               <p><strong>📧 Email Zoom:</strong> ${data.licenseEmail}</p>
@@ -179,6 +188,7 @@ export class EmailService {
                 <li>Recibirás un correo de recordatorio unos días antes de que expire la licencia.</li>
               </ul>
             </div>
+            `}
 
             ${(data.moodleUser || data.moodlePassword) ? `
             <p class="section-heading" style="color: #059669; border-bottom: 2px solid #059669;">📚 Acceso a Moodle</p>
@@ -206,15 +216,54 @@ export class EmailService {
   }
 
   /**
-   * Send assignment confirmation email to teacher
+   * Send assignment confirmation email to teacher.
+   * When actual credentials are included (not credentialsPending), also sends
+   * a copy to admin notification emails so administrators have a record.
    */
   async sendAssignmentConfirmation(data: AssignmentEmailData): Promise<boolean> {
     const html = this.buildAssignmentEmailHtml(data);
-    return await this.sendEmail({
+    const subject = `✅ Licencia de Zoom Asignada - ${data.startDate} a ${data.endDate}`;
+
+    const sent = await this.sendEmail({
       to: data.teacherEmail,
-      subject: `✅ Licencia de Zoom Asignada - ${data.startDate} a ${data.endDate}`,
+      subject,
       html,
     });
+
+    // Send admin copy when credentials are included
+    if (sent && data.zoomPassword && !data.credentialsPending) {
+      await this.sendAdminCredentialCopy(data, html);
+    }
+
+    return sent;
+  }
+
+  /**
+   * Send a copy of the credentials email to all configured admin addresses.
+   * Subject is prefixed with [COPIA ADMIN] so admins can distinguish it.
+   */
+  private async sendAdminCredentialCopy(data: AssignmentEmailData, html: string): Promise<void> {
+    try {
+      const adminEmailsSetting = await settingsService.getSetting('adminNotificationEmails');
+
+      let emails: string[] = [];
+      if (Array.isArray(adminEmailsSetting)) {
+        emails = adminEmailsSetting.map((e: string) => e.trim()).filter(Boolean);
+      } else if (typeof adminEmailsSetting === 'string' && adminEmailsSetting.trim()) {
+        emails = adminEmailsSetting.split(',').map((e: string) => e.trim()).filter(Boolean);
+      }
+
+      if (emails.length === 0) return;
+
+      const subject = `[COPIA ADMIN] ✅ Credenciales enviadas a ${data.teacherName} (${data.licenseEmail})`;
+      await this.sendEmail({
+        to: emails,
+        subject,
+        html,
+      });
+    } catch (error: any) {
+      console.error('Failed to send admin credential copy:', error.message);
+    }
   }
 
   /**

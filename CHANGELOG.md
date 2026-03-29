@@ -2,6 +2,56 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.3.5] – 2026-03-29
+
+### Changed
+- **License search now includes assigned teacher**: The search bar in the license overview now matches against the assigned teacher's name (`nombreApellidos`) and corporate email (`correocorporativo`), in addition to the license email and Moodle username. Placeholder updated to "Buscar por email, usuario o asignado...".
+
+## [1.3.4] – 2026-03-29
+
+### Changed
+- **Loading spinner on "Confirmar Asignación"**: The button now shows "⏳ Asignando..." and is disabled while the API call is in progress, preventing double-clicks and giving visual feedback.
+
+## [1.3.3] – 2026-03-29
+
+### Added
+- **Admin credential copy email**: When a teacher receives their Zoom credentials (either immediately or via the 48h cron job), all configured admin notification email addresses now receive a copy of the same email. The admin copy is prefixed with `[COPIA ADMIN]` in the subject line. Only sent when actual credentials are included (not for the initial "credentials pending" confirmation).
+
+## [1.3.2] – 2026-03-29
+
+### Changed
+- **48-hour credential lock**: Licenses assigned for a future date (>48h) now remain **libre** (available) until 48 hours before the start date. A daily cron job (7 AM) locks the license to "ocupado", generates a fresh Zoom password, and emails the teacher with working credentials. This avoids long idle periods where a license is blocked by a distant future reservation.
+- **≤48h assignments**: Assignments starting within 48 hours behave as before — license is locked immediately and credentials are sent right away.
+- **Email wording**: The "credentials pending" confirmation email now states credentials will arrive ~48h before the start date.
+
+### Added
+- **`credentialsSent` field** on Assignment model to track whether credential emails have been delivered, preventing duplicates and enabling retry on next cron run if the license is still occupied by another user.
+
+## [1.3.1] – 2026-03-27
+
+### Fixed
+- **Stale password for future-start assignments**: When a license was assigned for a future date, the teacher immediately received an email with the current Zoom password. If the license was reused or the password was rotated before that date, the credentials would be invalid. The system now sends a confirmation-only email (without credentials) for future-start assignments, and a new daily cron job (7:00 AM) generates a fresh password and emails the actual credentials on the start date.
+
+### Added
+- **Start-date credentials cron job**: Runs daily at 7 AM, finds assignments starting today, generates a fresh Zoom password, sets it via the API, persists it, and emails the teacher with working credentials.
+- **"Credentials pending" email template**: The assignment confirmation email now shows a clear message when credentials will be delivered later, instead of omitting the password silently.
+
+## [1.3.0] – 2026-03-27
+
+### Added
+- **1-year maximum license period validation**: New and extension license requests are now limited to 365 days. Both the teacher request form and the backend API enforce this limit. A clear message informs the user that they can request an extension when their period is nearing its end.
+
+## [1.2.9] – 2026-03-27
+
+### Fixed
+- **Extension check always failing with "ID de licencia inválido"**: The `GET /api/licenses/check-extension` route was defined *after* the `GET /api/licenses/:id` catch-all route, so Express matched `"check-extension"` as a `:id` parameter and tried to look up a license with that string — which failed ObjectId validation. Moved `/check-extension` above `/:id` so it matches first.
+
+## [1.2.8] – 2026-03-27
+
+### Fixed
+- **Zoom password desync — teacher received wrong password on assignment**: The manual "Cambiar contraseña de Zoom" route changed the password in Zoom but never updated `passwordZoom`/`passwordEmail` in the database, causing stale credentials to be emailed. The route now syncs the new password to the DB after a successful Zoom API call.
+- **Assignment email now guarantees a working password**: When a license is assigned (pending → active), the system generates a fresh password, sets it via the Zoom API, persists it to the DB, and emails that exact password to the teacher — eliminating any chance of a stale-password mismatch.
+
 ## [1.2.7] – 2026-03-19
 
 ### Fixed

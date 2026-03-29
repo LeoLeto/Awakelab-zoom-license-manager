@@ -4,6 +4,8 @@ import { Types } from 'mongoose';
 import { HistoryService } from './history.service';
 import { emailService } from './email.service';
 import { settingsService } from './settings.service';
+import zoomService from './zoom.service';
+import { licenseService } from './license.service';
 
 export class AssignmentService {
   /**
@@ -110,11 +112,22 @@ export class AssignmentService {
     const savedAssignment = await assignment.save();
 
     // Update license status to 'ocupado' only if licenseId is provided
+    // and the assignment starts within the next 48 hours
     if (assignmentData.licenseId) {
-      await License.findByIdAndUpdate(
-        assignmentData.licenseId,
-        { $set: { estado: 'ocupado' } }
-      );
+      const startDate = new Date(assignmentData.fechaInicioUso);
+      const hoursUntilStart = (startDate.getTime() - Date.now()) / (1000 * 60 * 60);
+
+      if (hoursUntilStart > 48) {
+        // >48h away — license stays libre; credentials sent later by cron
+        savedAssignment.credentialsSent = false;
+        await savedAssignment.save();
+      } else {
+        // ≤48h — lock the license immediately
+        await License.findByIdAndUpdate(
+          assignmentData.licenseId,
+          { $set: { estado: 'ocupado' } }
+        );
+      }
 
       // Record assignment action
       await HistoryService.recordChange({
@@ -220,11 +233,19 @@ export class AssignmentService {
         throw new Error('La licencia no está disponible para el rango de fechas solicitado');
       }
 
-      // Update license status to ocupado
-      await License.findByIdAndUpdate(
-        updateData.licenseId,
-        { $set: { estado: 'ocupado' } }
-      );
+      const assignStartDate = new Date(existingAssignment.fechaInicioUso);
+      const hoursUntilStart = (assignStartDate.getTime() - Date.now()) / (1000 * 60 * 60);
+
+      if (hoursUntilStart > 48) {
+        // >48h away — license stays libre; credentials sent later by cron
+        (updateData as any).credentialsSent = false;
+      } else {
+        // ≤48h — lock the license immediately
+        await License.findByIdAndUpdate(
+          updateData.licenseId,
+          { $set: { estado: 'ocupado' } }
+        );
+      }
 
       // Set estado to 'activo' when assigning a license
       updateData.estado = 'activo';
@@ -302,17 +323,48 @@ export class AssignmentService {
           try {
             const license = await License.findById(updatedAssignment.licenseId);
             if (license) {
-              await emailService.sendAssignmentConfirmation({
-                teacherName: updatedAssignment.nombreApellidos,
-                teacherEmail: updatedAssignment.correocorporativo,
-                licenseEmail: license.email,
-                startDate: new Date(updatedAssignment.fechaInicioUso).toLocaleDateString('es-CL'),
-                endDate: new Date(updatedAssignment.fechaFinUso).toLocaleDateString('es-CL'),
-                platform: updatedAssignment.tipoUso,
-                zoomPassword: license.passwordEmail,
-                moodleUser: license.usuarioMoodle,
-                moodlePassword: license.claveUsuarioMoodle,
-              });
+              const startDate = new Date(updatedAssignment.fechaInicioUso);
+              const hoursUntilStart = (startDate.getTime() - Date.now()) / (1000 * 60 * 60);
+
+              if (hoursUntilStart > 48) {
+                // Assignment starts in >48h — send confirmation WITHOUT
+                // password; credentials will be sent 48h before by cron.
+                await emailService.sendAssignmentConfirmation({
+                  teacherName: updatedAssignment.nombreApellidos,
+                  teacherEmail: updatedAssignment.correocorporativo,
+                  licenseEmail: license.email,
+                  startDate: startDate.toLocaleDateString('es-CL'),
+                  endDate: new Date(updatedAssignment.fechaFinUso).toLocaleDateString('es-CL'),
+                  platform: updatedAssignment.tipoUso,
+                  moodleUser: license.usuarioMoodle,
+                  moodlePassword: license.claveUsuarioMoodle,
+                  credentialsPending: true,
+                });
+              } else {
+                // Assignment starts within 48h — generate a fresh
+                // password and send credentials immediately.
+                let freshPassword = license.passwordEmail;
+                try {
+                  freshPassword = zoomService.generateSecurePassword();
+                  await zoomService.changeUserPassword(license.email, freshPassword);
+                  await licenseService.updatePasswordByEmail(license.email, freshPassword);
+                  console.log(`🔑 Password refreshed for ${license.email} during assignment`);
+                } catch (pwdError: any) {
+                  console.error(`Failed to refresh Zoom password for ${license.email}, using stored password:`, pwdError.message);
+                }
+
+                await emailService.sendAssignmentConfirmation({
+                  teacherName: updatedAssignment.nombreApellidos,
+                  teacherEmail: updatedAssignment.correocorporativo,
+                  licenseEmail: license.email,
+                  startDate: startDate.toLocaleDateString('es-CL'),
+                  endDate: new Date(updatedAssignment.fechaFinUso).toLocaleDateString('es-CL'),
+                  platform: updatedAssignment.tipoUso,
+                  zoomPassword: freshPassword,
+                  moodleUser: license.usuarioMoodle,
+                  moodlePassword: license.claveUsuarioMoodle,
+                });
+              }
             }
           } catch (error: any) {
             console.error('Failed to send assignment confirmation email:', error.message);

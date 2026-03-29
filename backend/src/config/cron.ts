@@ -1,4 +1,6 @@
 import cron from 'node-cron';
+import { Assignment } from '../models/Assignment.model';
+import { License } from '../models/License.model';
 import { assignmentService } from '../services/assignment.service';
 import { settingsService } from '../services/settings.service';
 import { licenseService } from '../services/license.service';
@@ -181,6 +183,89 @@ export const initCronJobs = () => {
     }
   });
 
-  console.log('✅ Cron jobs initialized (expired assignments + password rotation + expiration warnings)');
+  console.log('✅ Cron jobs initialized (expired assignments + password rotation + expiration warnings + 48h credential lock)');
+
+  // ── Lock licenses & send credentials 48h before start ─────────────────────
+  // Runs daily at 7:00 AM — finds assignments starting within the next 48 hours
+  // whose credentials haven't been sent yet, locks the license to "ocupado",
+  // generates a fresh password, and emails the teacher.
+  cron.schedule('0 7 * * *', async () => {
+    try {
+      console.log('🕐 Running cron job: Lock licenses & send credentials (48h before start)');
+
+      const now = new Date();
+      const in48h = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+
+      // Find active assignments starting within 48h that still need credentials
+      const pending = await Assignment.find({
+        estado: 'activo',
+        licenseId: { $ne: null },
+        credentialsSent: { $ne: true },
+        fechaInicioUso: { $lte: in48h },
+      });
+
+      console.log(`   Found ${pending.length} assignment(s) needing credentials`);
+
+      let sentCount = 0;
+      let skippedCount = 0;
+      let failedCount = 0;
+
+      for (const assignment of pending) {
+        try {
+          const license = await License.findById(assignment.licenseId);
+          if (!license) continue;
+
+          // Only proceed if the license is currently libre —
+          // if it's still occupied by another assignment, we'll retry next run
+          if (license.estado !== 'libre') {
+            skippedCount++;
+            console.log(`   ⏳ Skipped ${license.email} — still occupied, will retry`);
+            continue;
+          }
+
+          // Lock the license
+          await License.findByIdAndUpdate(license._id, { $set: { estado: 'ocupado' } });
+
+          // Generate fresh password
+          const freshPassword = zoomService.generateSecurePassword();
+          await zoomService.changeUserPassword(license.email, freshPassword);
+          await licenseService.updatePasswordByEmail(license.email, freshPassword);
+
+          // Send credentials email
+          await emailService.sendAssignmentConfirmation({
+            teacherName: assignment.nombreApellidos,
+            teacherEmail: assignment.correocorporativo,
+            licenseEmail: license.email,
+            startDate: new Date(assignment.fechaInicioUso).toLocaleDateString('es-CL'),
+            endDate: new Date(assignment.fechaFinUso).toLocaleDateString('es-CL'),
+            platform: assignment.tipoUso,
+            zoomPassword: freshPassword,
+            moodleUser: license.usuarioMoodle,
+            moodlePassword: license.claveUsuarioMoodle,
+          });
+
+          // Mark credentials as sent
+          await Assignment.findByIdAndUpdate(assignment._id, { $set: { credentialsSent: true } });
+
+          sentCount++;
+          console.log(`   ✅ License locked & credentials sent to ${assignment.correocorporativo} for ${license.email}`);
+
+          // Respect Zoom API rate limits
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (error: any) {
+          failedCount++;
+          console.error(`   ❌ Failed for ${assignment.correocorporativo}:`, error.message);
+        }
+      }
+
+      console.log(`\n📊 48h Credential Lock Summary:`);
+      console.log(`   Pending assignments: ${pending.length}`);
+      console.log(`   Credentials sent: ${sentCount}`);
+      console.log(`   Skipped (still occupied): ${skippedCount}`);
+      console.log(`   Failed: ${failedCount}`);
+    } catch (error) {
+      console.error('❌ Error in 48h credential lock cron job:', error);
+    }
+  });
 };
 

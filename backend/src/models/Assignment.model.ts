@@ -11,6 +11,7 @@ export interface IAssignment extends Document {
   fechaInicioUso: Date;
   fechaFinUso: Date;
   estado: 'activo' | 'expirado' | 'cancelado' | 'pendiente';
+  credentialsSent: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -66,6 +67,10 @@ const AssignmentSchema = new Schema<IAssignment>(
       enum: ['activo', 'expirado', 'cancelado', 'pendiente'],
       default: 'pendiente',
       required: true,
+    },
+    credentialsSent: {
+      type: Boolean,
+      default: true,
     },
   },
   {

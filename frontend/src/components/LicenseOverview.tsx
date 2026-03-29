@@ -44,7 +44,9 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
     const matchesFilter = filter === 'all' || item.license.estado === filter;
     const matchesSearch = 
       item.license.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.license.usuarioMoodle.toLowerCase().includes(searchTerm.toLowerCase());
+      item.license.usuarioMoodle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.assignment?.nombreApellidos?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+      (item.assignment?.correocorporativo?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
     return matchesFilter && matchesSearch;
   });
 
@@ -158,7 +160,7 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
         </div>
         <input
           type="text"
-          placeholder="🔍 Buscar por email o usuario..."
+          placeholder="🔍 Buscar por email, usuario o asignado..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="search-input"

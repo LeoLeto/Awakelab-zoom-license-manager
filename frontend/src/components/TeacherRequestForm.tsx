@@ -166,8 +166,26 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
     setExtensionAvailable(null);
     setExtensionMessage('');
     if (selectedAssignment && value) {
+      // Validate 1-year max from the original assignment's start date
+      if (exceedsMaxPeriod(selectedAssignment.fechaInicioUso, value)) {
+        setExtensionAvailable(false);
+        setExtensionMessage(MAX_LICENSE_MSG);
+        return;
+      }
       checkExtension(selectedAssignment._id, value);
     }
+  };
+
+  // ── Max licence period (365 days) ────────────────────────────────────────
+  const MAX_LICENSE_DAYS = 365;
+  const MAX_LICENSE_MSG =
+    'El período máximo de una licencia es de 1 año (365 días). Si necesitas más tiempo, podrás solicitar una ampliación cuando el período esté por terminar.';
+
+  /** Returns true when start→end exceeds MAX_LICENSE_DAYS */
+  const exceedsMaxPeriod = (start: string, end: string) => {
+    if (!start || !end) return false;
+    const diffMs = new Date(end).getTime() - new Date(start).getTime();
+    return diffMs > MAX_LICENSE_DAYS * 24 * 60 * 60 * 1000;
   };
 
   // ── "Nueva aula Zoom" availability check ─────────────────────────────────
@@ -206,6 +224,10 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
           setError(DOMAIN_ERROR_MSG);
           return;
         }
+        if (exceedsMaxPeriod(selectedAssignment.fechaInicioUso, nuevaFechaFin)) {
+          setError(MAX_LICENSE_MSG);
+          return;
+        }
 
         // Compute fechaInicioUso for the extension: day after the existing assignment ends
         const currentEnd = new Date(selectedAssignment.fechaFinUso);
@@ -224,6 +246,10 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
       } else {
         if (!isDomainAccepted(formData.correocorporativo)) {
           setError(DOMAIN_ERROR_MSG);
+          return;
+        }
+        if (exceedsMaxPeriod(formData.fechaInicioUso, formData.fechaFinUso)) {
+          setError(MAX_LICENSE_MSG);
           return;
         }
         await assignmentApi.createAssignment({ ...formData, tipoUso: formData.tipoUso as TipoUso });
@@ -733,6 +759,21 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                     />
                   </div>
                 </div>
+
+                {exceedsMaxPeriod(formData.fechaInicioUso, formData.fechaFinUso) && (
+                  <div
+                    style={{
+                      padding: '12px',
+                      backgroundColor: '#f8d7da',
+                      border: '1px solid #f5c6cb',
+                      borderRadius: '4px',
+                      color: '#721c24',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    ⚠️ {MAX_LICENSE_MSG}
+                  </div>
+                )}
 
                 {formData.fechaInicioUso && formData.fechaFinUso && (
                   <div>
