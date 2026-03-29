@@ -5,7 +5,7 @@ export const HistoryDashboard: React.FC = () => {
   return (
     <div className="history-dashboard">
       <div className="dashboard-header">
-        <h2>📜 Panel de Historial</h2>
+        <h2><img src="/icons/clock.png" className="icon-inline" alt="" /> Panel de Historial</h2>
         <p>Visualiza todos los cambios realizados en las licencias y asignaciones</p>
       </div>
 

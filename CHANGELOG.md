@@ -2,6 +2,69 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.4.9] – 2026-03-29
+
+### Changed
+- **Mis Asignaciones**: Redesigned to match Solicitar Licencia styling — uses `.card` wrapper, `.form-section` / `.form-group` layout, and clean tables instead of card grids and gradient banners.
+
+### Removed
+- Removed unused CSS: `.email-filter-required`, `.info-message`, `.assignments-grid`, `.assignment-card`, `.status-badge`, `.warning-badge`, `.btn-search`, `.assignments-section`.
+
+## [1.4.8] – 2026-03-29
+
+### Changed
+- **Mis Asignaciones**: Applied consistent styling throughout the section:
+  - Email filter gradient now uses app color scheme (#294560 → #35B3BA) instead of generic blue.
+  - Info message matches the same gradient.
+  - Search button uses the app’s dark blue (#294560) accent.
+  - Assignment sections wrapped in white cards with shadows and bordered headers.
+  - Added pending status styling (amber) for assignment cards, status badges, and table badges.
+
+## [1.4.7] – 2026-03-29
+
+### Fixed
+- **Homepage layout**: Fixed content overflow — removed viewport lock and vertical centering so homepage scrolls naturally with no navbar.
+
+## [1.4.6] – 2026-03-29
+
+### Fixed
+- **Homepage layout**: Fixed content overflow by enabling internal scrolling within the full-viewport homepage container.
+
+## [1.4.5] – 2026-03-29
+
+### Changed
+- **Homepage**: Removed navbar from the homepage for a cleaner full-screen experience.
+
+## [1.4.4] – 2026-03-29
+
+### Fixed
+- **Navbar background color**: Changed from #35B3BA (teal) to #294560 (dark blue).
+
+## [1.4.3] – 2026-03-29
+
+### Fixed
+- **Login page scrollbar**: Eliminated unnecessary scrollbar by constraining the login page to the exact viewport height with reduced padding.
+
+## [1.4.2] – 2026-03-29
+
+### Added
+- **Login page powered-by logo**: Added the "Powered by Awakelab" image at the bottom of the login page.
+
+## [1.4.1] – 2026-03-29
+
+### Changed
+- **Login page background**: The admin login page now uses the same full-bleed background image as the homepage, with the form displayed in a centered translucent card.
+
+## [1.4.0] – 2026-03-29
+
+### Changed
+- **Visual redesign**: New color palette (#35B3BA primary teal, #294560 dark blue, #999999 gray accents, #F0F2F2 backgrounds).
+- **Navigation**: Teal (#35B3BA) background with white logo image replacing text brand.
+- **Homepage**: Full-bleed background image, content wrapped in a translucent card, powered-by footer.
+- **Icons**: All emojis across every component replaced with custom PNG icon set from assets/icons.
+- **Buttons & tabs**: Updated active/hover states to match the new teal palette.
+- **Feature cards**: Added subtle gray border for visual definition.
+
 ## [1.3.5] – 2026-03-29
 
 ### Changed

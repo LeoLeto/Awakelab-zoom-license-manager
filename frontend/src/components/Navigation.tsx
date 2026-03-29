@@ -16,45 +16,48 @@ export default function Navigation() {
     <nav className="main-nav">
       <div className="nav-container">
         <div className="nav-brand">
-          <h1>🎯 Gestor de Licencias Zoom <span className="version-badge">v{APP_VERSION}</span></h1>
+          <Link to="/">
+            <img src="/images/logo-white.png" alt="Zoom Manager" className="nav-brand-logo" />
+          </Link>
+          <span className="version-badge">v{APP_VERSION}</span>
         </div>
         <div className="nav-links">
           <Link 
             to="/" 
             className={location.pathname === '/' ? 'active' : ''}
           >
-            🏠 Inicio
+            Inicio
           </Link>
           <Link 
             to="/admin" 
             className={location.pathname === '/admin' ? 'active' : ''}
           >
-            🔧 Panel de Administración
+            Panel de Administración
           </Link>
           <Link 
             to="/teacher" 
             className={location.pathname === '/teacher' ? 'active' : ''}
           >
-            👨‍🏫 Portal de asignaciones
+            Portal de asignaciones
           </Link>
           
           {isAuthenticated && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
               <span style={{ 
-                color: '#2563eb', 
+                color: 'white', 
                 fontSize: '0.9em',
                 fontWeight: '500',
                 padding: '0.5rem 1rem',
                 borderRadius: '0.375rem',
-                background: '#f1f5f9',
+                background: 'rgba(255,255,255,0.15)',
               }}>
-                👤 {admin?.username}
+                {admin?.username}
               </span>
               <button 
                 onClick={handleLogout}
                 style={{
-                  background: '#ef4444',
-                  border: 'none',
+                  background: 'rgba(255,255,255,0.2)',
+                  border: '1px solid rgba(255,255,255,0.4)',
                   padding: '0.5rem 1rem',
                   borderRadius: '0.375rem',
                   color: '#fff',
@@ -63,10 +66,10 @@ export default function Navigation() {
                   fontWeight: '500',
                   transition: 'background-color 0.2s',
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = '#dc2626'}
-                onMouseLeave={(e) => e.currentTarget.style.background = '#ef4444'}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
               >
-                🚪 Cerrar Sesión
+                Cerrar Sesión
               </button>
             </div>
           )}

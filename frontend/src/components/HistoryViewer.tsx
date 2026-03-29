@@ -59,20 +59,20 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
   const getEventDescription = (action: string, entityType: string): { icon: string; label: string } => {
     const key = `${action}:${entityType}`;
     const map: Record<string, { icon: string; label: string }> = {
-      'create:license':        { icon: '➕', label: 'Licencia creada' },
-      'create:assignment':     { icon: '➕', label: 'Solicitud de asignación creada' },
-      'update:license':        { icon: '✏️', label: 'Licencia actualizada' },
-      'update:assignment':     { icon: '✏️', label: 'Asignación actualizada' },
-      'delete:license':        { icon: '🗑️', label: 'Licencia eliminada' },
-      'delete:assignment':     { icon: '🗑️', label: 'Asignación eliminada' },
-      'assign:license':        { icon: '🔗', label: 'Licencia asignada a un usuario' },
-      'assign:assignment':     { icon: '🔗', label: 'Asignación confirmada' },
-      'unassign:license':      { icon: '🔓', label: 'Licencia liberada' },
-      'unassign:assignment':   { icon: '🔓', label: 'Asignación cancelada' },
-      'status_change:license': { icon: '🔄', label: 'Estado de licencia cambiado' },
-      'status_change:assignment': { icon: '🔄', label: 'Estado de asignación cambiado' },
+      'create:license':        { icon: '+', label: 'Licencia creada' },
+      'create:assignment':     { icon: '+', label: 'Solicitud de asignación creada' },
+      'update:license':        { icon: '✏', label: 'Licencia actualizada' },
+      'update:assignment':     { icon: '✏', label: 'Asignación actualizada' },
+      'delete:license':        { icon: '×', label: 'Licencia eliminada' },
+      'delete:assignment':     { icon: '×', label: 'Asignación eliminada' },
+      'assign:license':        { icon: '→', label: 'Licencia asignada a un usuario' },
+      'assign:assignment':     { icon: '→', label: 'Asignación confirmada' },
+      'unassign:license':      { icon: '←', label: 'Licencia liberada' },
+      'unassign:assignment':   { icon: '←', label: 'Asignación cancelada' },
+      'status_change:license': { icon: '↻', label: 'Estado de licencia cambiado' },
+      'status_change:assignment': { icon: '↻', label: 'Estado de asignación cambiado' },
     };
-    return map[key] ?? { icon: '📝', label: action };
+    return map[key] ?? { icon: '·', label: action };
   };
 
   const formatFieldName = (field: string) => {
@@ -169,7 +169,7 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
       <div className="history-header">
         <h3>{title}</h3>
         <button onClick={fetchHistory} className="btn-refresh">
-          🔄 Actualizar
+          Actualizar
         </button>
       </div>
 
@@ -265,13 +265,13 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
               {entry.metadata && (
                 <div className="entry-metadata">
                   {entry.metadata.licenseEmail && (
-                    <span className="metadata-item">📧 {entry.metadata.licenseEmail}</span>
+                    <span className="metadata-item">{entry.metadata.licenseEmail}</span>
                   )}
                   {entry.metadata.assignmentName && (
-                    <span className="metadata-item">👤 {entry.metadata.assignmentName}</span>
+                    <span className="metadata-item">{entry.metadata.assignmentName}</span>
                   )}
                   {entry.metadata.reason && (
-                    <span className="metadata-reason">💭 {entry.metadata.reason}</span>
+                    <span className="metadata-reason">{entry.metadata.reason}</span>
                   )}
                 </div>
               )}

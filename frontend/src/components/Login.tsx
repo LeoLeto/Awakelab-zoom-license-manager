@@ -27,15 +27,18 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="container" style={{ maxWidth: '450px', margin: '2rem auto' }}>
-      <div className="card">
+    <div className="login-page">
+      <div className="home-card" style={{ maxWidth: '450px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+          <img src="/images/logo-blue.png" alt="Zoom Manager" style={{ height: 44, margin: '0 auto' }} />
+        </div>
         <h2 style={{ 
           textAlign: 'center', 
           marginBottom: '0.5rem',
           color: 'var(--gray-900)',
           fontSize: '1.75rem'
         }}>
-          🔐 Inicio de Sesión
+          Inicio de sesión
         </h2>
         <p style={{ 
           textAlign: 'center', 
@@ -88,7 +91,7 @@ const Login: React.FC = () => {
               color: '#991b1b',
               fontSize: '0.9rem'
             }}>
-              ⚠️ {error}
+              <img src="/icons/shield.png" style={{ width: 16, height: 16, verticalAlign: 'middle', marginRight: 4 }} alt="" /> {error}
             </div>
           )}
 
@@ -98,9 +101,12 @@ const Login: React.FC = () => {
             style={{ width: '100%', fontSize: '1rem', padding: '0.75rem' }}
             disabled={isLoading}
           >
-            {isLoading ? '⏳ Iniciando sesión...' : '🚀 Iniciar Sesión'}
+            {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
           </button>
         </form>
+      </div>
+      <div className="powered-by">
+        <img src="/images/powered-by.png" alt="Powered by Awakelab" />
       </div>
     </div>
   );

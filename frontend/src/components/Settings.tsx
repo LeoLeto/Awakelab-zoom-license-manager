@@ -151,7 +151,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
         throw new Error(data.error || data.message || 'Error al enviar correo de prueba');
       }
 
-      setSuccessMessage(`✅ Correo de prueba enviado a ${testEmailAddress}`);
+      setSuccessMessage(`Correo de prueba enviado a ${testEmailAddress}`);
       // Do NOT clear the address so the button stays enabled for re-testing
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err: any) {
@@ -188,7 +188,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
         throw new Error(data.error || data.message || 'Error al enviar muestra');
       }
 
-      setSuccessMessage(`✅ Correo de muestra (asignación) enviado a ${testEmailAddress}`);
+      setSuccessMessage(`Correo de muestra (asignación) enviado a ${testEmailAddress}`);
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err: any) {
       setError(err.message);
@@ -407,21 +407,21 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
 
   const getSettingLabel = (key: string): string => {
     const labels: Record<string, string> = {
-      autoPasswordRotation: '🔐 Rotación Automática de Contraseñas',
-      passwordRotationTime: '🕐 Hora de Rotación',
-      notifyOnExpiration: '📧 Notificar Expiración',
-      expirationWarningDays: '⏰ Días de Aviso Previo',
-      emailHost: '🌐 Servidor SMTP',
-      emailPort: '🔌 Puerto SMTP',
-      emailSecure: '🔒 Usar SSL/TLS',
-      emailUser: '👤 Usuario SMTP',
-      emailPassword: '🔑 Contraseña SMTP',
-      emailFrom: '📤 Remitente',
-      adminNotificationEmails: '👥 Correos Administradores',
-      notifyOnPasswordChange: '🔐 Notificar Cambio de Contraseña',
-      notifyOnNewRequest: '📋 Notificar Nuevas Solicitudes',
-      areaDepartamento: '🏢 Áreas / Departamentos',
-      acceptedDomains: '🌐 Dominios Aceptados'
+      autoPasswordRotation: 'Rotación Automática de Contraseñas',
+      passwordRotationTime: 'Hora de Rotación',
+      notifyOnExpiration: 'Notificar Expiración',
+      expirationWarningDays: 'Días de Aviso Previo',
+      emailHost: 'Servidor SMTP',
+      emailPort: 'Puerto SMTP',
+      emailSecure: 'Usar SSL/TLS',
+      emailUser: 'Usuario SMTP',
+      emailPassword: 'Contraseña SMTP',
+      emailFrom: 'Remitente',
+      adminNotificationEmails: 'Correos Administradores',
+      notifyOnPasswordChange: 'Notificar Cambio de Contraseña',
+      notifyOnNewRequest: 'Notificar Nuevas Solicitudes',
+      areaDepartamento: 'Áreas / Departamentos',
+      acceptedDomains: 'Dominios Aceptados'
     };
     return labels[key] || key;
   };
@@ -452,20 +452,20 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
   return (
     <div className="settings-container">
       <div className="settings-header">
-        <h2>⚙️ Configuración del Sistema</h2>
+        <h2><img src="/icons/settings.png" className="icon-inline" alt="" /> Configuración del Sistema</h2>
         <p className="subtitle">Ajusta el comportamiento automático del sistema</p>
       </div>
 
       {error && (
         <div className="alert alert-error">
-          <span>❌</span>
+          <span><img src="/icons/shield.png" className="icon-inline" alt="" /></span>
           <span>{error}</span>
         </div>
       )}
 
       {successMessage && (
         <div className="alert alert-success">
-          <span>✅</span>
+          <span><img src="/icons/shield.png" className="icon-inline" alt="" /></span>
           <span>{successMessage}</span>
         </div>
       )}
@@ -473,7 +473,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
       {/* General Settings */}
       <div className="settings-section">
         <div className="section-card">
-          <h3 className="section-card-title">🔧 Configuración General</h3>
+          <h3 className="section-card-title">Configuración General</h3>
           {(() => {
             const wideKeys = ['adminNotificationEmails'];
             return (
@@ -486,7 +486,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
                     </div>
                     <div className="setting-value">
                       {renderSettingControl(setting)}
-                      {saving === setting.key && <span className="saving-indicator">💾</span>}
+                      {saving === setting.key && <span className="saving-indicator">Guardando...</span>}
                     </div>
                   </div>
                 ))}
@@ -499,7 +499,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
       {/* Email Settings */}
       <div className="settings-section">
         <div className="section-card">
-          <h3 className="section-card-title">📧 Configuración de Correo Electrónico</h3>
+          <h3 className="section-card-title">Configuración de Correo Electrónico</h3>
           <p className="section-card-subtitle">Configure los parámetros SMTP para el envío de notificaciones automáticas</p>
           
           {(() => {
@@ -513,7 +513,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
                     </div>
                     <div className="setting-value">
                       {renderSettingControl(setting)}
-                      {saving === setting.key && <span className="saving-indicator">💾</span>}
+                      {saving === setting.key && <span className="saving-indicator">Guardando...</span>}
                     </div>
                   </div>
                 ))}
@@ -524,7 +524,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
           {/* Admin Notification Emails */}
           <div className="setting-row setting-row--full" style={{ marginTop: '16px', borderTop: '1px solid #e9ecef', paddingTop: '16px' }}>
             <div className="setting-label" style={{ marginBottom: '10px' }}>
-              <span className="label-text">👥 Correos Administradores</span>
+              <span className="label-text">Correos Administradores</span>
               <span className="label-description">
                 {settings.find(s => s.key === 'adminNotificationEmails')?.description || 'Correos de administradores que reciben notificaciones del sistema'}
               </span>
@@ -589,7 +589,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
                   onClick={handleAddAdminEmail}
                   disabled={savingAdminEmails || !newAdminEmail.trim()}
                 >
-                  {savingAdminEmails ? '💾 Guardando...' : '+ Añadir'}
+                  {savingAdminEmails ? 'Guardando...' : '+ Añadir'}
                 </button>
               </div>
             </div>
@@ -597,7 +597,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
 
           {/* Test Email Section */}
           <div className="test-email-section">
-            <h4>🧪 Probar Configuración de Correo</h4>
+            <h4>Probar Configuración de Correo</h4>
             <p className="test-email-description">
               Envía un correo de prueba para verificar que la configuración SMTP es correcta
             </p>
@@ -615,7 +615,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
                 disabled={testingEmail || sendingAssignmentSample || !testEmailAddress}
                 className="test-email-button"
               >
-                {testingEmail ? '📤 Enviando...' : '📧 Enviar Correo de Prueba'}
+                {testingEmail ? 'Enviando...' : 'Enviar Correo de Prueba'}
               </button>
               <button
                 onClick={sendAssignmentSampleEmail}
@@ -623,7 +623,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
                 className="test-email-button"
                 style={{ marginLeft: '8px', background: '#059669' }}
               >
-                {sendingAssignmentSample ? '📤 Enviando...' : '📋 Enviar Muestra de Asignación'}
+                {sendingAssignmentSample ? 'Enviando...' : 'Enviar Muestra de Asignación'}
               </button>
             </div>
           </div>
@@ -633,7 +633,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
       {/* ── Dominios Aceptados ── */}
       <div className="settings-section">
         <div className="section-card">
-          <h3 className="section-card-title">🌐 Dominios Aceptados</h3>
+          <h3 className="section-card-title">Dominios Aceptados</h3>
           <p className="section-card-subtitle">
             Solo los correos con estos dominios podrán enviar solicitudes de licencia.
             Si la lista está vacía se aceptarán todos los dominios.
@@ -703,7 +703,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
               onClick={handleAddDomain}
               disabled={savingDomains || !newDomain.trim()}
             >
-              {savingDomains ? '💾 Guardando...' : '+ Añadir'}
+              {savingDomains ? 'Guardando...' : '+ Añadir'}
             </button>
           </div>
           </div>
@@ -713,7 +713,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
       {/* ── Áreas / Departamentos ── */}
       <div className="settings-section">
         <div className="section-card">
-          <h3 className="section-card-title">🏢 Áreas / Departamentos</h3>
+          <h3 className="section-card-title">Áreas / Departamentos</h3>
           <p className="section-card-subtitle">
             Administra la lista de áreas disponibles en el formulario de solicitud de licencia
           </p>
@@ -781,7 +781,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
               onClick={handleAddArea}
               disabled={savingAreas || !newArea.trim()}
             >
-              {savingAreas ? '💾 Guardando...' : '+ Añadir'}
+              {savingAreas ? 'Guardando...' : '+ Añadir'}
             </button>
           </div>
           </div>
@@ -789,7 +789,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
       </div>
 
       <div className="settings-info">
-        <h3>ℹ️ Información sobre la Rotación Automática</h3>
+        <h3>Información sobre la Rotación Automática</h3>
         <div className="info-box">
           <p>
             <strong>¿Qué hace la rotación automática?</strong><br />
@@ -811,7 +811,7 @@ export default function Settings({ onSettingsChange }: SettingsProps) {
       </div>
       
       <div className="settings-info">
-        <h3>📧 Información sobre Notificaciones por Correo</h3>
+        <h3>Información sobre Notificaciones por Correo</h3>
         <div className="info-box">
           <p>
             <strong>Notificaciones de Expiración:</strong><br />

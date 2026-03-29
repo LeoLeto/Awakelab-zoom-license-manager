@@ -186,7 +186,7 @@ const AdminManagement: React.FC = () => {
                   }}
                   title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                 >
-                  {showPassword ? '👁️' : '👁️‍🗨️'}
+                  {showPassword ? '○' : '●'}
                 </button>
               </div>
             </div>

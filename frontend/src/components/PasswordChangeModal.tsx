@@ -65,7 +65,7 @@ export default function PasswordChangeModal({ user, onClose, onSuccess }: Passwo
     return (
       <div className="modal-overlay" onClick={onClose}>
         <div className="modal" onClick={(e) => e.stopPropagation()}>
-          <h3>✅ Contraseña Cambiada Exitosamente</h3>
+          <h3><img src="/icons/shield.png" className="icon-inline" alt="" /> Contraseña Cambiada Exitosamente</h3>
           <div className="success-message">
             <p><strong>Usuario:</strong> {user.email}</p>
             <p><strong>Nueva Contraseña:</strong></p>
@@ -85,7 +85,7 @@ export default function PasswordChangeModal({ user, onClose, onSuccess }: Passwo
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h3>🔐 Cambiar Contraseña</h3>
+        <h3><img src="/icons/password.png" className="icon-inline" alt="" /> Cambiar Contraseña</h3>
         
         <div className="modal-user-info">
           <p><strong>Usuario:</strong> {user.first_name} {user.last_name}</p>

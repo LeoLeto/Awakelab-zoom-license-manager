@@ -84,8 +84,8 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
   return (
     <div className="license-overview">
       <div className="section-header">
-        <h2>📊 Resumen de Licencias</h2>
-        <button onClick={loadLicenses} className="btn-refresh">🔄 Actualizar</button>
+        <h2><img src="/icons/monitor.png" className="icon-inline-lg" alt="" /> Resumen de Licencias</h2>
+        <button onClick={loadLicenses} className="btn-refresh">Actualizar</button>
       </div>
 
       {/* Statistics */}
@@ -122,7 +122,7 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
           color: '#92400e',
           fontSize: '0.9rem',
         }}>
-          <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+          <span style={{ fontSize: '1.2rem' }}><img src="/icons/shield.png" style={{ width: 20, height: 20 }} alt="" /></span>
           <span>
             <strong>Stock bajo:</strong> solo {stats.libre === 0 ? 'quedan 0 licencias disponibles' : `queda${stats.libre === 1 ? '' : 'n'} ${stats.libre} licencia${stats.libre === 1 ? '' : 's'} disponible${stats.libre === 1 ? '' : 's'}`}.
             Considera liberar licencias ocupadas o agregar nuevas.
@@ -160,7 +160,7 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
         </div>
         <input
           type="text"
-          placeholder="🔍 Buscar por email, usuario o asignado..."
+          placeholder="Buscar por email, usuario o asignado..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="search-input"
@@ -218,14 +218,14 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
                       onClick={() => setSelectedLicenseForDetails(item)}
                       title="Ver detalles"
                     >
-                      📋
+                      <img src="/icons/clipboard.png" className="icon-inline" alt="Ver detalles" />
                     </button>
                     <button
                       className="btn-small"
                       onClick={() => handlePasswordChange(item)}
                       title="Cambiar contraseña de Zoom"
                     >
-                      🔐
+                      <img src="/icons/password.png" className="icon-inline" alt="Cambiar contraseña" />
                     </button>
                   </div>
                 </td>

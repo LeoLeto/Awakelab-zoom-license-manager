@@ -25,7 +25,7 @@ export default function TeacherPortal() {
   return (
     <div className="teacher-portal">
       <div className="dashboard-header">
-        <h1>👨‍🏫 Portal de asignaciones</h1>
+        <h1><img src="/icons/calendar.png" className="icon-inline-lg" alt="" /> Portal de asignaciones</h1>
         <p className="subtitle">Solicita y gestiona tus licencias de Zoom</p>
       </div>
 
@@ -35,13 +35,13 @@ export default function TeacherPortal() {
           className={`tab ${activeTab === 'request' ? 'active' : ''}`}
           onClick={() => setActiveTab('request')}
         >
-          📝 Solicitar Licencia
+          <img src="/icons/clipboard.png" className="icon-inline" alt="" /> Solicitar Licencia
         </button>
         <button
           className={`tab ${activeTab === 'assignments' ? 'active' : ''}`}
           onClick={() => setActiveTab('assignments')}
         >
-          📋 Mis Asignaciones
+          <img src="/icons/calendar.png" className="icon-inline" alt="" /> Mis Asignaciones
         </button>
       </div>
 
@@ -66,7 +66,7 @@ export default function TeacherPortal() {
                 color: '#065f46',
                 fontSize: '0.95rem',
               }}>
-                <span style={{ fontSize: '1.3rem' }}>✅</span>
+                <span style={{ fontSize: '1.3rem' }}><img src="/icons/chart.png" style={{ width: 20, height: 20 }} alt="" /></span>
                 <span>
                   <strong>¡Solicitud enviada correctamente!</strong> Tu solicitud ha sido recibida y está pendiente de aprobación por el administrador.
                 </span>

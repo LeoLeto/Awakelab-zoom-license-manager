@@ -120,10 +120,10 @@ const AnalyticsDashboard: React.FC = () => {
   return (
     <div className="analytics-dashboard">
       <div className="analytics-header">
-        <h2>📊 Panel de Análisis</h2>
+        <h2><img src="/icons/chart.png" className="icon-inline" alt="" /> Panel de Análisis</h2>
         <div className="analytics-actions">
           <button onClick={loadAnalytics} className="btn-refresh">
-            🔄 Actualizar
+            Actualizar
           </button>
         </div>
       </div>
@@ -132,7 +132,7 @@ const AnalyticsDashboard: React.FC = () => {
       {overview && (
         <div className="overview-grid">
           <div className="stat-card">
-            <div className="stat-icon">📦</div>
+            <div className="stat-icon"><img src="/icons/monitor.png" className="icon-inline-lg" alt="" /></div>
             <div className="stat-content">
               <div className="stat-label">Total de Licencias</div>
               <div className="stat-value">{overview.totalLicenses}</div>
@@ -140,7 +140,7 @@ const AnalyticsDashboard: React.FC = () => {
           </div>
 
           <div className="stat-card">
-            <div className="stat-icon">✅</div>
+            <div className="stat-icon"><img src="/icons/shield.png" className="icon-inline-lg" alt="" /></div>
             <div className="stat-content">
               <div className="stat-label">Licencias Asignadas</div>
               <div className="stat-value">{overview.assignedLicenses}</div>
@@ -148,7 +148,7 @@ const AnalyticsDashboard: React.FC = () => {
           </div>
 
           <div className="stat-card">
-            <div className="stat-icon">📊</div>
+            <div className="stat-icon"><img src="/icons/chart.png" className="icon-inline-lg" alt="" /></div>
             <div className="stat-content">
               <div className="stat-label">Tasa de Utilización</div>
               <div className="stat-value">{overview.utilizationRate}%</div>
@@ -162,7 +162,7 @@ const AnalyticsDashboard: React.FC = () => {
           </div>
 
           <div className="stat-card clickable" onClick={() => overview.expiringThisWeek > 0 && setShowExpiringModal(true)}>
-            <div className="stat-icon">⏰</div>
+            <div className="stat-icon"><img src="/icons/clock.png" className="icon-inline-lg" alt="" /></div>
             <div className="stat-content">
               <div className="stat-label">Expiran Esta Semana</div>
               <div className="stat-value">{overview.expiringThisWeek}</div>
@@ -170,7 +170,7 @@ const AnalyticsDashboard: React.FC = () => {
           </div>
 
           <div className="stat-card">
-            <div className="stat-icon">👥</div>
+            <div className="stat-icon"><img src="/icons/messages.png" className="icon-inline-lg" alt="" /></div>
             <div className="stat-content">
               <div className="stat-label">Usuarios Activos</div>
               <div className="stat-value">{overview.totalTeachers}</div>
@@ -178,7 +178,7 @@ const AnalyticsDashboard: React.FC = () => {
           </div>
 
           <div className="stat-card clickable" onClick={() => overview.pendingRequests > 0 && setShowPendingModal(true)}>
-            <div className="stat-icon">📋</div>
+            <div className="stat-icon"><img src="/icons/clipboard.png" className="icon-inline-lg" alt="" /></div>
             <div className="stat-content">
               <div className="stat-label">Solicitudes Pendientes</div>
               <div className="stat-value">{overview.pendingRequests}</div>
@@ -190,7 +190,7 @@ const AnalyticsDashboard: React.FC = () => {
       {/* Top Teachers */}
       {teachers.length > 0 && (
         <div className="analytics-section">
-          <h3>👨‍🏫 Licencias por Usuario</h3>
+          <h3><img src="/icons/messages.png" className="icon-inline" alt="" /> Licencias por Usuario</h3>
           <div className="analytics-table">
             <table>
               <thead>
@@ -241,7 +241,7 @@ const AnalyticsDashboard: React.FC = () => {
             <div className="modal-header">
               <div>
                 <h3>
-                  {assignmentFilter === 'active' ? '✅ Asignaciones Activas' : '📋 Todas las Asignaciones'}
+                  {assignmentFilter === 'active' ? 'Asignaciones Activas' : 'Todas las Asignaciones'}
                 </h3>
                 <p className="modal-subtitle">{selectedTeacher.teacherName} — {selectedTeacher.teacherEmail}</p>
               </div>
@@ -315,7 +315,7 @@ const AnalyticsDashboard: React.FC = () => {
         <div className="modal-overlay" onClick={() => setShowExpiringModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>⏰ Licencias que Expiran Esta Semana</h3>
+              <h3><img src="/icons/clock.png" className="icon-inline" alt="" /> Licencias que Expiran Esta Semana</h3>
               <button className="modal-close" onClick={() => setShowExpiringModal(false)}>✕</button>
             </div>
             <div className="modal-body">
@@ -330,7 +330,7 @@ const AnalyticsDashboard: React.FC = () => {
         <div className="modal-overlay" onClick={() => setShowPendingModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>📋 Solicitudes Pendientes</h3>
+              <h3><img src="/icons/clipboard.png" className="icon-inline" alt="" /> Solicitudes Pendientes</h3>
               <button className="modal-close" onClick={() => setShowPendingModal(false)}>✕</button>
             </div>
             <div className="modal-body">

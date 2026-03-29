@@ -162,12 +162,12 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
     <>
     <div className="assignment-manager">
       <div className="section-header">
-        <h2>📋 Solicitudes y Nuevas Asignaciones</h2>
+        <h2><img src="/icons/clipboard.png" className="icon-inline" alt="" /> Solicitudes y Nuevas Asignaciones</h2>
         <button
           className="btn-primary"
           onClick={() => setShowCreateForm(!showCreateForm)}
         >
-          {showCreateForm ? '✖ Cancelar' : '➕ Nueva Asignación'}
+          {showCreateForm ? '✖ Cancelar' : '+ Nueva Asignación'}
         </button>
       </div>
 
@@ -327,10 +327,10 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
 
       {/* Pending Requests */}
       <div className="pending-requests">
-        <h3>⏳ Solicitudes Pendientes ({pendingAssignments.length})</h3>
+        <h3>Solicitudes Pendientes ({pendingAssignments.length})</h3>
         {pendingAssignments.length === 0 ? (
           <div className="empty-state">
-            <p>✅ No hay solicitudes pendientes en este momento.</p>
+            <p>No hay solicitudes pendientes en este momento.</p>
           </div>
         ) : (
           <div className="table-container">
@@ -387,7 +387,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
         <div className="modal-overlay" onClick={handleCancelAssigning}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="assign-modal-header">
-              <h3>🎫 Asignar Licencia</h3>
+              <h3><img src="/icons/calendar.png" className="icon-inline" alt="" /> Asignar Licencia</h3>
               <button className="close-button" onClick={handleCancelAssigning}>×</button>
             </div>
 
@@ -418,7 +418,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
             {modalLoading ? (
               <div className="assign-modal-empty">Cargando licencias...</div>
             ) : availableLicenses.length === 0 ? (
-              <div className="assign-modal-empty">⚠️ No hay licencias disponibles para este período.</div>
+              <div className="assign-modal-empty"><img src="/icons/shield.png" className="icon-inline" alt="" /> No hay licencias disponibles para este período.</div>
             ) : (
               <div className="assign-license-list">
                 {availableLicenses.map((license) => (
@@ -450,7 +450,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
                 onClick={handleAssignLicense}
                 disabled={!selectedLicenseForAssignment || assigning}
               >
-                {assigning ? '⏳ Asignando...' : '✓ Confirmar Asignación'}
+                {assigning ? 'Asignando...' : 'Confirmar Asignación'}
               </button>
             </div>
           </div>

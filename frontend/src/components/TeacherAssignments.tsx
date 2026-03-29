@@ -72,18 +72,18 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
     const endDate = new Date(assignment.fechaFinUso);
 
     if (assignment.estado === 'pendiente') {
-      return { label: 'Pendiente de Aprobación', className: 'pending', icon: '⏳' };
+      return { label: 'Pendiente de Aprobación', className: 'pending', icon: '○' };
     }
     if (assignment.estado === 'cancelado') {
-      return { label: 'Cancelada', className: 'cancelled', icon: '🚫' };
+      return { label: 'Cancelada', className: 'cancelled', icon: '×' };
     }
     if (assignment.estado === 'expirado' || endDate < now) {
-      return { label: 'Expirada', className: 'expired', icon: '⌛' };
+      return { label: 'Expirada', className: 'expired', icon: '○' };
     }
     if (startDate > now) {
-      return { label: 'Próxima', className: 'upcoming', icon: '📅' };
+      return { label: 'Próxima', className: 'upcoming', icon: '→' };
     }
-    return { label: 'Activa', className: 'active', icon: '✅' };
+    return { label: 'Activa', className: 'active', icon: '●' };
   };
 
   const getDaysRemaining = (endDate: string) => {
@@ -119,140 +119,135 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
 
   return (
     <div className="teacher-assignments">
-      {!teacherEmail && (
-        <div className="form-group email-filter-required">
-          <label htmlFor="emailFilter">
-            <strong>🔍 Ingresa tu Email Corporativo</strong>
-          </label>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <input
-              id="emailFilter"
-              type="email"
-              value={filterEmail}
-              onChange={(e) => setFilterEmail(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="ejemplo@awakelab.cl"
-              autoFocus
-              style={{ flex: 1 }}
-            />
-            <button type="button" onClick={handleSearch} className="btn-search">
-              🔍 Buscar
-            </button>
-          </div>
-          <small>Ingresa tu email para ver tus asignaciones de licencias Zoom</small>
-        </div>
-      )}
+      <div className="card">
+        <h2><img src="/icons/calendar.png" className="icon-inline" alt="" /> Mis Asignaciones</h2>
+        <p className="form-description">
+          Ingresa tu email corporativo para consultar tus asignaciones de licencias Zoom.
+        </p>
 
-      {!searchEmail.trim() ? (
-        <div className="info-message">
-          <p>👆 Por favor ingresa tu email corporativo arriba para ver tus asignaciones</p>
-        </div>
-      ) : (
-        <>
-          {/* Active & Upcoming Assignments */}
-          <div className="assignments-section">
-            <h3>📋 Asignaciones Actuales y Próximas ({activeAssignments.length})</h3>
-            {activeAssignments.length === 0 ? (
-              <div className="empty-state">
-                <p>No tienes asignaciones activas o próximas.</p>
+        {!teacherEmail && (
+          <div className="form-section">
+            <h3>Buscar Asignaciones</h3>
+            <div className="form-row" style={{ alignItems: 'flex-end' }}>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label htmlFor="emailFilter">Email Corporativo *</label>
+                <input
+                  id="emailFilter"
+                  type="email"
+                  value={filterEmail}
+                  onChange={(e) => setFilterEmail(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="ejemplo@awakelab.cl"
+                  autoFocus
+                />
               </div>
-            ) : (
-          <div className="assignments-grid">
-            {activeAssignments.map((assignment) => {
-              const status = getStatusInfo(assignment);
-              const daysRemaining = getDaysRemaining(assignment.fechaFinUso);
-
-              return (
-                <div key={assignment._id} className={`assignment-card ${status.className}`}>
-                  <div className="card-header">
-                    <span className={`status-badge ${status.className}`}>
-                      {status.icon} {status.label}
-                    </span>
-                    {status.className === 'active' && daysRemaining <= 7 && (
-                      <span className="warning-badge">⚠️ {daysRemaining} días restantes</span>
-                    )}
-                  </div>
-                  
-                  <div className="card-body">
-                    <h4>{assignment.nombreApellidos}</h4>
-                    <div className="assignment-details">
-                      {assignment.licenseId && typeof assignment.licenseId === 'object' && (
-                        <div className="detail-row">
-                          <span className="label">🔑 Licencia Zoom:</span>
-                          <span className="value">{(assignment.licenseId as any).email}</span>
-                        </div>
-                      )}
-                      <div className="detail-row">
-                        <span className="label">📧 Email:</span>
-                        <span className="value">{assignment.correocorporativo}</span>
-                      </div>
-                      <div className="detail-row">
-                        <span className="label">📚 Área:</span>
-                        <span className="value">{assignment.area}</span>
-                      </div>
-                      <div className="detail-row">
-                        <span className="label">📍 Comunidad:</span>
-                        <span className="value">{assignment.comunidadAutonoma}</span>
-                      </div>
-                      <div className="detail-row">
-                          <span className="label">💻 Tipo de Uso:</span>
-                          <span className="value">{displayTipoUso(assignment.tipoUso)}</span>
-                      </div>
-                      <div className="detail-row">
-                        <span className="label">📅 Período:</span>
-                        <span className="value">
-                          {formatDate(assignment.fechaInicioUso)} - 
-                          {formatDate(assignment.fechaFinUso)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+              <div className="form-group" style={{ flex: '0 0 auto' }}>
+                <button type="button" onClick={handleSearch} className="btn-secondary">
+                  Buscar
+                </button>
+              </div>
+            </div>
           </div>
         )}
-      </div>
 
-      {/* Past Assignments */}
-      {pastAssignments.length > 0 && (
-        <div className="assignments-section">
-          <h3>📜 Asignaciones Pasadas ({pastAssignments.length})</h3>
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Estado</th>
-                  <th>Nombre</th>
-                  <th>Área</th>
-                  <th>Fecha Inicio</th>
-                  <th>Fecha Fin</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pastAssignments.map((assignment) => {
-                  const status = getStatusInfo(assignment);
-                  return (
-                    <tr key={assignment._id}>
-                      <td>
-                        <span className={`badge ${status.className}`}>
-                          {status.icon} {status.label}
-                        </span>
-                      </td>
-                      <td>{assignment.nombreApellidos}</td>
-                      <td>{assignment.area}</td>
-                      <td>{formatDate(assignment.fechaInicioUso)}</td>
-                      <td>{formatDate(assignment.fechaFinUso)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+        {!searchEmail.trim() ? (
+          <div className="form-section">
+            <p style={{ color: 'var(--gray-500)', textAlign: 'center', padding: '2rem 0' }}>
+              Ingresa tu email corporativo para ver tus asignaciones.
+            </p>
           </div>
-        </div>
-      )}
-        </>
-      )}
+        ) : (
+          <>
+            {/* Active & Upcoming Assignments */}
+            <div className="form-section">
+              <h3><img src="/icons/clipboard.png" className="icon-inline" alt="" /> Asignaciones Actuales y Próximas ({activeAssignments.length})</h3>
+              {activeAssignments.length === 0 ? (
+                <p style={{ color: 'var(--gray-500)', padding: '1rem 0' }}>
+                  No tienes asignaciones activas o próximas.
+                </p>
+              ) : (
+                <div className="table-container">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Estado</th>
+                        <th>Nombre</th>
+                        <th>Área</th>
+                        <th>Tipo de Uso</th>
+                        <th>Fecha Inicio</th>
+                        <th>Fecha Fin</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activeAssignments.map((assignment) => {
+                        const status = getStatusInfo(assignment);
+                        const daysRemaining = getDaysRemaining(assignment.fechaFinUso);
+                        return (
+                          <tr key={assignment._id}>
+                            <td>
+                              <span className={`badge ${status.className}`}>
+                                {status.icon} {status.label}
+                              </span>
+                              {status.className === 'active' && daysRemaining <= 7 && (
+                                <span className="badge" style={{ marginLeft: '0.5rem', background: 'var(--warning-light)', color: '#92400e' }}>
+                                  {daysRemaining}d
+                                </span>
+                              )}
+                            </td>
+                            <td>{assignment.nombreApellidos}</td>
+                            <td>{assignment.area}</td>
+                            <td>{displayTipoUso(assignment.tipoUso)}</td>
+                            <td>{formatDate(assignment.fechaInicioUso)}</td>
+                            <td>{formatDate(assignment.fechaFinUso)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Past Assignments */}
+            {pastAssignments.length > 0 && (
+              <div className="form-section">
+                <h3><img src="/icons/clock.png" className="icon-inline" alt="" /> Asignaciones Pasadas ({pastAssignments.length})</h3>
+                <div className="table-container">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Estado</th>
+                        <th>Nombre</th>
+                        <th>Área</th>
+                        <th>Fecha Inicio</th>
+                        <th>Fecha Fin</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pastAssignments.map((assignment) => {
+                        const status = getStatusInfo(assignment);
+                        return (
+                          <tr key={assignment._id}>
+                            <td>
+                              <span className={`badge ${status.className}`}>
+                                {status.icon} {status.label}
+                              </span>
+                            </td>
+                            <td>{assignment.nombreApellidos}</td>
+                            <td>{assignment.area}</td>
+                            <td>{formatDate(assignment.fechaInicioUso)}</td>
+                            <td>{formatDate(assignment.fechaFinUso)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

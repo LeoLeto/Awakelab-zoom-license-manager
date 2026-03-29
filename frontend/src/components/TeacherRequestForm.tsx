@@ -275,7 +275,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
   if (success) {
     return (
       <div className="card success-message">
-        <h3>✅ ¡Solicitud de Licencia Enviada Exitosamente!</h3>
+        <h3><img src="/icons/shield.png" className="icon-inline" alt="" /> ¡Solicitud de Licencia Enviada Exitosamente!</h3>
         <p>
           Tu solicitud ha sido enviada al administrador y está pendiente de aprobación. Te
           notificaremos cuando se te asigne una licencia.
@@ -306,7 +306,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
   return (
     <div className="teacher-request-form">
       <div className="card">
-        <h2>📝 Solicitar una Licencia de Zoom</h2>
+        <h2><img src="/icons/clipboard.png" className="icon-inline" alt="" /> Solicitar una Licencia de Zoom</h2>
         <p className="form-description">
           Completa este formulario para solicitar una licencia de Zoom para tus necesidades
           docentes.
@@ -387,7 +387,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                       onClick={searchAssignments}
                       disabled={searchingAssignments || !ampliacionEmail.trim() || !!ampliacionDomainError}
                     >
-                      {searchingAssignments ? 'Buscando...' : '🔍 Buscar'}
+                      {searchingAssignments ? 'Buscando...' : 'Buscar'}
                     </button>
                   </div>
                 </div>
@@ -405,7 +405,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                       fontSize: '0.9rem',
                     }}
                   >
-                    ⚠️ {ampliacionDomainError}
+                    <img src="/icons/shield.png" className="icon-inline" alt="" /> {ampliacionDomainError}
                   </div>
                 )}
 
@@ -566,7 +566,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                         marginBottom: '8px',
                       }}
                     >
-                      ✅ La licencia está disponible para el período de ampliación. Puedes enviar
+                      La licencia está disponible para el período de ampliación. Puedes enviar
                       la solicitud.
                     </div>
                   )}
@@ -582,7 +582,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                         marginBottom: '8px',
                       }}
                     >
-                      ❌ {extensionMessage || 'La licencia no está disponible para ese período.'}{' '}
+                      La licencia no está disponible para ese período.{' '}
                       Debes <strong>solicitar una nueva licencia</strong> en su lugar.
                     </div>
                   )}
@@ -644,7 +644,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                           fontSize: '0.875rem',
                         }}
                       >
-                        ⚠️ {emailDomainError}
+                        <img src="/icons/shield.png" className="icon-inline" alt="" /> {emailDomainError}
                       </div>
                     )}
                   </div>
@@ -771,7 +771,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                       marginBottom: '8px',
                     }}
                   >
-                    ⚠️ {MAX_LICENSE_MSG}
+                    <img src="/icons/shield.png" className="icon-inline" alt="" /> {MAX_LICENSE_MSG}
                   </div>
                 )}
 
@@ -785,7 +785,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                     >
                       {checkingAvailability
                         ? 'Verificando...'
-                        : '🔍 Verificar Disponibilidad (Opcional)'}
+                        : 'Verificar Disponibilidad (Opcional)'}
                     </button>
                     <small className="form-hint" style={{ display: 'block', marginTop: '8px' }}>
                       Esta verificación es solo informativa. Puedes enviar tu solicitud
@@ -807,7 +807,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                     color: '#155724',
                   }}
                 >
-                  ✅ Hay {availableLicenses.length} licencia(s) disponible(s) para tu período
+                  Hay {availableLicenses.length} licencia(s) disponible(s) para tu período
                   seleccionado. El administrador asignará una de ellas a tu solicitud.
                 </div>
               )}
@@ -850,7 +850,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                       checkingExtension))
                 }
               >
-                {loading ? 'Enviando...' : '🚀 Enviar Solicitud'}
+                {loading ? 'Enviando...' : 'Enviar Solicitud'}
               </button>
               {isAmpliacion && selectedAssignment && nuevaFechaFin && extensionAvailable !== true && !checkingExtension && (
                 <small style={{ display: 'block', marginTop: '6px', color: '#6c757d' }}>

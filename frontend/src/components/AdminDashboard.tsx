@@ -31,7 +31,7 @@ export default function AdminDashboard() {
   return (
     <div className="admin-dashboard">
       <div className="dashboard-header">
-        <h1>🎯 Panel de Administración</h1>
+        <h1><img src="/icons/monitor.png" className="icon-inline-lg" alt="" /> Panel de Administración</h1>
         <p className="subtitle">Gestiona licencias de Zoom y asignaciones</p>
       </div>
 
@@ -41,13 +41,13 @@ export default function AdminDashboard() {
           className={`tab ${activeTab === 'overview' ? 'active' : ''}`}
           onClick={() => setActiveTab('overview')}
         >
-          📊 Licencias
+          <img src="/icons/monitor.png" className="icon-inline" alt="" /> Licencias
         </button>
         <button
           className={`tab ${activeTab === 'assignments' ? 'active' : ''}`}
           onClick={() => setActiveTab('assignments')}
         >
-          📋 Solicitudes
+          <img src="/icons/clipboard.png" className="icon-inline" alt="" /> Solicitudes
           {pendingCount > 0 && (
             <span className="tab-badge">{pendingCount}</span>
           )}
@@ -56,25 +56,25 @@ export default function AdminDashboard() {
           className={`tab ${activeTab === 'history' ? 'active' : ''}`}
           onClick={() => setActiveTab('history')}
         >
-          📜 Historial
+          <img src="/icons/clock.png" className="icon-inline" alt="" /> Historial
         </button>
         <button
           className={`tab ${activeTab === 'admins' ? 'active' : ''}`}
           onClick={() => setActiveTab('admins')}
         >
-          👥 Administradores
+          <img src="/icons/messages.png" className="icon-inline" alt="" /> Administración
         </button>
         <button
           className={`tab ${activeTab === 'analytics' ? 'active' : ''}`}
           onClick={() => setActiveTab('analytics')}
         >
-          📈 Analytics
+          <img src="/icons/chart.png" className="icon-inline" alt="" /> Analytics
         </button>
         <button
           className={`tab ${activeTab === 'settings' ? 'active' : ''}`}
           onClick={() => setActiveTab('settings')}
         >
-          ⚙️ Configuración
+          <img src="/icons/settings.png" className="icon-inline" alt="" /> Configuración
         </button>
       </div>
 

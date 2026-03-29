@@ -16,7 +16,7 @@ export default function LicenseDetailsModal({ licenseData, onClose }: LicenseDet
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>📋 Detalles de la Licencia</h3>
+          <h3><img src="/icons/clipboard.png" className="icon-inline" alt="" /> Detalles de la Licencia</h3>
           <button onClick={onClose} className="close-button">×</button>
         </div>
 
@@ -25,13 +25,13 @@ export default function LicenseDetailsModal({ licenseData, onClose }: LicenseDet
             className={activeTab === 'details' ? 'tab-active' : ''} 
             onClick={() => setActiveTab('details')}
           >
-            📄 Detalles
+            Detalles
           </button>
           <button 
             className={activeTab === 'history' ? 'tab-active' : ''} 
             onClick={() => setActiveTab('history')}
           >
-            📜 Historial
+            Historial
           </button>
         </div>
         
