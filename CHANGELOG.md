@@ -2,6 +2,27 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.4.22] – 2026-03-30
+
+### Changed
+- Made tab icons bigger (20px → 24px) and h2 heading icons bigger (20px → 28px) via contextual CSS.
+- Bumped `.icon-inline-lg` from 28px to 32px for consistency.
+
+## [1.4.21] – 2026-03-30
+
+### Fixed
+- **Historial**: The Actor column now shows the logged-in admin's username instead of always displaying "system".
+- Admin-only routes (create/update/delete license, update/cancel assignment) now require authentication and extract the actor from the JWT token.
+- Teacher assignment requests use the teacher's corporate email (`correocorporativo`) as the actor in history entries.
+
+## [1.4.20] – 2026-03-30
+
+### Changed
+- **Historial**: Replaced card/timeline grid with a sortable table (columns: Fecha, Tipo, Acción, Entidad, Cambios, Actor).
+- Action and entity-type badges now use the app colour palette.
+- Removed inline `<style>` block from HistoryViewer; all styles moved to App.css.
+- Simplified HistoryDashboard wrapper (removed redundant dashboard-header).
+
 ## [1.4.19] – 2026-03-30
 
 ### Changed

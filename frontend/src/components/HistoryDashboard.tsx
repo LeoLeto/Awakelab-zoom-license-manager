@@ -1,9 +1,14 @@
 import React from 'react';
 import { HistoryViewer } from './HistoryViewer';
 
-export const HistoryDashboard: React.FC = () => {
-  return (
-    <div className="history-dashboard">
+export const HistoryDashboard: React.FC = () => (
+  <div className="history-dashboard">
+    <HistoryViewer showFilters={true} title="Historial Completo" />
+  </div>
+);
+
+export default HistoryDashboard;
+
       <div className="dashboard-header">
         <h2><img src="/icons/clock.png" className="icon-inline" alt="" /> Panel de Historial</h2>
         <p>Visualiza todos los cambios realizados en las licencias y asignaciones</p>

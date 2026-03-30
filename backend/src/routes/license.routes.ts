@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { licenseService } from '../services/license.service';
 import { assignmentService } from '../services/assignment.service';
+import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
 
 const router = Router();
 
@@ -128,9 +129,10 @@ router.get('/:id', async (req: Request, res: Response) => {
  * Create a new license
  * POST /api/licenses
  */
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const license = await licenseService.createLicense(req.body);
+    const actor = req.username || 'system';
+    const license = await licenseService.createLicense(req.body, actor);
     res.status(201).json({ 
       success: true,
       message: 'Licencia creada exitosamente',
@@ -148,9 +150,10 @@ router.post('/', async (req: Request, res: Response) => {
  * Update a license
  * PUT /api/licenses/:id
  */
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const license = await licenseService.updateLicense(req.params.id, req.body);
+    const actor = req.username || 'system';
+    const license = await licenseService.updateLicense(req.params.id, req.body, actor);
     
     if (!license) {
       return res.status(404).json({
@@ -176,9 +179,10 @@ router.put('/:id', async (req: Request, res: Response) => {
  * Delete a license
  * DELETE /api/licenses/:id
  */
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const deleted = await licenseService.deleteLicense(req.params.id);
+    const actor = req.username || 'system';
+    const deleted = await licenseService.deleteLicense(req.params.id, actor);
     
     if (!deleted) {
       return res.status(404).json({
@@ -287,7 +291,9 @@ router.post('/assignments', async (req: Request, res: Response) => {
       }
     }
 
-    const assignment = await assignmentService.createAssignment(req.body);
+    // Use teacher's corporate email as actor so history shows who submitted the request
+    const actor = req.body.correocorporativo || 'teacher';
+    const assignment = await assignmentService.createAssignment(req.body, actor);
     res.status(201).json({ 
       success: true,
       message: 'Asignación creada exitosamente',
@@ -365,9 +371,10 @@ router.get('/assignments/pending', async (req: Request, res: Response) => {
  * Update an assignment (assign license to pending request)
  * PUT /api/licenses/assignments/:id
  */
-router.put('/assignments/:id', async (req: Request, res: Response) => {
+router.put('/assignments/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const assignment = await assignmentService.updateAssignment(req.params.id, req.body);
+    const actor = req.username || 'system';
+    const assignment = await assignmentService.updateAssignment(req.params.id, req.body, actor);
     
     if (!assignment) {
       return res.status(404).json({
@@ -393,9 +400,10 @@ router.put('/assignments/:id', async (req: Request, res: Response) => {
  * Cancel an assignment
  * POST /api/licenses/assignments/:id/cancel
  */
-router.post('/assignments/:id/cancel', async (req: Request, res: Response) => {
+router.post('/assignments/:id/cancel', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const assignment = await assignmentService.cancelAssignment(req.params.id);
+    const actor = req.username || 'system';
+    const assignment = await assignmentService.cancelAssignment(req.params.id, actor);
     
     if (!assignment) {
       return res.status(404).json({
