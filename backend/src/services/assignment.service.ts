@@ -114,7 +114,7 @@ export class AssignmentService {
     // Update license status to 'ocupado' only if licenseId is provided
     // and the assignment starts within the next 48 hours
     if (assignmentData.licenseId) {
-      const startDate = new Date(assignmentData.fechaInicioUso);
+      const startDate = new Date(assignmentData.fechaInicioUso!);
       const hoursUntilStart = (startDate.getTime() - Date.now()) / (1000 * 60 * 60);
 
       if (hoursUntilStart > 48) {
