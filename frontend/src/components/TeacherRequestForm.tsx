@@ -34,7 +34,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
   const [nuevaFechaFin, setNuevaFechaFin] = useState('');
   const [checkingExtension, setCheckingExtension] = useState(false);
   const [extensionAvailable, setExtensionAvailable] = useState<boolean | null>(null);
-  const [extensionMessage, setExtensionMessage] = useState('');
+  const [, setExtensionMessage] = useState('');
 
   // ── Area/Departamento options (loaded from settings) ─────────────────────
   const [areaOptions, setAreaOptions] = useState<string[]>([]);  const [acceptedDomains, setAcceptedDomains] = useState<string[]>([]);
