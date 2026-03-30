@@ -23,12 +23,6 @@ export default function Navigation() {
         </div>
         <div className="nav-links">
           <Link 
-            to="/" 
-            className={location.pathname === '/' ? 'active' : ''}
-          >
-            Inicio
-          </Link>
-          <Link 
             to="/admin" 
             className={location.pathname === '/admin' ? 'active' : ''}
           >
@@ -40,40 +34,23 @@ export default function Navigation() {
           >
             Portal de asignaciones
           </Link>
-          
-          {isAuthenticated && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-              <span style={{ 
-                color: 'white', 
-                fontSize: '0.9em',
-                fontWeight: '500',
-                padding: '0.5rem 1rem',
-                borderRadius: '0.375rem',
-                background: 'rgba(255,255,255,0.15)',
-              }}>
-                {admin?.username}
-              </span>
-              <button 
-                onClick={handleLogout}
-                style={{
-                  background: 'rgba(255,255,255,0.2)',
-                  border: '1px solid rgba(255,255,255,0.4)',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '0.375rem',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: '0.9em',
-                  fontWeight: '500',
-                  transition: 'background-color 0.2s',
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
-              >
-                Cerrar Sesión
-              </button>
-            </div>
-          )}
         </div>
+
+        {isAuthenticated && (
+          <div className="nav-auth">
+            <span className="nav-username">
+              {admin?.username}
+            </span>
+            <button 
+              onClick={handleLogout}
+              className="nav-logout-btn"
+              onMouseEnter={(e) => e.currentTarget.style.background = '#2a9198'}
+              onMouseLeave={(e) => e.currentTarget.style.background = '#35B3BA'}
+            >
+              Cerrar Sesión
+            </button>
+          </div>
+        )}
       </div>
     </nav>
   );

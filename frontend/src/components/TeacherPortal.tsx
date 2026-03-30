@@ -24,11 +24,6 @@ export default function TeacherPortal() {
 
   return (
     <div className="teacher-portal">
-      <div className="dashboard-header">
-        <h1><img src="/icons/calendar.png" className="icon-inline-lg" alt="" /> Portal de asignaciones</h1>
-        <p className="subtitle">Solicita y gestiona tus licencias de Zoom</p>
-      </div>
-
       {/* Navigation Tabs */}
       <div className="tabs">
         <button

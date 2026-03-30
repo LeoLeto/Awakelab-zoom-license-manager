@@ -30,11 +30,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="admin-dashboard">
-      <div className="dashboard-header">
-        <h1><img src="/icons/monitor.png" className="icon-inline-lg" alt="" /> Panel de Administración</h1>
-        <p className="subtitle">Gestiona licencias de Zoom y asignaciones</p>
-      </div>
-
       {/* Navigation Tabs */}
       <div className="tabs">
         <button

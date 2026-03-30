@@ -216,14 +216,14 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
                     <button
                       className="btn-small"
                       onClick={() => setSelectedLicenseForDetails(item)}
-                      title="Ver detalles"
+                      data-tooltip="Ver detalles"
                     >
                       <img src="/icons/clipboard.png" className="icon-inline" alt="Ver detalles" />
                     </button>
                     <button
                       className="btn-small"
                       onClick={() => handlePasswordChange(item)}
-                      title="Cambiar contraseña de Zoom"
+                      data-tooltip="Cambiar contraseña de Zoom"
                     >
                       <img src="/icons/password.png" className="icon-inline" alt="Cambiar contraseña" />
                     </button>

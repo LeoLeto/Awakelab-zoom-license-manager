@@ -2,6 +2,63 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.4.19] – 2026-03-30
+
+### Changed
+- Removed "Inicio" link from the navbar (irrelevant for logged-in users).
+- Remaining nav links (Panel de Administración, Portal de asignaciones) are now left-aligned next to the logo.
+- Auth section (username + logout button) pushed to the right with `margin-left: auto`.
+- Removed redundant `dashboard-header` from AdminDashboard and TeacherPortal.
+
+## [1.4.18] – 2026-03-30
+
+### Changed
+- Version badge repositioned to `position: absolute` at the top-right corner of the navbar logo.
+
+## [1.4.17] – 2026-03-30
+
+### Fixed
+- Icons inside action buttons no longer inherit `margin-right: 6px`, which was off-centering them.
+
+## [1.4.16] – 2026-03-30
+
+### Changed
+- Navbar logo height increased from 40px to 54px.
+
+## [1.4.15] – 2026-03-30
+
+### Changed
+- Action buttons in license table now left-align with the cell edge (removed centering).
+- Replaced native `title` tooltips on action buttons with instant CSS `data-tooltip` (no delay).
+
+## [1.4.14] – 2026-03-30
+
+### Changed
+- Navbar buttons (logout) now use `#35B3BA` as background color.
+- Active nav link underline changed from white to `#35B3BA`.
+
+## [1.4.13] – 2026-03-30
+
+### Changed
+- **Homepage**: Moved "sobre el sistema" into its own separate card below the main card.
+- Replaced the features grid with a carousel slider — one feature per slide with prev/next arrow navigation.
+
+## [1.4.12] – 2026-03-30
+
+### Changed
+- Increased homepage logo size from 50px to 90px.
+
+## [1.4.11] – 2026-03-30
+
+### Changed
+- Removed logo-blue.png from the login card (Inicio de sesión).
+- Restored logo-blue.png on the homepage card.
+
+## [1.4.10] – 2026-03-30
+
+### Removed
+- Removed logo-blue.png from the homepage card.
+
 ## [1.4.9] – 2026-03-29
 
 ### Changed

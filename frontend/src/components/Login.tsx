@@ -29,9 +29,6 @@ const Login: React.FC = () => {
   return (
     <div className="login-page">
       <div className="home-card" style={{ maxWidth: '450px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-          <img src="/images/logo-blue.png" alt="Zoom Manager" style={{ height: 44, margin: '0 auto' }} />
-        </div>
         <h2 style={{ 
           textAlign: 'center', 
           marginBottom: '0.5rem',
