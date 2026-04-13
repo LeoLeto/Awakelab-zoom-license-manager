@@ -97,7 +97,7 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
   };
 
   const formatTimestamp = (ts: string) =>
-    new Date(ts).toLocaleString('es-ES', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    new Date(ts).toLocaleString('es-ES', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
 
   const visibleEntries = history.filter((entry) =>
     entry.changes.some((c) => {

@@ -2,6 +2,22 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.4.25] – 2026-04-13
+
+### Fixed
+- History timestamps now include the timezone abbreviation (e.g. "CET", "CEST") so the displayed hour is unambiguous.
+
+## [1.4.24] – 2026-04-13
+
+### Fixed
+- Assignment expiration now records a `status_change` history entry (actor: system, `estado: activo → expirado`), so expired assignments appear in the license history.
+- `markExpiredAssignments` no longer re-processes all previously expired assignments on every cron run — it now scopes the license-status check only to the assignments just expired.
+
+## [1.4.23] – 2026-04-13
+
+### Fixed
+- `fechaFinUso` is now stored as end-of-day (`23:59:59.999Z`) instead of midnight UTC, so the final day of an assignment is fully included in active-assignment queries and not treated as already expired.
+
 ## [1.4.22] – 2026-03-30
 
 ### Changed

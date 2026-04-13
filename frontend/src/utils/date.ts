@@ -10,6 +10,7 @@ const DATETIME_OPTS: Intl.DateTimeFormatOptions = {
   year: '2-digit',
   hour: '2-digit',
   minute: '2-digit',
+  timeZoneName: 'short',
 };
 
 export function formatDate(value: string | Date | undefined | null): string {

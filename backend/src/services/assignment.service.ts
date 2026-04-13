@@ -77,6 +77,13 @@ export class AssignmentService {
    * Create a new assignment
    */
   async createAssignment(assignmentData: Partial<IAssignment>, actor: string = 'system'): Promise<IAssignment> {
+    // Normalize fechaFinUso to end-of-day so the final day is fully included in active queries
+    if (assignmentData.fechaFinUso) {
+      const d = new Date(assignmentData.fechaFinUso);
+      d.setUTCHours(23, 59, 59, 999);
+      assignmentData = { ...assignmentData, fechaFinUso: d };
+    }
+
     // If licenseId is provided, validate and check availability
     if (assignmentData.licenseId) {
       // Validate license exists
@@ -195,6 +202,13 @@ export class AssignmentService {
     const existingAssignment = await Assignment.findById(id);
     if (!existingAssignment) {
       throw new Error('Asignación no encontrada');
+    }
+
+    // Normalize fechaFinUso to end-of-day so the final day is fully included in active queries
+    if (updateData.fechaFinUso) {
+      const d = new Date(updateData.fechaFinUso);
+      d.setUTCHours(23, 59, 59, 999);
+      updateData = { ...updateData, fechaFinUso: d };
     }
 
     const oldLicenseId = existingAssignment.licenseId;
@@ -507,38 +521,48 @@ export class AssignmentService {
    */
   async markExpiredAssignments(): Promise<number> {
     const now = new Date();
-    
-    const result = await Assignment.updateMany(
-      {
-        estado: 'activo',
-        fechaFinUso: { $lt: now }
-      },
-      {
-        $set: { estado: 'expirado' }
-      }
-    );
 
-    // Update license status for expired assignments
-    const expiredAssignments = await Assignment.find({
-      estado: 'expirado',
+    // Fetch before updating so we have the docs for history recording
+    const toExpire = await Assignment.find({
+      estado: 'activo',
       fechaFinUso: { $lt: now }
     });
 
-    for (const assignment of expiredAssignments) {
-      const activeAssignments = await Assignment.find({
-        licenseId: assignment.licenseId,
-        estado: 'activo'
+    if (toExpire.length === 0) return 0;
+
+    await Assignment.updateMany(
+      { _id: { $in: toExpire.map(a => a._id) } },
+      { $set: { estado: 'expirado' } }
+    );
+
+    for (const assignment of toExpire) {
+      // Record expiration in history
+      await HistoryService.recordChange({
+        entityType: 'assignment',
+        entityId: assignment._id,
+        action: 'status_change',
+        actor: 'system',
+        changes: [{ field: 'estado', oldValue: 'activo', newValue: 'expirado' }],
+        metadata: { assignmentName: assignment.nombreApellidos },
       });
 
-      if (activeAssignments.length === 0) {
-        await License.findByIdAndUpdate(
-          assignment.licenseId,
-          { $set: { estado: 'libre' } }
-        );
+      // Free the license if no other active assignment is using it
+      if (assignment.licenseId) {
+        const activeAssignments = await Assignment.find({
+          licenseId: assignment.licenseId,
+          estado: 'activo'
+        });
+
+        if (activeAssignments.length === 0) {
+          await License.findByIdAndUpdate(
+            assignment.licenseId,
+            { $set: { estado: 'libre' } }
+          );
+        }
       }
     }
 
-    return result.modifiedCount;
+    return toExpire.length;
   }
 
   /**
