@@ -180,7 +180,8 @@ export class AssignmentService {
             savedAssignment.correocorporativo,
             new Date(savedAssignment.fechaInicioUso).toLocaleDateString('es-CL'),
             new Date(savedAssignment.fechaFinUso).toLocaleDateString('es-CL'),
-            savedAssignment.area
+            savedAssignment.area,
+            !!savedAssignment.isExtension
           );
         } catch (error: any) {
           console.error('Failed to send pending request notification:', error.message);
@@ -350,6 +351,7 @@ export class AssignmentService {
                   startDate: startDate.toLocaleDateString('es-CL'),
                   endDate: new Date(updatedAssignment.fechaFinUso).toLocaleDateString('es-CL'),
                   platform: updatedAssignment.tipoUso,
+                  hostKey: license.claveAnfitrionZoom,
                   moodleUser: license.usuarioMoodle,
                   moodlePassword: license.claveUsuarioMoodle,
                   credentialsPending: true,
@@ -375,6 +377,7 @@ export class AssignmentService {
                   endDate: new Date(updatedAssignment.fechaFinUso).toLocaleDateString('es-CL'),
                   platform: updatedAssignment.tipoUso,
                   zoomPassword: freshPassword,
+                  hostKey: license.claveAnfitrionZoom,
                   moodleUser: license.usuarioMoodle,
                   moodlePassword: license.claveUsuarioMoodle,
                 });
@@ -398,6 +401,7 @@ export class AssignmentService {
                 endDate: new Date(updatedAssignment.fechaFinUso).toLocaleDateString('es-CL'),
                 platform: updatedAssignment.tipoUso,
                 zoomPassword: license.passwordEmail,
+                hostKey: license.claveAnfitrionZoom,
                 moodleUser: license.usuarioMoodle,
                 moodlePassword: license.claveUsuarioMoodle,
               });

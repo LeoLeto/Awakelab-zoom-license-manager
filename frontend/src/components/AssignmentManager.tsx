@@ -17,6 +17,8 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
   const [selectedLicenseForAssignment, setSelectedLicenseForAssignment] = useState<string>('');
   const [modalLoading, setModalLoading] = useState(false);
   const [assigning, setAssigning] = useState(false);
+  const [extensionOriginalLicense, setExtensionOriginalLicense] = useState<License | null>(null);
+  const [forcePickLicense, setForcePickLicense] = useState(false);
   const [areaOptions, setAreaOptions] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     licenseId: '',
@@ -122,7 +124,30 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
   const handleStartAssigning = async (assignment: Assignment) => {
     setAssigningTo(assignment);
     setSelectedLicenseForAssignment('');
+    setExtensionOriginalLicense(null);
+    setForcePickLicense(false);
     setModalLoading(true);
+
+    if (assignment.isExtension && assignment.originalAssignmentId) {
+      try {
+        const res = await assignmentApi.getAssignmentById(assignment.originalAssignmentId);
+        const origAssignment = res.assignment as Assignment & { licenseId?: any };
+        const licenseId = typeof origAssignment.licenseId === 'object'
+          ? origAssignment.licenseId?._id
+          : origAssignment.licenseId;
+
+        if (licenseId) {
+          const licRes = await licenseApi.getLicenseById(licenseId);
+          setExtensionOriginalLicense(licRes.license.license);
+          setSelectedLicenseForAssignment(licenseId);
+          setModalLoading(false);
+          return; // skip loading the general available-license list
+        }
+      } catch {
+        // original assignment not found — fall through to regular picker
+      }
+    }
+
     await loadAvailableLicensesForAssignment(assignment);
     setModalLoading(false);
   };
@@ -152,6 +177,8 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
     setAssigningTo(null);
     setSelectedLicenseForAssignment('');
     setAvailableLicenses([]);
+    setExtensionOriginalLicense(null);
+    setForcePickLicense(false);
   };
 
   if (loading) {
@@ -337,6 +364,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
             <table>
               <thead>
                 <tr>
+                  <th>Tipo</th>
                   <th>Usuario</th>
                   <th>Email</th>
                   <th>Área</th>
@@ -350,6 +378,13 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
               <tbody>
                 {pendingAssignments.map((assignment) => (
                   <tr key={assignment._id}>
+                    <td>
+                      {assignment.isExtension ? (
+                        <span className="badge-extension">Ampliación</span>
+                      ) : (
+                        <span className="badge-nueva">Nueva</span>
+                      )}
+                    </td>
                     <td>{assignment.nombreApellidos}</td>
                     <td>{assignment.correocorporativo}</td>
                     <td>{assignment.area}</td>
@@ -363,7 +398,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
                           className="btn-primary btn-small"
                           onClick={() => handleStartAssigning(assignment)}
                         >
-                          Asignar Licencia
+                          {assignment.isExtension ? 'Asignar Ampliación' : 'Asignar Licencia'}
                         </button>
                         <button
                           className="btn-danger btn-small"
@@ -387,7 +422,10 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
         <div className="modal-overlay" onClick={handleCancelAssigning}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="assign-modal-header">
-              <h3><img src="/icons/calendar.png" className="icon-inline" alt="" /> Asignar Licencia</h3>
+              <h3>
+                <img src="/icons/calendar.png" className="icon-inline" alt="" />
+                {assigningTo.isExtension ? ' Asignar Licencia para Ampliación' : ' Asignar Licencia'}
+              </h3>
               <button className="close-button" onClick={handleCancelAssigning}>×</button>
             </div>
 
@@ -413,31 +451,67 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
               </div>
             </div>
 
-            <p className="assign-modal-subtitle">Selecciona una licencia disponible:</p>
-
             {modalLoading ? (
-              <div className="assign-modal-empty">Cargando licencias...</div>
-            ) : availableLicenses.length === 0 ? (
-              <div className="assign-modal-empty"><img src="/icons/shield.png" className="icon-inline" alt="" /> No hay licencias disponibles para este período.</div>
-            ) : (
-              <div className="assign-license-list">
-                {availableLicenses.map((license) => (
-                  <div
-                    key={license._id}
-                    className={`assign-license-card${
-                      selectedLicenseForAssignment === license._id ? ' selected' : ''
-                    }`}
-                    onClick={() => setSelectedLicenseForAssignment(license._id)}
-                  >
-                    <div className="assign-license-card-check">
-                      {selectedLicenseForAssignment === license._id ? '●' : '○'}
-                    </div>
-                    <div>
-                      <div className="assign-license-card-email">{license.email}</div>
-                      <div className="assign-license-card-user">{license.usuarioMoodle}</div>
-                    </div>
+              <div className="assign-modal-empty">Cargando licencia...</div>
+            ) : extensionOriginalLicense && !forcePickLicense ? (
+              /* Extension: show the original license, no picker needed */
+              <div>
+                <p className="assign-modal-subtitle">
+                  Esta ampliación continuará con la misma licencia del período anterior:
+                </p>
+                <div className="assign-license-card selected" style={{ cursor: 'default' }}>
+                  <div className="assign-license-card-check">●</div>
+                  <div>
+                    <div className="assign-license-card-email">{extensionOriginalLicense.email}</div>
+                    {extensionOriginalLicense.usuarioMoodle && (
+                      <div className="assign-license-card-user">{extensionOriginalLicense.usuarioMoodle}</div>
+                    )}
                   </div>
-                ))}
+                </div>
+                <button
+                  className="btn-link"
+                  style={{ marginTop: '8px', fontSize: '0.85rem' }}
+                  onClick={async () => {
+                    setForcePickLicense(true);
+                    setExtensionOriginalLicense(null);
+                    setSelectedLicenseForAssignment('');
+                    setModalLoading(true);
+                    await loadAvailableLicensesForAssignment(assigningTo!);
+                    setModalLoading(false);
+                  }}
+                >
+                  Cambiar licencia
+                </button>
+              </div>
+            ) : (
+              /* Regular new assignment or admin forcing a different license */
+              <div>
+                <p className="assign-modal-subtitle">Selecciona una licencia disponible:</p>
+                {availableLicenses.length === 0 ? (
+                  <div className="assign-modal-empty">
+                    <img src="/icons/shield.png" className="icon-inline" alt="" /> No hay licencias disponibles para este período.
+                  </div>
+                ) : (
+                  <div className="assign-license-list">
+                    {availableLicenses.map((license) => (
+                      <div
+                        key={license._id}
+                        className={`assign-license-card${
+                          selectedLicenseForAssignment === license._id ? ' selected' : ''
+                        }`}
+                        onClick={() => setSelectedLicenseForAssignment(license._id)}
+                      >
+                        <div className="assign-license-card-check">
+                          {selectedLicenseForAssignment === license._id ? '●' : '○'}
+                        </div>
+                        <div>
+                          <div className="assign-license-card-email">{license.email}</div>
+                          <div className="assign-license-card-user">{license.usuarioMoodle}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -450,7 +524,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
                 onClick={handleAssignLicense}
                 disabled={!selectedLicenseForAssignment || assigning}
               >
-                {assigning ? 'Asignando...' : 'Confirmar Asignación'}
+                {assigning ? 'Asignando...' : assigningTo.isExtension ? 'Confirmar Ampliación' : 'Confirmar Asignación'}
               </button>
             </div>
           </div>

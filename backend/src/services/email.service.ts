@@ -18,6 +18,7 @@ interface AssignmentEmailData {
   zoomPassword?: string;
   moodleUser?: string;
   moodlePassword?: string;
+  hostKey?: string;
   isExtension?: boolean;
   credentialsPending?: boolean;
 }
@@ -179,6 +180,7 @@ export class EmailService {
             <div class="zoom-credentials">
               <p><strong>📧 Email Zoom:</strong> ${data.licenseEmail}</p>
               ${data.zoomPassword ? `<p><strong>🔑 Contraseña Zoom:</strong> <code>${data.zoomPassword}</code></p>` : ''}
+              ${data.hostKey ? `<p><strong>🎙️ Clave de anfitrión:</strong> <code>${data.hostKey}</code></p>` : ''}
             </div>
             <div class="warning-box">
               <p style="margin: 0 0 6px 0;"><strong>⚠️ Sobre la contraseña Zoom:</strong></p>
@@ -290,6 +292,7 @@ export class EmailService {
       endDate: '11/06/2026',
       platform: 'Uso para una plataforma Moodle de Grupo Aspasia',
       zoomPassword: 'Zoom@S3gura!2026',
+      hostKey: '123456',
       moodleUser: 'jgarcia.moodle',
       moodlePassword: 'Moodle#Pass2026',
     });
@@ -453,7 +456,8 @@ export class EmailService {
     teacherEmail: string,
     startDate: string,
     endDate: string,
-    area: string
+    area: string,
+    isExtension: boolean = false
   ): Promise<boolean> {
     const adminEmailsSetting = await settingsService.getSetting('adminNotificationEmails');
 
@@ -487,22 +491,27 @@ export class EmailService {
       <body>
         <div class="container">
           <div class="header">
-            <h2>📋 Nueva Solicitud de Licencia Pendiente</h2>
+            <h2>${isExtension ? '📅 Solicitud de Ampliación de Licencia Pendiente' : '📋 Nueva Solicitud de Licencia Pendiente'}</h2>
           </div>
           <div class="content">
             <p>Hola Administrador,</p>
-            
-            <p>Se ha recibido una nueva solicitud de licencia de Zoom que requiere tu atención.</p>
-            
+
+            <p>${isExtension
+              ? 'Se ha recibido una <strong>solicitud de ampliación</strong> de licencia de Zoom que requiere tu atención.'
+              : 'Se ha recibido una <strong>nueva solicitud</strong> de licencia de Zoom que requiere tu atención.'}</p>
+
             <div class="info-box">
               <p><strong>👤 Docente:</strong> ${teacherName}</p>
               <p><strong>📧 Email:</strong> ${teacherEmail}</p>
               <p><strong>🏢 Área:</strong> ${area}</p>
               <p><strong>📅 Período Solicitado:</strong> ${startDate} - ${endDate}</p>
+              ${isExtension ? '<p><strong>🔄 Tipo:</strong> Ampliación de licencia existente</p>' : ''}
             </div>
-            
+
             <p><strong>Acción requerida:</strong></p>
-            <p>Por favor, ingresa al Panel de Administración para asignar una licencia disponible a esta solicitud.</p>
+            <p>${isExtension
+              ? 'Por favor, ingresa al Panel de Administración para asignar una licencia disponible al nuevo período de ampliación.'
+              : 'Por favor, ingresa al Panel de Administración para asignar una licencia disponible a esta solicitud.'}</p>
             
             <p>Saludos,<br><strong>Sistema de Gestión de Licencias Zoom</strong></p>
           </div>
@@ -516,7 +525,9 @@ export class EmailService {
 
     return await this.sendEmail({
       to: emails,
-      subject: `📋 Nueva Solicitud de Licencia - ${teacherName}`,
+      subject: isExtension
+        ? `📅 Solicitud de Ampliación de Licencia - ${teacherName}`
+        : `📋 Nueva Solicitud de Licencia - ${teacherName}`,
       html,
     });
   }

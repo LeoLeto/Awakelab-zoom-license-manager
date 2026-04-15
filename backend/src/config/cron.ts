@@ -240,6 +240,7 @@ export const initCronJobs = () => {
             endDate: new Date(assignment.fechaFinUso).toLocaleDateString('es-CL'),
             platform: assignment.tipoUso,
             zoomPassword: freshPassword,
+            hostKey: license.claveAnfitrionZoom,
             moodleUser: license.usuarioMoodle,
             moodlePassword: license.claveUsuarioMoodle,
           });

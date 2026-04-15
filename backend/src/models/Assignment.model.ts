@@ -12,6 +12,8 @@ export interface IAssignment extends Document {
   fechaFinUso: Date;
   estado: 'activo' | 'expirado' | 'cancelado' | 'pendiente';
   credentialsSent: boolean;
+  isExtension?: boolean;
+  originalAssignmentId?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -71,6 +73,15 @@ const AssignmentSchema = new Schema<IAssignment>(
     credentialsSent: {
       type: Boolean,
       default: true,
+    },
+    isExtension: {
+      type: Boolean,
+      default: false,
+    },
+    originalAssignmentId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Assignment',
+      required: false,
     },
   },
   {

@@ -39,6 +39,8 @@ export interface Assignment {
   fechaInicioUso: string;
   fechaFinUso: string;
   estado: 'activo' | 'expirado' | 'cancelado' | 'pendiente';
+  isExtension?: boolean;
+  originalAssignmentId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -69,4 +71,6 @@ export interface CreateAssignmentDto {
   tipoUso: TipoUso;
   fechaInicioUso: string;
   fechaFinUso: string;
+  isExtension?: boolean;
+  originalAssignmentId?: string;
 }

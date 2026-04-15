@@ -2,6 +2,31 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.5.2] – 2026-04-15
+
+### Fixed
+- Las ampliaciones ahora se procesan correctamente como extensiones de la licencia original:
+  - El formulario de ampliación almacena el ID de la asignación original (`originalAssignmentId`).
+  - Al abrir "Asignar Ampliación" en Solicitudes Pendientes, el sistema recupera automáticamente la licencia del período anterior y la muestra pre-seleccionada, sin necesidad de elegir una licencia manualmente.
+  - El administrador puede pulsar "Cambiar licencia" si excepcionalmente necesita asignar una diferente.
+
+## [1.5.1] – 2026-04-15
+
+### Fixed
+- Las solicitudes de ampliación ya son distinguibles de las solicitudes nuevas en toda la cadena:
+  - **Solicitudes Pendientes**: nueva columna "Tipo" con badges **Nueva** (azul) y **Ampliación** (amarillo).
+  - Botón de acción cambia a **Asignar Ampliación** y el modal a **Asignar Licencia para Ampliación** / **Confirmar Ampliación** cuando corresponde.
+  - Correo de notificación al administrador usa asunto y cuerpo diferenciados: «Solicitud de Ampliación de Licencia Pendiente» en lugar de «Nueva Solicitud».
+
+## [1.5.0] – 2026-04-15
+
+### Added
+- Email de asignación/ampliación ahora incluye la **Clave de anfitrión** (host key) de Zoom cuando está disponible en la licencia.
+- Sección **Historial**: cada fila ahora tiene un botón "Ver detalles" (icono de portapapeles) que abre el modal de detalles de la licencia asociada, sin necesidad de copiar el ID y buscarlo manualmente.
+
+### Fixed
+- Error 400 al ampliar una licencia con un valor heredado de `tipoUso`: el formulario de ampliación ahora muestra siempre un selector de Tipo de Uso, pre-rellenado con el valor existente si es válido o vacío si es un valor heredado, y exige seleccionar una opción válida antes de enviar.
+
 ## [1.4.25] – 2026-04-13
 
 ### Fixed

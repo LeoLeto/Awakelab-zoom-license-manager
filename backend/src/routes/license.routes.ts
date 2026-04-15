@@ -368,6 +368,22 @@ router.get('/assignments/pending', async (req: Request, res: Response) => {
 });
 
 /**
+ * Get a single assignment by ID
+ * GET /api/licenses/assignments/:id
+ */
+router.get('/assignments/:id', async (req: Request, res: Response) => {
+  try {
+    const assignment = await assignmentService.getAssignmentById(req.params.id);
+    if (!assignment) {
+      return res.status(404).json({ success: false, error: 'Asignación no encontrada' });
+    }
+    res.json({ success: true, assignment });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * Update an assignment (assign license to pending request)
  * PUT /api/licenses/assignments/:id
  */

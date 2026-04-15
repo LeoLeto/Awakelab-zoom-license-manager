@@ -35,6 +35,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
   const [checkingExtension, setCheckingExtension] = useState(false);
   const [extensionAvailable, setExtensionAvailable] = useState<boolean | null>(null);
   const [, setExtensionMessage] = useState('');
+  const [extensionTipoUso, setExtensionTipoUso] = useState('');
 
   // ── Area/Departamento options (loaded from settings) ─────────────────────
   const [areaOptions, setAreaOptions] = useState<string[]>([]);  const [acceptedDomains, setAcceptedDomains] = useState<string[]>([]);
@@ -82,6 +83,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
     setNuevaFechaFin('');
     setExtensionAvailable(null);
     setExtensionMessage('');
+    setExtensionTipoUso('');
   };
 
   const resetNuevaState = () => {
@@ -159,6 +161,9 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
     setNuevaFechaFin('');
     setExtensionAvailable(null);
     setExtensionMessage('');
+    // Pre-populate tipoUso only if the stored value is still a valid option
+    const isValidTipo = (TIPO_USO_OPTIONS as readonly string[]).includes(a.tipoUso);
+    setExtensionTipoUso(isValidTipo ? a.tipoUso : '');
   };
 
   const handleNuevaFechaFinChange = (value: string) => {
@@ -239,9 +244,11 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
           correocorporativo: selectedAssignment.correocorporativo,
           area: selectedAssignment.area,
           comunidadAutonoma: selectedAssignment.comunidadAutonoma,
-          tipoUso: selectedAssignment.tipoUso as TipoUso,
+          tipoUso: extensionTipoUso as TipoUso,
           fechaInicioUso: extensionStart,
           fechaFinUso: nuevaFechaFin,
+          isExtension: true,
+          originalAssignmentId: selectedAssignment._id,
         });
       } else {
         if (!isDomainAccepted(formData.correocorporativo)) {
@@ -529,6 +536,27 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                         </strong>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Tipo de Uso — must be a valid value before submitting */}
+                  <div className="form-group">
+                    <label htmlFor="extensionTipoUso">Tipo de Uso *</label>
+                    <select
+                      id="extensionTipoUso"
+                      required={isAmpliacion}
+                      value={extensionTipoUso}
+                      onChange={(e) => setExtensionTipoUso(e.target.value)}
+                    >
+                      <option value="">Seleccionar...</option>
+                      {TIPO_USO_OPTIONS.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                    {selectedAssignment.tipoUso && !(TIPO_USO_OPTIONS as readonly string[]).includes(selectedAssignment.tipoUso) && (
+                      <small className="form-hint" style={{ display: 'block', marginTop: '4px', color: '#856404' }}>
+                        Valor heredado: «{selectedAssignment.tipoUso}» — selecciona una opción válida.
+                      </small>
+                    )}
                   </div>
 
                   {/* New end date */}
@@ -845,6 +873,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                   loading ||
                   (isAmpliacion &&
                     (!selectedAssignment ||
+                      !extensionTipoUso ||
                       !nuevaFechaFin ||
                       extensionAvailable !== true ||
                       checkingExtension))

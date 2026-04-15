@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { historyApi } from '../services/api.service';
+import { historyApi, licenseApi, assignmentApi } from '../services/api.service';
 import { HistoryEntry, HistoryFilters } from '../types/history.types';
+import { LicenseWithAssignment, Assignment } from '../types/license.types';
 import { formatDateTime } from '../utils/date';
+import LicenseDetailsModal from './LicenseDetailsModal';
 
 interface HistoryViewerProps {
   entityType?: 'license' | 'assignment';
@@ -53,6 +55,8 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<HistoryFilters>({ limit: 50 });
+  const [detailsModal, setDetailsModal] = useState<LicenseWithAssignment | null>(null);
+  const [loadingDetailsId, setLoadingDetailsId] = useState<string | null>(null);
 
   useEffect(() => { fetchHistory(); }, [entityType, entityId, filters]);
 
@@ -73,6 +77,34 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
       setError(err instanceof Error ? err.message : 'Error al cargar el historial');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleViewDetails = async (entry: HistoryEntry) => {
+    setLoadingDetailsId(entry._id);
+    try {
+      if (entry.entityType === 'license') {
+        const res = await licenseApi.getLicenseById(entry.entityId);
+        setDetailsModal(res.license);
+      } else {
+        // Assignment: fetch the assignment then its license
+        const res = await assignmentApi.getAssignmentById(entry.entityId);
+        const assignment = res.assignment as Assignment & { licenseId?: any };
+        const licenseId = typeof assignment.licenseId === 'object'
+          ? (assignment.licenseId as any)?._id
+          : assignment.licenseId;
+        if (licenseId) {
+          const licRes = await licenseApi.getLicenseById(licenseId);
+          setDetailsModal(licRes.license);
+        } else {
+          // Pending assignment — no license yet; show a minimal view
+          setDetailsModal({ license: null as any, assignment });
+        }
+      }
+    } catch {
+      // silently ignore fetch errors
+    } finally {
+      setLoadingDetailsId(null);
     }
   };
 
@@ -168,6 +200,13 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
         </div>
       )}
 
+      {detailsModal && detailsModal.license && (
+        <LicenseDetailsModal
+          licenseData={detailsModal}
+          onClose={() => setDetailsModal(null)}
+        />
+      )}
+
       {!loading && !error && (
         <div className="table-container">
           <table className="history-table">
@@ -179,12 +218,13 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
                 <th>Entidad</th>
                 <th>Cambios</th>
                 <th>Actor</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
               {visibleEntries.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="history-empty">No hay historial disponible</td>
+                  <td colSpan={7} className="history-empty">No hay historial disponible</td>
                 </tr>
               ) : (
                 visibleEntries.map((entry) => {
@@ -228,6 +268,16 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
                         )}
                       </td>
                       <td className="history-actor">{entry.actor}</td>
+                      <td>
+                        <button
+                          className="btn-details"
+                          title="Ver detalles"
+                          disabled={loadingDetailsId === entry._id}
+                          onClick={() => handleViewDetails(entry)}
+                        >
+                          {loadingDetailsId === entry._id ? '…' : <img src="/icons/clipboard.png" className="icon-inline" alt="Ver detalles" />}
+                        </button>
+                      </td>
                     </tr>
                   );
                 })

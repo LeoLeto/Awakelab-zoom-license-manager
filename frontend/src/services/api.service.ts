@@ -118,6 +118,10 @@ export const licenseApi = {
 };
 
 export const assignmentApi = {
+  async getAssignmentById(id: string): Promise<{ success: boolean; assignment: Assignment }> {
+    return apiCall(`${API_BASE_URL}/licenses/assignments/${id}`);
+  },
+
   async getAllAssignments(): Promise<{ success: boolean; assignments: Assignment[] }> {
     return apiCall(`${API_BASE_URL}/licenses/assignments/all`);
   },
