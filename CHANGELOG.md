@@ -2,6 +2,25 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.6.3] – 2026-04-15
+
+### Fixed
+- Analytics y Configuración ya no tienen el padding superior extra que los diferenciaba del resto de secciones (`padding: 2rem` → `padding: 0` en `.analytics-dashboard` y `.settings-container`).
+
+## [1.6.2] – 2026-04-15
+
+### Fixed
+- Uniformizados los encabezados de sección en todos los componentes principales:
+  - `UserList`, `AdminManagement`, `HistoryViewer`, `AnalyticsDashboard` ahora usan `section-header` + `h2` con icono, igual que Resumen de Licencias y Solicitudes.
+  - `AdminManagement`: eliminados estilos en línea, clases `btn btn-primary`/`btn btn-danger` reemplazadas por `btn-primary`/`btn-danger`, alertas cambiadas a clases `error`/`success`, tabla migrada a `table-container`.
+- CSS: eliminadas las clases obsoletas `.history-viewer-header`, `.history-viewer-title`, `.analytics-header`, `.analytics-actions` y sus media queries.
+- `.success` ahora tiene el mismo estilo de caja que `.error` y `.warning`.
+
+## [1.6.1] – 2026-04-15
+
+### Fixed
+- EmailLogViewer ahora usa exclusivamente las clases CSS del sistema de diseño existente (misma apariencia que Resumen de Licencias y Solicitudes), sin estilos en línea ni clases ad-hoc.
+
 ## [1.6.0] – 2026-04-15
 
 ### Added

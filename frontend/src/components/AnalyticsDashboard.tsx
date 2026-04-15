@@ -119,13 +119,9 @@ const AnalyticsDashboard: React.FC = () => {
 
   return (
     <div className="analytics-dashboard">
-      <div className="analytics-header">
+      <div className="section-header">
         <h2><img src="/icons/chart.png" className="icon-inline" alt="" /> Panel de Análisis</h2>
-        <div className="analytics-actions">
-          <button onClick={loadAnalytics} className="btn-refresh">
-            Actualizar
-          </button>
-        </div>
+        <button onClick={loadAnalytics} className="btn-refresh">Actualizar</button>
       </div>
 
       {/* Overview Cards */}

@@ -107,106 +107,77 @@ const AdminManagement: React.FC = () => {
   };
 
   if (isLoading) {
-    return <div className="container"><p>Cargando administradores...</p></div>;
+    return <div className="loading">Cargando administradores...</div>;
   }
 
   return (
-    <div className="container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2>Gestión de Administradores</h2>
+    <div className="assignment-manager">
+      <div className="section-header">
+        <h2><img src="/icons/messages.png" className="icon-inline" alt="" /> Gestión de Administradores</h2>
         <button
-          className="btn btn-primary"
+          className="btn-primary"
           onClick={() => setShowCreateForm(!showCreateForm)}
         >
-          {showCreateForm ? 'Cancelar' : 'Agregar Nuevo Administrador'}
+          {showCreateForm ? '✖ Cancelar' : '+ Agregar Administrador'}
         </button>
       </div>
 
-      {error && (
-        <div className="alert alert-error" style={{ marginBottom: '20px' }}>
-          {error}
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="alert alert-success" style={{ marginBottom: '20px' }}>
-          {successMessage}
-        </div>
-      )}
+      {error && <div className="error"><p>{error}</p></div>}
+      {successMessage && <div className="success"><p>{successMessage}</p></div>}
 
       {showCreateForm && (
-        <div className="card" style={{ marginBottom: '20px' }}>
+        <div className="card">
           <h3>Crear Nuevo Administrador</h3>
-          <form onSubmit={handleCreateAdmin}>
-            <div style={{ marginBottom: '15px' }}>
-              <label htmlFor="newUsername" style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>
-                Nombre de usuario (mínimo 3 caracteres)
-              </label>
-              <input
-                type="text"
-                id="newUsername"
-                className="setting-input"
-                value={newUsername}
-                onChange={(e) => setNewUsername(e.target.value)}
-                required
-                minLength={3}
-                style={{ width: '100%', maxWidth: '400px' }}
-              />
-            </div>
-
-            <div style={{ marginBottom: '15px' }}>
-              <label htmlFor="newPassword" style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>
-                Contraseña (mínimo 6 caracteres)
-              </label>
-              <div style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>
+          <form onSubmit={handleCreateAdmin} className="assignment-form">
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="newUsername">Nombre de usuario (mínimo 3 caracteres)</label>
                 <input
-                  type={showPassword ? "text" : "password"}
-                  id="newPassword"
-                  className="setting-input"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
+                  type="text"
+                  id="newUsername"
+                  value={newUsername}
+                  onChange={(e) => setNewUsername(e.target.value)}
                   required
-                  minLength={6}
-                  style={{ width: '100%', paddingRight: '40px' }}
+                  minLength={3}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '8px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '4px 8px',
-                    color: 'var(--gray-600)',
-                    fontSize: '0.875rem'
-                  }}
-                  title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                >
-                  {showPassword ? '○' : '●'}
-                </button>
+              </div>
+              <div className="form-group">
+                <label htmlFor="newPassword">Contraseña (mínimo 6 caracteres)</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    id="newPassword"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    style={{ paddingRight: '2.5rem' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="btn-details"
+                    style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)' }}
+                    title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  >
+                    {showPassword ? '○' : '●'}
+                  </button>
+                </div>
               </div>
             </div>
 
-            {formError && (
-              <div className="alert alert-error" style={{ marginBottom: '15px' }}>
-                {formError}
-              </div>
-            )}
+            {formError && <div className="error"><p>{formError}</p></div>}
 
-            <button type="submit" className="btn btn-primary">
-              Crear Administrador
-            </button>
+            <div className="form-actions">
+              <button type="submit" className="btn-primary">Crear Administrador</button>
+              <button type="button" className="btn-secondary" onClick={() => setShowCreateForm(false)}>Cancelar</button>
+            </div>
           </form>
         </div>
       )}
 
-      <div className="card">
-        <h3>Administradores Actuales ({admins.length})</h3>
-        <table className="table">
+      <div className="table-container">
+        <table>
           <thead>
             <tr>
               <th>Nombre de Usuario</th>
@@ -222,9 +193,7 @@ const AdminManagement: React.FC = () => {
                 <td>
                   <strong>{admin.username}</strong>
                   {admin.username === 'superadmin' && (
-                    <span style={{ marginLeft: '10px', color: '#666', fontSize: '0.9em' }}>
-                      (Sistema)
-                    </span>
+                    <span className="text-muted"> (Sistema)</span>
                   )}
                 </td>
                 <td>{formatDate(admin.createdAt)}</td>
@@ -235,15 +204,16 @@ const AdminManagement: React.FC = () => {
                     : 'Nunca'}
                 </td>
                 <td>
-                  {admin.username !== 'superadmin' && (
-                    <button
-                      className="btn btn-danger"
-                      onClick={() => handleDeleteAdmin(admin._id, admin.username)}
-                      style={{ fontSize: '0.9em', padding: '5px 10px' }}
-                    >
-                      Eliminar
-                    </button>
-                  )}
+                  <div className="table-actions">
+                    {admin.username !== 'superadmin' && (
+                      <button
+                        className="btn-danger btn-small"
+                        onClick={() => handleDeleteAdmin(admin._id, admin.username)}
+                      >
+                        Eliminar
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

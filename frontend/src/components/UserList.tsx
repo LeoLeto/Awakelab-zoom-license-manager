@@ -57,7 +57,9 @@ export default function UserList() {
   return (
     <>
       <div className="user-list">
-        <h2>Usuarios de Zoom</h2>
+        <div className="section-header">
+          <h2><img src="/icons/messages.png" className="icon-inline" alt="" /> Usuarios de Zoom</h2>
+        </div>
         <div className="user-stats">
           Total de Usuarios: <strong>{users.length}</strong>
         </div>

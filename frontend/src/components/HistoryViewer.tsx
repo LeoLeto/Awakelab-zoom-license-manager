@@ -141,8 +141,8 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
 
   return (
     <div className="history-viewer">
-      <div className="history-viewer-header">
-        <h3 className="history-viewer-title">{title}</h3>
+      <div className="section-header">
+        <h2><img src="/icons/clock.png" className="icon-inline" alt="" /> {title}</h2>
         <button onClick={fetchHistory} className="btn-refresh">Actualizar</button>
       </div>
 

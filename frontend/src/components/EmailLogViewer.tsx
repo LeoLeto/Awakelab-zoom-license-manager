@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { emailLogApi } from '../services/api.service';
 import { EmailLog, EmailLogType } from '../types/license.types';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 
 const LOG_TYPE_LABELS: Record<EmailLogType, string> = {
   assignment_confirmation: 'Confirmación asignación',
@@ -15,16 +13,27 @@ const LOG_TYPE_LABELS: Record<EmailLogType, string> = {
   sample: 'Muestra',
 };
 
+// Uses the same two-word `badge <modifier>` convention as the rest of the app
 const LOG_TYPE_BADGE: Record<EmailLogType, string> = {
-  assignment_confirmation: 'badge-active',
-  pending_request_notification: 'badge-nueva',
-  extension_confirmation: 'badge-extension',
-  expiration_warning: 'badge-expired',
-  password_changed: 'badge-count',
-  admin_copy: 'badge-assigned',
-  test: 'badge-pending',
-  sample: 'badge-pending',
+  assignment_confirmation: 'active',
+  pending_request_notification: 'upcoming',
+  extension_confirmation: 'pending',
+  expiration_warning: 'ocupado',
+  password_changed: 'mantenimiento',
+  admin_copy: 'ocupado',
+  test: 'expirado',
+  sample: 'expirado',
 };
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleString('es-ES', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
 export default function EmailLogViewer() {
   const [logs, setLogs] = useState<EmailLog[]>([]);
@@ -74,7 +83,7 @@ export default function EmailLogViewer() {
     setActionResult(null);
     try {
       await emailLogApi.resendToAdmins(log._id);
-      setActionResult({ id: log._id, msg: 'Reenviado a admins correctamente', ok: true });
+      setActionResult({ id: log._id, msg: 'Reenviado a admins', ok: true });
     } catch (e: any) {
       setActionResult({ id: log._id, msg: e.message || 'Error al reenviar a admins', ok: false });
     } finally {
@@ -82,157 +91,171 @@ export default function EmailLogViewer() {
     }
   };
 
-  const formatDate = (iso: string) =>
-    format(new Date(iso), "d MMM yyyy, HH:mm", { locale: es });
+  if (loading) return <div className="loading">Cargando emails...</div>;
 
   return (
-    <div className="email-log-viewer">
-      <div className="section-header">
-        <h2>Log de Emails</h2>
-        <button className="btn-refresh" onClick={fetchLogs} disabled={loading}>
-          {loading ? 'Cargando…' : 'Actualizar'}
-        </button>
-      </div>
-
-      {/* Filters */}
-      <div className="filter-row" style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value as '' | 'sent' | 'failed')}
-          className="filter-select"
-        >
-          <option value="">Todos los estados</option>
-          <option value="sent">Enviados</option>
-          <option value="failed">Fallidos</option>
-        </select>
-
-        <select
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          className="filter-select"
-        >
-          <option value="">Todos los tipos</option>
-          {(Object.keys(LOG_TYPE_LABELS) as EmailLogType[]).map((t) => (
-            <option key={t} value={t}>{LOG_TYPE_LABELS[t]}</option>
-          ))}
-        </select>
-      </div>
-
-      {error && <div className="alert alert-error">{error}</div>}
-
-      {loading ? (
-        <div className="loading-state">Cargando logs…</div>
-      ) : logs.length === 0 ? (
-        <div className="empty-state">No hay registros de emails.</div>
-      ) : (
-        <div className="table-wrapper">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Tipo</th>
-                <th>Destinatarios</th>
-                <th>Asunto</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map((log) => {
-                const busy = actionLoading === log._id + '_resend' || actionLoading === log._id + '_admins';
-                return (
-                  <tr key={log._id} className={log.status === 'failed' ? 'row-failed' : ''}>
-                    <td style={{ whiteSpace: 'nowrap' }}>{formatDate(log.createdAt)}</td>
-                    <td>
-                      <span className={`badge ${LOG_TYPE_BADGE[log.logType] ?? 'badge-pending'}`}>
-                        {LOG_TYPE_LABELS[log.logType] ?? log.logType}
-                      </span>
-                    </td>
-                    <td style={{ fontSize: '13px' }}>
-                      {log.to.join(', ')}
-                    </td>
-                    <td style={{ fontSize: '13px', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {log.subject}
-                    </td>
-                    <td>
-                      {log.status === 'sent' ? (
-                        <span className="badge badge-active">Enviado</span>
-                      ) : (
-                        <span className="badge badge-cancelled" title={log.error}>Fallido</span>
-                      )}
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                        <button
-                          className="btn-details"
-                          title="Ver contenido del email"
-                          onClick={() => setPreviewLog(log)}
-                        >
-                          <img src="/icons/clipboard.png" className="icon-inline" alt="Ver" />
-                        </button>
-                        <button
-                          className="btn btn-sm"
-                          disabled={busy}
-                          title="Reenviar a destinatarios originales"
-                          onClick={() => handleResend(log)}
-                          style={{ fontSize: '12px', padding: '3px 8px' }}
-                        >
-                          {actionLoading === log._id + '_resend' ? '…' : 'Reenviar'}
-                        </button>
-                        <button
-                          className="btn btn-sm btn-secondary"
-                          disabled={busy}
-                          title="Reenviar solo a admins"
-                          onClick={() => handleResendAdmins(log)}
-                          style={{ fontSize: '12px', padding: '3px 8px' }}
-                        >
-                          {actionLoading === log._id + '_admins' ? '…' : 'Solo admins'}
-                        </button>
-                      </div>
-                      {actionResult?.id === log._id && (
-                        <div style={{ fontSize: '11px', marginTop: '4px', color: actionResult.ok ? '#15803d' : '#dc2626' }}>
-                          {actionResult.msg}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+    <>
+      <div className="assignment-manager">
+        <div className="section-header">
+          <h2>
+            <img src="/icons/messages.png" className="icon-inline" alt="" /> Log de Emails
+          </h2>
+          <button className="btn-refresh" onClick={fetchLogs}>
+            Actualizar
+          </button>
         </div>
-      )}
 
-      {/* HTML preview modal */}
+        {error && <div className="error"><p>{error}</p></div>}
+
+        {/* Filters */}
+        <div className="form-section history-filters">
+          <div className="form-row">
+            <div className="form-group">
+              <label>Estado</label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as '' | 'sent' | 'failed')}
+              >
+                <option value="">Todos</option>
+                <option value="sent">Enviados</option>
+                <option value="failed">Fallidos</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Tipo</label>
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+              >
+                <option value="">Todos</option>
+                {(Object.keys(LOG_TYPE_LABELS) as EmailLogType[]).map((t) => (
+                  <option key={t} value={t}>{LOG_TYPE_LABELS[t]}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {logs.length === 0 ? (
+          <div className="empty-state">
+            <p>No hay registros de emails.</p>
+          </div>
+        ) : (
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th>Destinatarios</th>
+                  <th>Asunto</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {logs.map((log) => {
+                  const busy =
+                    actionLoading === log._id + '_resend' ||
+                    actionLoading === log._id + '_admins';
+                  return (
+                    <tr key={log._id} className={log.status === 'failed' ? 'row-failed' : ''}>
+                      <td>{formatDate(log.createdAt)}</td>
+                      <td>
+                        <span className={`badge ${LOG_TYPE_BADGE[log.logType] ?? 'expirado'}`}>
+                          {LOG_TYPE_LABELS[log.logType] ?? log.logType}
+                        </span>
+                      </td>
+                      <td>{log.to.join(', ')}</td>
+                      <td className="email-log-subject">{log.subject}</td>
+                      <td>
+                        {log.status === 'sent' ? (
+                          <span className="badge active">Enviado</span>
+                        ) : (
+                          <span className="badge mantenimiento" title={log.error}>
+                            Fallido
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        <div className="table-actions">
+                          <button
+                            className="btn-small"
+                            data-tooltip="Ver contenido"
+                            onClick={() => setPreviewLog(log)}
+                          >
+                            <img src="/icons/clipboard.png" className="icon-inline" alt="Ver" />
+                          </button>
+                          <button
+                            className="btn-small"
+                            disabled={busy}
+                            data-tooltip="Reenviar al destinatario original"
+                            onClick={() => handleResend(log)}
+                          >
+                            {actionLoading === log._id + '_resend' ? '…' : 'Reenviar'}
+                          </button>
+                          <button
+                            className="btn-small"
+                            disabled={busy}
+                            data-tooltip="Reenviar solo a admins"
+                            onClick={() => handleResendAdmins(log)}
+                          >
+                            {actionLoading === log._id + '_admins' ? '…' : 'Solo admins'}
+                          </button>
+                        </div>
+                        {actionResult?.id === log._id && (
+                          <small
+                            className={actionResult.ok ? 'form-hint' : 'history-error'}
+                            style={{ display: 'block', marginTop: '4px' }}
+                          >
+                            {actionResult.msg}
+                          </small>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* HTML preview modal — same structure as LicenseDetailsModal */}
       {previewLog && (
         <div className="modal-overlay" onClick={() => setPreviewLog(null)}>
-          <div
-            className="modal-container"
-            style={{ maxWidth: '700px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="modal-content modal-wide" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Vista previa del email</h3>
-              <button className="modal-close" onClick={() => setPreviewLog(null)}>✕</button>
+              <h3>
+                <img src="/icons/messages.png" className="icon-inline" alt="" /> Vista previa del email
+              </h3>
+              <button className="close-button" onClick={() => setPreviewLog(null)}>×</button>
             </div>
-            <div style={{ padding: '8px 20px 4px', fontSize: '13px', color: '#6b7280', borderBottom: '1px solid #e5e7eb' }}>
-              <strong>Para:</strong> {previewLog.to.join(', ')}<br />
-              <strong>Asunto:</strong> {previewLog.subject}
+            <div className="modal-body">
+              <p>
+                <strong>Para:</strong> {previewLog.to.join(', ')}<br />
+                <strong>Asunto:</strong> {previewLog.subject}
+              </p>
               {previewLog.error && (
-                <div style={{ color: '#dc2626', marginTop: '4px' }}><strong>Error:</strong> {previewLog.error}</div>
+                <p className="history-error">
+                  <strong>Error:</strong> {previewLog.error}
+                </p>
               )}
-            </div>
-            <div style={{ flex: 1, overflow: 'auto', padding: '0' }}>
               <iframe
                 srcDoc={previewLog.html}
                 title="Vista previa"
-                style={{ width: '100%', height: '500px', border: 'none' }}
+                style={{ width: '100%', height: '480px', border: 'none', display: 'block', marginTop: '12px' }}
                 sandbox="allow-same-origin"
               />
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setPreviewLog(null)}>
+                Cerrar
+              </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

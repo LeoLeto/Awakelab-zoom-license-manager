@@ -1360,7 +1360,12 @@ button {
 }
 
 .success {
+  background: var(--success-light);
   color: #047857;
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  border-left: 4px solid var(--success-color);
+  margin-bottom: 1rem;
 }
 
 .success-message {
@@ -1482,7 +1487,7 @@ button {
 /* ===== SETTINGS COMPONENT ===== */
 /* Settings Container */
 .settings-container {
-  padding: 2rem 0;
+  padding: 0;
 }
 
 .settings-header {
@@ -1822,18 +1827,6 @@ button {
   gap: 1.25rem;
 }
 
-.history-viewer-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.history-viewer-title {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--gray-900);
-}
 
 .history-filters {
   margin-bottom: 0;
@@ -1940,32 +1933,11 @@ button {
    ======================================== */
 
 .analytics-dashboard {
-  padding: 2rem;
+  padding: 0;
   max-width: 1400px;
   margin: 0 auto;
 }
 
-.analytics-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.analytics-header h2 {
-  margin: 0;
-  color: var(--gray-900);
-  font-size: 1.75rem;
-}
-
-.analytics-actions {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  flex-wrap: wrap;
-}
 
 .period-selector {
   padding: 0.5rem 1rem;
@@ -2329,19 +2301,6 @@ button {
 
 /* Responsive Analytics */
 @media (max-width: 768px) {
-  .analytics-dashboard {
-    padding: 1rem;
-  }
-
-  .analytics-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .analytics-actions {
-    width: 100%;
-  }
-
   .period-selector,
   .btn-export,
   .btn-refresh {
@@ -2554,46 +2513,13 @@ button {
 }
 
 /* Email log viewer */
-.email-log-viewer {
-  padding: 0 4px;
-}
-
-.email-log-viewer .section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.email-log-viewer .section-header h2 {
-  margin: 0;
-}
-
 tr.row-failed td {
   background: #fff5f5;
 }
 
-.btn-sm {
-  padding: 4px 10px;
-  font-size: 12px;
-  border-radius: 4px;
-  border: 1px solid var(--gray-300, #d1d5db);
-  cursor: pointer;
-  background: #fff;
-  color: var(--gray-700, #374151);
-  transition: background 0.15s;
-}
-
-.btn-sm:hover:not(:disabled) {
-  background: var(--gray-100, #f3f4f6);
-}
-
-.btn-sm:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.btn-sm.btn-secondary {
-  border-color: var(--gray-200, #e5e7eb);
-  color: var(--gray-500, #6b7280);
+.email-log-subject {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
