@@ -1,11 +1,13 @@
 import nodemailer, { Transporter } from 'nodemailer';
 import { settingsService } from './settings.service';
+import { EmailLog, EmailLogType } from '../models/EmailLog.model';
 
 interface EmailOptions {
   to: string | string[];
   subject: string;
   html: string;
   text?: string;
+  logType?: EmailLogType;
 }
 
 interface AssignmentEmailData {
@@ -93,7 +95,9 @@ export class EmailService {
       await this.initTransporter();
 
       if (!this.transporter) {
-        console.log('⚠️  Email transporter not configured');
+        const msg = 'Email transporter not configured';
+        console.log('⚠️  ' + msg);
+        this.writeLog(options, 'failed', msg);
         return false;
       }
 
@@ -112,11 +116,38 @@ export class EmailService {
       });
 
       console.log(`✅ Email sent to: ${recipients}`);
+      this.writeLog(options, 'sent');
       return true;
     } catch (error: any) {
       console.error('❌ Error sending email:', error.message);
+      this.writeLog(options, 'failed', error.message);
       return false;
     }
+  }
+
+  /** Persist an email log entry. Never throws — logging must not block email delivery. */
+  private writeLog(options: EmailOptions, status: 'sent' | 'failed', error?: string): void {
+    const to = Array.isArray(options.to) ? options.to : [options.to];
+    EmailLog.create({
+      to,
+      subject: options.subject,
+      html: options.html,
+      logType: options.logType ?? 'test',
+      status,
+      ...(error ? { error } : {}),
+    }).catch((err) => console.error('Failed to write email log:', err));
+  }
+
+  /** Resend any logged email to its original recipients (or override the destination). */
+  async resendEmail(logId: string, toOverride?: string[]): Promise<boolean> {
+    const log = await EmailLog.findById(logId);
+    if (!log) throw new Error('Entrada de log no encontrada');
+    return this.sendEmail({
+      to: toOverride ?? log.to,
+      subject: `[REENVÍO] ${log.subject}`,
+      html: log.html,
+      logType: log.logType,
+    });
   }
 
   /**
@@ -230,6 +261,7 @@ export class EmailService {
       to: data.teacherEmail,
       subject,
       html,
+      logType: 'assignment_confirmation',
     });
 
     // Send admin copy when credentials are included
@@ -262,6 +294,7 @@ export class EmailService {
         to: emails,
         subject,
         html,
+        logType: 'admin_copy',
       });
     } catch (error: any) {
       console.error('Failed to send admin credential copy:', error.message);
@@ -277,6 +310,7 @@ export class EmailService {
       to: data.teacherEmail,
       subject: `📅 Licencia de Zoom Ampliada - hasta ${data.endDate}`,
       html,
+      logType: 'extension_confirmation',
     });
   }
 
@@ -308,15 +342,17 @@ export class EmailService {
       const from = await settingsService.getSetting('emailFrom');
       const user = await settingsService.getSetting('emailUser');
 
+      const sampleSubject = '[MUESTRA] ✅ Licencia de Zoom Asignada — 11/03/2026 a 11/06/2026';
       await this.transporter.sendMail({
         from: from || user || '',
         to: recipientEmail,
-        subject: '[MUESTRA] ✅ Licencia de Zoom Asignada — 11/03/2026 a 11/06/2026',
+        subject: sampleSubject,
         html,
         text: this.stripHtml(html),
       });
 
       console.log(`✅ Assignment sample email sent to: ${recipientEmail}`);
+      this.writeLog({ to: recipientEmail, subject: sampleSubject, html, logType: 'sample' }, 'sent');
       return true;
     } catch (error: any) {
       console.error('❌ Error sending assignment sample email:', error.message);
@@ -385,6 +421,7 @@ export class EmailService {
       to: data.teacherEmail,
       subject: `⚠️ Tu Licencia de Zoom Expira en ${data.daysRemaining} Día${data.daysRemaining !== 1 ? 's' : ''}`,
       html,
+      logType: 'expiration_warning',
     });
   }
 
@@ -445,6 +482,7 @@ export class EmailService {
       to: recipientEmail,
       subject: `🔐 Contraseña Actualizada - ${data.licenseEmail}`,
       html,
+      logType: 'password_changed',
     });
   }
 
@@ -529,6 +567,7 @@ export class EmailService {
         ? `📅 Solicitud de Ampliación de Licencia - ${teacherName}`
         : `📋 Nueva Solicitud de Licencia - ${teacherName}`,
       html,
+      logType: 'pending_request_notification',
     });
   }
 
@@ -588,19 +627,26 @@ export class EmailService {
       const from = await settingsService.getSetting('emailFrom');
       const user = await settingsService.getSetting('emailUser');
 
+      const testSubject = '✅ Prueba de Configuración de Email - Sistema de Licencias Zoom';
       await this.transporter.sendMail({
         // Must match the authenticated account on Office365
         from: from || user || '',
         to: recipientEmail,
-        subject: '✅ Prueba de Configuración de Email - Sistema de Licencias Zoom',
+        subject: testSubject,
         html,
         text: this.stripHtml(html),
       });
 
       console.log(`✅ Test email sent to: ${recipientEmail}`);
+      this.writeLog({ to: recipientEmail, subject: testSubject, html, logType: 'test' }, 'sent');
       return true;
     } catch (error: any) {
       console.error('❌ Error sending test email:', error.message);
+      this.writeLog(
+        { to: recipientEmail, subject: '✅ Prueba de Configuración de Email - Sistema de Licencias Zoom', html, logType: 'test' },
+        'failed',
+        error.message
+      );
       throw error; // Re-throw so the route returns the real error message
     }
   }

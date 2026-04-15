@@ -5,10 +5,11 @@ import { HistoryViewer } from './HistoryViewer';
 import AdminManagement from './AdminManagement';
 import Settings from './Settings';
 import AnalyticsDashboard from './AnalyticsDashboard';
+import EmailLogViewer from './EmailLogViewer';
 import { assignmentApi } from '../services/api.service';
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'assignments' | 'history' | 'admins' | 'analytics' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'assignments' | 'history' | 'admins' | 'analytics' | 'emails' | 'settings'>('overview');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [pendingCount, setPendingCount] = useState(0);
 
@@ -66,6 +67,12 @@ export default function AdminDashboard() {
           <img src="/icons/chart.png" className="icon-inline" alt="" /> Analytics
         </button>
         <button
+          className={`tab ${activeTab === 'emails' ? 'active' : ''}`}
+          onClick={() => setActiveTab('emails')}
+        >
+          <img src="/icons/messages.png" className="icon-inline" alt="" /> Emails
+        </button>
+        <button
           className={`tab ${activeTab === 'settings' ? 'active' : ''}`}
           onClick={() => setActiveTab('settings')}
         >
@@ -89,6 +96,9 @@ export default function AdminDashboard() {
         )}
         {activeTab === 'analytics' && (
           <AnalyticsDashboard />
+        )}
+        {activeTab === 'emails' && (
+          <EmailLogViewer />
         )}
         {activeTab === 'settings' && (
           <Settings onSettingsChange={handleRefresh} />

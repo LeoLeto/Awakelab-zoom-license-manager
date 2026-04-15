@@ -11,6 +11,7 @@ import authRoutes from './routes/auth.routes';
 import adminRoutes from './routes/admin.routes';
 import settingsRoutes from './routes/settings.routes';
 import analyticsRoutes from './routes/analytics.routes';
+import emailLogRoutes from './routes/emailLog.routes';
 import { settingsService } from './services/settings.service';
 
 // Load environment variables from backend/.env
@@ -48,6 +49,7 @@ app.use('/api/licenses', licenseRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/email-logs', emailLogRoutes);
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: any) => {

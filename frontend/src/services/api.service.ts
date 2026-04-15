@@ -1,10 +1,11 @@
 import { ZoomUsersResponse } from '../types/zoom.types';
-import { 
-  License, 
-  Assignment, 
-  LicenseWithAssignment, 
-  CreateLicenseDto, 
-  CreateAssignmentDto 
+import {
+  License,
+  Assignment,
+  LicenseWithAssignment,
+  CreateLicenseDto,
+  CreateAssignmentDto,
+  EmailLog,
 } from '../types/license.types';
 import { HistoryEntry, HistoryFilters } from '../types/history.types';
 
@@ -223,6 +224,29 @@ export const analyticsApi = {
 
   async getAnalyticsTrends(days: number = 30): Promise<any> {
     return apiCall(`${API_BASE_URL}/analytics/trends?days=${days}`);
+  },
+};
+
+export const emailLogApi = {
+  async getLogs(params?: {
+    limit?: number;
+    status?: 'sent' | 'failed';
+    logType?: string;
+  }): Promise<{ success: boolean; logs: EmailLog[] }> {
+    const qs = new URLSearchParams();
+    if (params?.limit) qs.append('limit', params.limit.toString());
+    if (params?.status) qs.append('status', params.status);
+    if (params?.logType) qs.append('logType', params.logType);
+    const q = qs.toString();
+    return apiCall(`${API_BASE_URL}/email-logs${q ? `?${q}` : ''}`);
+  },
+
+  async resend(id: string): Promise<{ success: boolean }> {
+    return apiCall(`${API_BASE_URL}/email-logs/${id}/resend`, { method: 'POST' });
+  },
+
+  async resendToAdmins(id: string): Promise<{ success: boolean }> {
+    return apiCall(`${API_BASE_URL}/email-logs/${id}/resend-admins`, { method: 'POST' });
   },
 };
 

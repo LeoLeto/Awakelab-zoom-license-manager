@@ -62,6 +62,28 @@ export interface CreateLicenseDto {
   observaciones?: string;
 }
 
+export type EmailLogType =
+  | 'assignment_confirmation'
+  | 'pending_request_notification'
+  | 'extension_confirmation'
+  | 'expiration_warning'
+  | 'password_changed'
+  | 'admin_copy'
+  | 'test'
+  | 'sample';
+
+export interface EmailLog {
+  _id: string;
+  to: string[];
+  subject: string;
+  html: string;
+  logType: EmailLogType;
+  status: 'sent' | 'failed';
+  error?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CreateAssignmentDto {
   licenseId?: string;
   nombreApellidos: string;

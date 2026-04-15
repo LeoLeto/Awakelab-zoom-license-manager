@@ -2,6 +2,21 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.6.0] – 2026-04-15
+
+### Added
+- **Log de Emails**: nueva pestaña "Emails" en el panel de administración con tabla completa de todos los emails enviados o fallidos.
+  - Filtros por estado (enviado / fallido) y por tipo de email.
+  - Vista previa del HTML del email en un modal.
+  - Botón **Reenviar** para reenviar al destinatario original.
+  - Botón **Solo admins** para reenviar únicamente a las direcciones de administrador configuradas.
+  - Todos los envíos (incluidos emails de prueba y muestra) quedan registrados en la colección `email_logs` de MongoDB.
+- Backend: nuevos endpoints `GET /api/email-logs`, `POST /api/email-logs/:id/resend`, `POST /api/email-logs/:id/resend-admins`.
+
+### Fixed
+- `sendPasswordChanged` y `sendPendingRequestNotification` ahora registran correctamente su `logType` en el log.
+- `sendTestEmail` y `sendAssignmentSample` (que usan el transporter directamente) ahora también escriben entrada en el log.
+
 ## [1.5.2] – 2026-04-15
 
 ### Fixed
