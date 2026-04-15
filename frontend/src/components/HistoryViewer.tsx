@@ -5,6 +5,8 @@ import { LicenseWithAssignment, Assignment } from '../types/license.types';
 import { formatDateTime } from '../utils/date';
 import LicenseDetailsModal from './LicenseDetailsModal';
 
+type ResendState = { id: string; status: 'loading' | 'ok' | 'error'; msg?: string };
+
 interface HistoryViewerProps {
   entityType?: 'license' | 'assignment';
   entityId?: string;
@@ -57,6 +59,7 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
   const [filters, setFilters] = useState<HistoryFilters>({ limit: 50 });
   const [detailsModal, setDetailsModal] = useState<LicenseWithAssignment | null>(null);
   const [loadingDetailsId, setLoadingDetailsId] = useState<string | null>(null);
+  const [resendState, setResendState] = useState<ResendState | null>(null);
 
   useEffect(() => { fetchHistory(); }, [entityType, entityId, filters]);
 
@@ -105,6 +108,16 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
       // silently ignore fetch errors
     } finally {
       setLoadingDetailsId(null);
+    }
+  };
+
+  const handleResendConfirmation = async (entry: HistoryEntry) => {
+    setResendState({ id: entry._id, status: 'loading' });
+    try {
+      await assignmentApi.resendConfirmation(entry.entityId);
+      setResendState({ id: entry._id, status: 'ok', msg: 'Email reenviado' });
+    } catch (e: any) {
+      setResendState({ id: entry._id, status: 'error', msg: e.message || 'Error al reenviar' });
     }
   };
 
@@ -269,14 +282,36 @@ export const HistoryViewer: React.FC<HistoryViewerProps> = ({
                       </td>
                       <td className="history-actor">{entry.actor}</td>
                       <td>
-                        <button
-                          className="btn-details"
-                          title="Ver detalles"
-                          disabled={loadingDetailsId === entry._id}
-                          onClick={() => handleViewDetails(entry)}
-                        >
-                          {loadingDetailsId === entry._id ? '…' : <img src="/icons/clipboard.png" className="icon-inline" alt="Ver detalles" />}
-                        </button>
+                        <div className="table-actions">
+                          <button
+                            className="btn-details"
+                            data-tooltip="Ver detalles"
+                            disabled={loadingDetailsId === entry._id}
+                            onClick={() => handleViewDetails(entry)}
+                          >
+                            {loadingDetailsId === entry._id
+                              ? '…'
+                              : <img src="/icons/clipboard.png" className="icon-inline" alt="Ver detalles" />}
+                          </button>
+                          {entry.action === 'assign' && entry.entityType === 'assignment' && (
+                            <button
+                              className="btn-small"
+                              disabled={resendState?.id === entry._id && resendState.status === 'loading'}
+                              onClick={() => handleResendConfirmation(entry)}
+                            >
+                              {resendState?.id === entry._id && resendState.status === 'loading'
+                                ? '…'
+                                : resendState?.id === entry._id && resendState.status === 'ok'
+                                ? '✓'
+                                : 'Reenviar email'}
+                            </button>
+                          )}
+                        </div>
+                        {resendState?.id === entry._id && resendState.status === 'error' && (
+                          <small className="history-error" style={{ display: 'block', marginTop: '4px' }}>
+                            {resendState.msg}
+                          </small>
+                        )}
                       </td>
                     </tr>
                   );

@@ -2,6 +2,22 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.6.6] – 2026-04-15
+
+### Fixed
+- `sendExtensionConfirmation` ahora envía copia `[COPIA ADMIN]` a los administradores configurados, igual que `sendAssignmentConfirmation`.
+
+## [1.6.5] – 2026-04-15
+
+### Fixed
+- Tooltip del botón "Reenviar email" en el Historial ya no se recorta: se eliminó el tooltip redundante en botones con etiqueta de texto, y se añadió una regla CSS que ancla los tooltips dentro de `.table-actions` al borde derecho del botón en lugar de centrarlos, evitando que el `overflow-x: auto` del contenedor los corte.
+
+## [1.6.4] – 2026-04-15
+
+### Added
+- **Historial**: las filas con acción "Asignación confirmada" ahora muestran un botón **Reenviar email** que reenvía el email de confirmación al docente con las credenciales actuales de la licencia. Funciona para asignaciones antiguas aunque no exista entrada en el log de emails. Las ampliaciones usan el template de ampliación; las nuevas asignaciones el de asignación.
+- Backend: nuevo endpoint `POST /api/licenses/assignments/:id/resend-confirmation`.
+
 ## [1.6.3] – 2026-04-15
 
 ### Fixed

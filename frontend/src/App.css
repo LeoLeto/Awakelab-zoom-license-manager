@@ -805,6 +805,14 @@ button {
   margin-right: 0;
 }
 
+/* Tooltips inside table action cells anchor to the right so they never
+   overflow the table-container's clipping boundary */
+.table-actions [data-tooltip]::after {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
 /* ===== INSTANT TOOLTIP ===== */
 [data-tooltip] {
   position: relative;

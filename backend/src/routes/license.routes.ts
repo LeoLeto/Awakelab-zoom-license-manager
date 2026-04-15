@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { licenseService } from '../services/license.service';
 import { assignmentService } from '../services/assignment.service';
 import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
+import { License } from '../models/License.model';
+import { emailService } from '../services/email.service';
 
 const router = Router();
 
@@ -409,6 +411,58 @@ router.put('/assignments/:id', authenticateToken, async (req: AuthRequest, res: 
       success: false, 
       error: error.message 
     });
+  }
+});
+
+/**
+ * Resend the confirmation email for an already-assigned assignment.
+ * Rebuilds the email from current assignment + license data so it always
+ * contains up-to-date credentials regardless of whether a log entry exists.
+ * POST /api/licenses/assignments/:id/resend-confirmation
+ */
+router.post('/assignments/:id/resend-confirmation', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const assignment = await assignmentService.getAssignmentById(req.params.id);
+    if (!assignment) {
+      return res.status(404).json({ success: false, error: 'Asignación no encontrada' });
+    }
+
+    const licenseId = typeof assignment.licenseId === 'object'
+      ? (assignment.licenseId as any)?._id
+      : assignment.licenseId;
+
+    if (!licenseId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Esta asignación no tiene una licencia vinculada y no se puede reenviar el email',
+      });
+    }
+
+    const license = await License.findById(licenseId);
+    if (!license) {
+      return res.status(404).json({ success: false, error: 'Licencia no encontrada' });
+    }
+
+    const emailData = {
+      teacherName: assignment.nombreApellidos,
+      teacherEmail: assignment.correocorporativo,
+      licenseEmail: license.email,
+      startDate: new Date(assignment.fechaInicioUso).toLocaleDateString('es-CL'),
+      endDate: new Date(assignment.fechaFinUso).toLocaleDateString('es-CL'),
+      platform: assignment.tipoUso,
+      zoomPassword: license.passwordEmail,
+      hostKey: license.claveAnfitrionZoom,
+      moodleUser: license.usuarioMoodle,
+      moodlePassword: license.claveUsuarioMoodle,
+    };
+
+    const sent = assignment.isExtension
+      ? await emailService.sendExtensionConfirmation(emailData)
+      : await emailService.sendAssignmentConfirmation(emailData);
+
+    res.json({ success: sent });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

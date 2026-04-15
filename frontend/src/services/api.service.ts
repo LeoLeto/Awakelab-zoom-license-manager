@@ -163,6 +163,12 @@ export const assignmentApi = {
     });
   },
 
+  async resendConfirmation(id: string): Promise<{ success: boolean }> {
+    return apiCall(`${API_BASE_URL}/licenses/assignments/${id}/resend-confirmation`, {
+      method: 'POST',
+    });
+  },
+
   async getAssignmentsByEmail(email: string): Promise<{ success: boolean; count: number; assignments: Assignment[] }> {
     return apiCall(
       `${API_BASE_URL}/licenses/assignments/by-email?email=${encodeURIComponent(email)}`

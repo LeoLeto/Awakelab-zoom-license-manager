@@ -306,12 +306,18 @@ export class EmailService {
    */
   async sendExtensionConfirmation(data: AssignmentEmailData): Promise<boolean> {
     const html = this.buildAssignmentEmailHtml({ ...data, isExtension: true });
-    return await this.sendEmail({
+    const sent = await this.sendEmail({
       to: data.teacherEmail,
       subject: `📅 Licencia de Zoom Ampliada - hasta ${data.endDate}`,
       html,
       logType: 'extension_confirmation',
     });
+
+    if (sent) {
+      await this.sendAdminCredentialCopy(data, html);
+    }
+
+    return sent;
   }
 
   /**
