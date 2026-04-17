@@ -2,6 +2,16 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.6.8] – 2026-04-17
+
+### Fixed
+- La **Clave de anfitrión** ahora aparece en el email de confirmación incluso cuando las credenciales están pendientes (`credentialsPending: true`). Al ser un valor estático que nunca cambia, se muestra siempre junto al email Zoom; la contraseña sigue enviándose solo cuando está disponible.
+
+## [1.6.7] – 2026-04-17
+
+### Fixed
+- `sendAssignmentConfirmation` ahora siempre envía copia `[COPIA ADMIN]` a los administradores, independientemente de si la contraseña está incluida o pendiente. Antes, cuando el inicio era más de 48 horas después (caso habitual), la condición `zoomPassword && !credentialsPending` impedía el envío de la copia.
+
 ## [1.6.6] – 2026-04-15
 
 ### Fixed

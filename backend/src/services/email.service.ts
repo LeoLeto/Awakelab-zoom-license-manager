@@ -201,18 +201,17 @@ export class EmailService {
               <p><strong>🖥️ Tipo de Uso:</strong> ${data.platform}</p>
             </div>
 
-            ${data.credentialsPending ? `
-            <div class="warning-box">
-              <p style="margin: 0 0 6px 0;"><strong>📧 Email Zoom:</strong> ${data.licenseEmail}</p>
-              <p style="margin: 0;">🔑 <strong>Las credenciales de acceso (contraseña) se enviarán automáticamente aproximadamente 48 horas antes de tu fecha de inicio (<u>${data.startDate}</u>)</strong>. Esto garantiza que recibas una contraseña válida y actualizada.</p>
-            </div>
-            ` : `
             <p class="section-heading" style="color: #1d4ed8; border-bottom: 2px solid #1d4ed8;">🎥 Acceso a Zoom</p>
             <div class="zoom-credentials">
               <p><strong>📧 Email Zoom:</strong> ${data.licenseEmail}</p>
-              ${data.zoomPassword ? `<p><strong>🔑 Contraseña Zoom:</strong> <code>${data.zoomPassword}</code></p>` : ''}
               ${data.hostKey ? `<p><strong>🎙️ Clave de anfitrión:</strong> <code>${data.hostKey}</code></p>` : ''}
+              ${!data.credentialsPending && data.zoomPassword ? `<p><strong>🔑 Contraseña Zoom:</strong> <code>${data.zoomPassword}</code></p>` : ''}
             </div>
+            ${data.credentialsPending ? `
+            <div class="warning-box">
+              <p style="margin: 0;">🔑 <strong>La contraseña de acceso se enviará automáticamente aproximadamente 48 horas antes de tu fecha de inicio (<u>${data.startDate}</u>)</strong>. Esto garantiza que recibas una contraseña válida y actualizada.</p>
+            </div>
+            ` : `
             <div class="warning-box">
               <p style="margin: 0 0 6px 0;"><strong>⚠️ Sobre la contraseña Zoom:</strong></p>
               <ul style="margin: 0; padding-left: 20px;">
@@ -264,8 +263,7 @@ export class EmailService {
       logType: 'assignment_confirmation',
     });
 
-    // Send admin copy when credentials are included
-    if (sent && data.zoomPassword && !data.credentialsPending) {
+    if (sent) {
       await this.sendAdminCredentialCopy(data, html);
     }
 
