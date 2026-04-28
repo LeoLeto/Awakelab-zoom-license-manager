@@ -204,12 +204,18 @@ export class LicenseService {
         .map((a) => a.licenseId!.toString())
     );
 
+    // Free licenses with a future active booking (estado still 'libre' because start >48h away)
+    // must also be excluded if they conflict with the requested period.
+    const freeAndAvailable = freeLicenses.filter(
+      (l) => !conflictingIds.has((l._id as any).toString())
+    );
+
     // Occupied licenses with NO conflicting assignment are also available
     const occupiedButAvailable = occupiedLicenses.filter(
       (l) => !conflictingIds.has((l._id as any).toString())
     );
 
-    return [...freeLicenses, ...occupiedButAvailable] as unknown as ILicense[];
+    return [...freeAndAvailable, ...occupiedButAvailable] as unknown as ILicense[];
   }
 
   /**

@@ -19,6 +19,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
   const [assigning, setAssigning] = useState(false);
   const [extensionOriginalLicense, setExtensionOriginalLicense] = useState<License | null>(null);
   const [forcePickLicense, setForcePickLicense] = useState(false);
+  const [assignModalError, setAssignModalError] = useState<string | null>(null);
   const [areaOptions, setAreaOptions] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     licenseId: '',
@@ -156,6 +157,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
     if (!assigningTo || !selectedLicenseForAssignment) return;
 
     setAssigning(true);
+    setAssignModalError(null);
     try {
       await assignmentApi.updateAssignment(assigningTo._id, {
         licenseId: selectedLicenseForAssignment
@@ -163,11 +165,12 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
       setAssigningTo(null);
       setSelectedLicenseForAssignment('');
       setAvailableLicenses([]);
+      setAssignModalError(null);
       loadPendingAssignments();
       onAssignmentChange?.();
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al asignar licencia');
+      setAssignModalError(err instanceof Error ? err.message : 'Error al asignar licencia');
     } finally {
       setAssigning(false);
     }
@@ -179,6 +182,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
     setAvailableLicenses([]);
     setExtensionOriginalLicense(null);
     setForcePickLicense(false);
+    setAssignModalError(null);
   };
 
   if (loading) {
@@ -499,7 +503,7 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
                         className={`assign-license-card${
                           selectedLicenseForAssignment === license._id ? ' selected' : ''
                         }`}
-                        onClick={() => setSelectedLicenseForAssignment(license._id)}
+                        onClick={() => { setSelectedLicenseForAssignment(license._id); setAssignModalError(null); }}
                       >
                         <div className="assign-license-card-check">
                           {selectedLicenseForAssignment === license._id ? '●' : '○'}
@@ -515,6 +519,9 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
               </div>
             )}
 
+            {assignModalError && (
+              <div className="error" style={{ margin: '0 0 8px' }}>{assignModalError}</div>
+            )}
             <div className="assign-modal-footer">
               <button className="btn-secondary" onClick={handleCancelAssigning}>
                 Cancelar

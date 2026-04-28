@@ -2,6 +2,12 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.6.9] – 2026-04-28
+
+### Fixed
+- **Solicitudes — Asignar licencia**: El selector ya no muestra licencias que tienen una asignación activa futura (estado `libre` pero reservadas a más de 48 h). El filtrado del backend ahora aplica la exclusión por conflicto de fechas también a las licencias `libre`, no solo a las `ocupado`.
+- **Solicitudes — Modal de asignación**: Los errores que ocurren al confirmar una asignación ahora se muestran dentro del modal en lugar de quedar ocultos detrás del overlay. Al seleccionar una licencia diferente el error se limpia automáticamente.
+
 ## [1.6.8] – 2026-04-17
 
 ### Fixed
