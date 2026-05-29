@@ -251,7 +251,18 @@ export class AssignmentService {
       const assignStartDate = new Date(existingAssignment.fechaInicioUso);
       const hoursUntilStart = (assignStartDate.getTime() - Date.now()) / (1000 * 60 * 60);
 
-      if (hoursUntilStart > 48) {
+      if (existingAssignment.isExtension) {
+        // Extension: the teacher reuses the SAME license and its existing
+        // credentials. The Zoom password must NEVER be rotated for an
+        // extension (doing so would break the teacher's in-progress access).
+        // The license is already occupied by the original assignment, so keep
+        // it locked and mark credentials as handled so the 48h cron skips it.
+        await License.findByIdAndUpdate(
+          updateData.licenseId,
+          { $set: { estado: 'ocupado' } }
+        );
+        (updateData as any).credentialsSent = true;
+      } else if (hoursUntilStart > 48) {
         // >48h away — license stays libre; credentials sent later by cron
         (updateData as any).credentialsSent = false;
       } else {
@@ -338,49 +349,67 @@ export class AssignmentService {
           try {
             const license = await License.findById(updatedAssignment.licenseId);
             if (license) {
-              const startDate = new Date(updatedAssignment.fechaInicioUso);
-              const hoursUntilStart = (startDate.getTime() - Date.now()) / (1000 * 60 * 60);
-
-              if (hoursUntilStart > 48) {
-                // Assignment starts in >48h — send confirmation WITHOUT
-                // password; credentials will be sent 48h before by cron.
-                await emailService.sendAssignmentConfirmation({
+              if (updatedAssignment.isExtension) {
+                // Extension: the teacher keeps the same license and the same
+                // credentials. Send the EXTENSION email with the existing
+                // stored password — never rotate the Zoom password here.
+                await emailService.sendExtensionConfirmation({
                   teacherName: updatedAssignment.nombreApellidos,
                   teacherEmail: updatedAssignment.correocorporativo,
                   licenseEmail: license.email,
-                  startDate: startDate.toLocaleDateString('es-CL'),
+                  startDate: new Date(updatedAssignment.fechaInicioUso).toLocaleDateString('es-CL'),
                   endDate: new Date(updatedAssignment.fechaFinUso).toLocaleDateString('es-CL'),
                   platform: updatedAssignment.tipoUso,
+                  zoomPassword: license.passwordEmail,
                   hostKey: license.claveAnfitrionZoom,
                   moodleUser: license.usuarioMoodle,
                   moodlePassword: license.claveUsuarioMoodle,
-                  credentialsPending: true,
                 });
               } else {
-                // Assignment starts within 48h — generate a fresh
-                // password and send credentials immediately.
-                let freshPassword = license.passwordEmail;
-                try {
-                  freshPassword = zoomService.generateSecurePassword();
-                  await zoomService.changeUserPassword(license.email, freshPassword);
-                  await licenseService.updatePasswordByEmail(license.email, freshPassword);
-                  console.log(`🔑 Password refreshed for ${license.email} during assignment`);
-                } catch (pwdError: any) {
-                  console.error(`Failed to refresh Zoom password for ${license.email}, using stored password:`, pwdError.message);
-                }
+                const startDate = new Date(updatedAssignment.fechaInicioUso);
+                const hoursUntilStart = (startDate.getTime() - Date.now()) / (1000 * 60 * 60);
 
-                await emailService.sendAssignmentConfirmation({
-                  teacherName: updatedAssignment.nombreApellidos,
-                  teacherEmail: updatedAssignment.correocorporativo,
-                  licenseEmail: license.email,
-                  startDate: startDate.toLocaleDateString('es-CL'),
-                  endDate: new Date(updatedAssignment.fechaFinUso).toLocaleDateString('es-CL'),
-                  platform: updatedAssignment.tipoUso,
-                  zoomPassword: freshPassword,
-                  hostKey: license.claveAnfitrionZoom,
-                  moodleUser: license.usuarioMoodle,
-                  moodlePassword: license.claveUsuarioMoodle,
-                });
+                if (hoursUntilStart > 48) {
+                  // Assignment starts in >48h — send confirmation WITHOUT
+                  // password; credentials will be sent 48h before by cron.
+                  await emailService.sendAssignmentConfirmation({
+                    teacherName: updatedAssignment.nombreApellidos,
+                    teacherEmail: updatedAssignment.correocorporativo,
+                    licenseEmail: license.email,
+                    startDate: startDate.toLocaleDateString('es-CL'),
+                    endDate: new Date(updatedAssignment.fechaFinUso).toLocaleDateString('es-CL'),
+                    platform: updatedAssignment.tipoUso,
+                    hostKey: license.claveAnfitrionZoom,
+                    moodleUser: license.usuarioMoodle,
+                    moodlePassword: license.claveUsuarioMoodle,
+                    credentialsPending: true,
+                  });
+                } else {
+                  // Assignment starts within 48h — generate a fresh
+                  // password and send credentials immediately.
+                  let freshPassword = license.passwordEmail;
+                  try {
+                    freshPassword = zoomService.generateSecurePassword();
+                    await zoomService.changeUserPassword(license.email, freshPassword);
+                    await licenseService.updatePasswordByEmail(license.email, freshPassword);
+                    console.log(`🔑 Password refreshed for ${license.email} during assignment`);
+                  } catch (pwdError: any) {
+                    console.error(`Failed to refresh Zoom password for ${license.email}, using stored password:`, pwdError.message);
+                  }
+
+                  await emailService.sendAssignmentConfirmation({
+                    teacherName: updatedAssignment.nombreApellidos,
+                    teacherEmail: updatedAssignment.correocorporativo,
+                    licenseEmail: license.email,
+                    startDate: startDate.toLocaleDateString('es-CL'),
+                    endDate: new Date(updatedAssignment.fechaFinUso).toLocaleDateString('es-CL'),
+                    platform: updatedAssignment.tipoUso,
+                    zoomPassword: freshPassword,
+                    hostKey: license.claveAnfitrionZoom,
+                    moodleUser: license.usuarioMoodle,
+                    moodlePassword: license.claveUsuarioMoodle,
+                  });
+                }
               }
             }
           } catch (error: any) {

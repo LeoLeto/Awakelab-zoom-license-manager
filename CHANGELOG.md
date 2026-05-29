@@ -2,6 +2,12 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.6.10] – 2026-05-29
+
+### Fixed
+- **Ampliaciones — Contraseña**: Una ampliación ya no cambia la contraseña de Zoom de la licencia. Al asignar la licencia a una solicitud de ampliación se reutiliza la misma contraseña existente; antes el flujo de ampliación pasaba por la ruta de asignación normal y rotaba la contraseña (al asignar dentro de 48 h) o la rotaba el cron 48 h antes, rompiendo el acceso del docente que ya estaba usando la licencia.
+- **Ampliaciones — Email**: Las ampliaciones ahora envían el email de ampliación (`sendExtensionConfirmation`) en lugar del email de asignación, y se envía al asignar la licencia (no 48 h antes). El cron de credenciales de 48 h ahora excluye las ampliaciones (`isExtension`), ya que reutilizan las credenciales existentes.
+
 ## [1.6.9] – 2026-04-28
 
 ### Fixed

@@ -196,11 +196,14 @@ export const initCronJobs = () => {
       const now = new Date();
       const in48h = new Date(now.getTime() + 48 * 60 * 60 * 1000);
 
-      // Find active assignments starting within 48h that still need credentials
+      // Find active assignments starting within 48h that still need credentials.
+      // Extensions are excluded: they reuse the same license and credentials,
+      // so their password must never be rotated.
       const pending = await Assignment.find({
         estado: 'activo',
         licenseId: { $ne: null },
         credentialsSent: { $ne: true },
+        isExtension: { $ne: true },
         fechaInicioUso: { $lte: in48h },
       });
 
