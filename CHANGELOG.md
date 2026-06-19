@@ -2,6 +2,11 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.8.1] – 2026-06-19
+
+### Changed
+- **Resumen de Licencias — Liberar licencia**: La acción «Liberar» ya no se muestra como botón rojo permanente. Ahora está dentro de un menú de tres puntos («Más opciones») en las licencias ocupadas, para reducir el ruido visual y el riesgo de clics accidentales.
+
 ## [1.8.0] – 2026-06-19
 
 ### Added

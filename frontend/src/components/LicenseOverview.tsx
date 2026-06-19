@@ -21,6 +21,7 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
   const [selectedLicenseForDetails, setSelectedLicenseForDetails] = useState<LicenseWithAssignment | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [licenseToFree, setLicenseToFree] = useState<LicenseWithAssignment | null>(null);
+  const [actionMenu, setActionMenu] = useState<{ item: LicenseWithAssignment; x: number; y: number } | null>(null);
 
   const loadLicenses = async () => {
     try {
@@ -42,6 +43,20 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
   useEffect(() => {
     loadLicenses();
   }, [refreshTrigger]);
+
+  // Close the row action menu on any outside click, scroll or resize.
+  useEffect(() => {
+    if (!actionMenu) return;
+    const close = () => setActionMenu(null);
+    document.addEventListener('click', close);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    return () => {
+      document.removeEventListener('click', close);
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+    };
+  }, [actionMenu]);
 
   const filteredLicenses = licenses.filter((item) => {
     const matchesFilter = filter === 'all' || item.license.estado === filter;
@@ -260,11 +275,21 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
                     )}
                     {item.license.estado === 'ocupado' && (
                       <button
-                        className="btn-small btn-free"
-                        onClick={() => setLicenseToFree(item)}
-                        data-tooltip="Liberar licencia (acción excepcional)"
+                        className="btn-small btn-more"
+                        aria-haspopup="true"
+                        aria-expanded={actionMenu?.item.license._id === item.license._id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (actionMenu?.item.license._id === item.license._id) {
+                            setActionMenu(null);
+                            return;
+                          }
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          setActionMenu({ item, x: rect.right, y: rect.bottom });
+                        }}
+                        data-tooltip="Más opciones"
                       >
-                        Liberar
+                        ⋮
                       </button>
                     )}
                   </div>
@@ -278,6 +303,25 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
       {filteredLicenses.length === 0 && (
         <div className="empty-state">
           <p>No se encontraron licencias que coincidan con tus criterios.</p>
+        </div>
+      )}
+
+      {actionMenu && (
+        <div
+          className="action-menu-dropdown"
+          style={{ top: actionMenu.y + 4, left: actionMenu.x }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            className="action-menu-item danger"
+            onClick={() => {
+              const item = actionMenu.item;
+              setActionMenu(null);
+              setLicenseToFree(item);
+            }}
+          >
+            Liberar licencia
+          </button>
         </div>
       )}
 

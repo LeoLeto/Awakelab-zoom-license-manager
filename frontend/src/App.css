@@ -860,14 +860,48 @@ button {
   cursor: not-allowed;
 }
 
-.btn-small.btn-free {
+.btn-small.btn-more {
+  font-size: 1.1rem;
+  line-height: 1;
+  font-weight: 700;
+  padding: 0.25rem 0.55rem;
+}
+
+/* Fixed-position overflow menu (anchored to the 3-dot button). Rendered
+   outside the table so it is not clipped by the scroll container. The
+   right edge aligns to the button via translateX(-100%). */
+.action-menu-dropdown {
+  position: fixed;
+  transform: translateX(-100%);
+  min-width: 160px;
+  background: white;
+  border: 1px solid var(--gray-200, #e5e7eb);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 0.25rem;
+  z-index: 300;
+}
+
+.action-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.75rem;
   background: transparent;
-  color: var(--danger-color, #ef4444);
-  border: 1px solid var(--danger-color, #ef4444);
+  border-radius: var(--border-radius);
+  font-size: 0.875rem;
   white-space: nowrap;
 }
 
-.btn-small.btn-free:hover {
+.action-menu-item:hover {
+  background: var(--gray-100, #f3f4f6);
+}
+
+.action-menu-item.danger {
+  color: var(--danger-color, #ef4444);
+}
+
+.action-menu-item.danger:hover {
   background: var(--danger-color, #ef4444);
   color: #fff;
 }
