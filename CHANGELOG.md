@@ -2,6 +2,11 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.7.0] – 2026-06-19
+
+### Added
+- **Resumen de Licencias**: Las licencias en estado **Mantenimiento** ahora muestran un botón «Marcar disponible» que las devuelve al estado **Disponible** (`libre`) para que puedan volver a asignarse. Incluye confirmación previa y queda registrado en el historial como cambio de estado.
+
 ## [1.6.10] – 2026-05-29
 
 ### Fixed

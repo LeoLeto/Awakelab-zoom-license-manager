@@ -18,6 +18,7 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<ZoomUser | null>(null);
   const [selectedLicenseForDetails, setSelectedLicenseForDetails] = useState<LicenseWithAssignment | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const loadLicenses = async () => {
     try {
@@ -69,6 +70,24 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
       </div>
     );
   }
+
+  const handleReleaseFromMaintenance = async (item: LicenseWithAssignment) => {
+    const confirmed = window.confirm(
+      `¿Marcar la licencia ${item.license.email} como disponible? Saldrá de mantenimiento y podrá asignarse a docentes.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setUpdatingId(item.license._id);
+      setError(null);
+      await licenseApi.updateLicense(item.license._id, { estado: 'libre' });
+      await loadLicenses();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al actualizar el estado de la licencia');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   const handlePasswordChange = (license: LicenseWithAssignment) => {
     const zoomUser: ZoomUser = {
@@ -227,6 +246,16 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
                     >
                       <img src="/icons/password.png" className="icon-inline" alt="Cambiar contraseña" />
                     </button>
+                    {item.license.estado === 'mantenimiento' && (
+                      <button
+                        className="btn-small btn-release"
+                        onClick={() => handleReleaseFromMaintenance(item)}
+                        disabled={updatingId === item.license._id}
+                        data-tooltip="Marcar como disponible (salir de mantenimiento)"
+                      >
+                        {updatingId === item.license._id ? '…' : 'Marcar disponible'}
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

@@ -845,6 +845,21 @@ button {
   background: var(--gray-200);
 }
 
+.btn-small.btn-release {
+  background: var(--success-color, #16a34a);
+  color: #fff;
+  white-space: nowrap;
+}
+
+.btn-small.btn-release:hover {
+  background: #15803d;
+}
+
+.btn-small.btn-release:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .btn-refresh {
   background: var(--info-color);
   color: white;
