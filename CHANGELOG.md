@@ -2,6 +2,11 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.8.0] – 2026-06-19
+
+### Added
+- **Resumen de Licencias — Liberar licencia ocupada**: Las licencias en estado **Ocupada** muestran un botón «Liberar» para devolverlas a **Disponible** en casos excepcionales. Abre un modal con una advertencia destacada que exige escribir el email de la licencia para confirmar. La operación se bloquea en el backend si la licencia tiene una asignación activa (hay que cancelar primero la asignación del docente) y queda registrada en el historial como cambio de estado.
+
 ## [1.7.0] – 2026-06-19
 
 ### Added

@@ -4,6 +4,7 @@ import { LicenseWithAssignment } from '../types/license.types';
 import { formatDate } from '../utils/date';
 import PasswordChangeModal from './PasswordChangeModal';
 import LicenseDetailsModal from './LicenseDetailsModal';
+import FreeLicenseModal from './FreeLicenseModal';
 import { ZoomUser } from '../types/zoom.types';
 
 interface LicenseOverviewProps {
@@ -19,6 +20,7 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
   const [selectedUser, setSelectedUser] = useState<ZoomUser | null>(null);
   const [selectedLicenseForDetails, setSelectedLicenseForDetails] = useState<LicenseWithAssignment | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [licenseToFree, setLicenseToFree] = useState<LicenseWithAssignment | null>(null);
 
   const loadLicenses = async () => {
     try {
@@ -256,6 +258,15 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
                         {updatingId === item.license._id ? '…' : 'Marcar disponible'}
                       </button>
                     )}
+                    {item.license.estado === 'ocupado' && (
+                      <button
+                        className="btn-small btn-free"
+                        onClick={() => setLicenseToFree(item)}
+                        data-tooltip="Liberar licencia (acción excepcional)"
+                      >
+                        Liberar
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -285,6 +296,17 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
         <LicenseDetailsModal
           licenseData={selectedLicenseForDetails}
           onClose={() => setSelectedLicenseForDetails(null)}
+        />
+      )}
+
+      {licenseToFree && (
+        <FreeLicenseModal
+          licenseData={licenseToFree}
+          onClose={() => setLicenseToFree(null)}
+          onSuccess={() => {
+            setLicenseToFree(null);
+            loadLicenses();
+          }}
         />
       )}
     </div>

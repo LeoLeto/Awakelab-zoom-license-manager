@@ -178,6 +178,28 @@ router.put('/:id', authenticateToken, async (req: AuthRequest, res: Response) =>
 });
 
 /**
+ * Force-free an occupied license (admin override)
+ * POST /api/licenses/:id/free
+ */
+router.post('/:id/free', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const actor = req.username || 'system';
+    const license = await licenseService.freeLicense(req.params.id, actor);
+
+    res.json({
+      success: true,
+      message: 'Licencia liberada exitosamente',
+      license,
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
  * Delete a license
  * DELETE /api/licenses/:id
  */

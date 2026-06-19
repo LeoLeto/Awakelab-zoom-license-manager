@@ -134,6 +134,56 @@ export class LicenseService {
   }
 
   /**
+   * Force-free an occupied license (admin override, used in rare cases).
+   * Blocked if the license still has an active assignment — the admin must
+   * cancel that assignment first. Sets the license back to 'libre'.
+   */
+  async freeLicense(id: string, actor: string = 'system'): Promise<ILicense> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new Error('ID de licencia inválido');
+    }
+
+    const license = await License.findById(id);
+    if (!license) {
+      throw new Error('Licencia no encontrada');
+    }
+
+    if (license.estado === 'libre') {
+      throw new Error('La licencia ya está disponible');
+    }
+
+    // Block if there is any active assignment (current or upcoming) using it
+    const activeAssignment = await Assignment.findOne({
+      licenseId: new Types.ObjectId(id),
+      estado: 'activo',
+    });
+
+    if (activeAssignment) {
+      throw new Error(
+        'Esta licencia tiene una asignación activa. Cancela primero la asignación del docente antes de liberar la licencia.'
+      );
+    }
+
+    const oldEstado = license.estado;
+    license.estado = 'libre';
+    await license.save();
+
+    await HistoryService.recordChange({
+      entityType: 'license',
+      entityId: license._id,
+      action: 'status_change',
+      actor,
+      changes: [{ field: 'estado', oldValue: oldEstado, newValue: 'libre' }],
+      metadata: {
+        licenseEmail: license.email,
+        reason: 'Liberación forzada de licencia (acción manual de administrador)',
+      },
+    });
+
+    return license;
+  }
+
+  /**
    * Delete license
    */
   async deleteLicense(id: string, actor: string = 'system'): Promise<boolean> {

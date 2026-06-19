@@ -116,6 +116,12 @@ export const licenseApi = {
       method: 'DELETE',
     });
   },
+
+  async freeLicense(id: string): Promise<{ success: boolean; message: string; license: License }> {
+    return apiCall(`${API_BASE_URL}/licenses/${id}/free`, {
+      method: 'POST',
+    });
+  },
 };
 
 export const assignmentApi = {

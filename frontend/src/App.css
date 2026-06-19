@@ -860,6 +860,18 @@ button {
   cursor: not-allowed;
 }
 
+.btn-small.btn-free {
+  background: transparent;
+  color: var(--danger-color, #ef4444);
+  border: 1px solid var(--danger-color, #ef4444);
+  white-space: nowrap;
+}
+
+.btn-small.btn-free:hover {
+  background: var(--danger-color, #ef4444);
+  color: #fff;
+}
+
 .btn-refresh {
   background: var(--info-color);
   color: white;
