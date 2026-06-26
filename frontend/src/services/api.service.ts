@@ -117,7 +117,7 @@ export const licenseApi = {
     });
   },
 
-  async freeLicense(id: string): Promise<{ success: boolean; message: string; license: License }> {
+  async freeLicense(id: string): Promise<{ success: boolean; message: string; cancelledCount?: number; license: License }> {
     return apiCall(`${API_BASE_URL}/licenses/${id}/free`, {
       method: 'POST',
     });

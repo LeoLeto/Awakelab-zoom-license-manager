@@ -6,6 +6,7 @@ export type EmailLogType =
   | 'extension_confirmation'
   | 'expiration_warning'
   | 'password_changed'
+  | 'assignment_cancelled'
   | 'admin_copy'
   | 'test'
   | 'sample';
@@ -34,6 +35,7 @@ const EmailLogSchema = new Schema<IEmailLog>(
         'extension_confirmation',
         'expiration_warning',
         'password_changed',
+        'assignment_cancelled',
         'admin_copy',
         'test',
         'sample',

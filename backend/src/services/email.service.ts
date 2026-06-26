@@ -39,6 +39,14 @@ interface PasswordChangedData {
   reason: string;
 }
 
+interface AssignmentCancelledData {
+  teacherName: string;
+  teacherEmail: string;
+  licenseEmail: string;
+  startDate: string;
+  endDate: string;
+}
+
 export class EmailService {
   private transporter: Transporter | null = null;
 
@@ -426,6 +434,66 @@ export class EmailService {
       subject: `⚠️ Tu Licencia de Zoom Expira en ${data.daysRemaining} Día${data.daysRemaining !== 1 ? 's' : ''}`,
       html,
       logType: 'expiration_warning',
+    });
+  }
+
+  /**
+   * Notify a teacher that their active assignment has been cancelled because
+   * an administrator freed the license. The teacher loses access immediately.
+   */
+  async sendAssignmentCancelled(data: AssignmentCancelledData): Promise<boolean> {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #dc2626; color: white; padding: 20px; border-radius: 5px 5px 0 0; }
+          .content { background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+          .info-box { background: white; padding: 15px; margin: 15px 0; border-left: 4px solid #dc2626; }
+          .footer { background: #f3f4f6; padding: 15px; text-align: center; font-size: 12px; color: #6b7280; }
+          strong { color: #1f2937; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h2>🚫 Acceso a Licencia de Zoom Cancelado</h2>
+          </div>
+          <div class="content">
+            <p>Hola <strong>${data.teacherName}</strong>,</p>
+
+            <p>Te informamos que tu acceso a la siguiente licencia de Zoom ha sido
+            <strong>cancelado por un administrador</strong> y la licencia ha quedado liberada.
+            A partir de ahora <strong>ya no podrás acceder a esta cuenta</strong>.</p>
+
+            <div class="info-box">
+              <p><strong>📧 Email de la Licencia:</strong> ${data.licenseEmail}</p>
+              <p><strong>📅 Período asignado originalmente:</strong> ${data.startDate} - ${data.endDate}</p>
+            </div>
+
+            <p>Por motivos de seguridad, la contraseña de la cuenta puede ser modificada, por lo que
+            las credenciales que tenías ya no serán válidas.</p>
+
+            <p>Si crees que esto es un error o necesitas una licencia para continuar tu actividad,
+            por favor contacta al administrador lo antes posible.</p>
+
+            <p>Saludos,<br><strong>Sistema de Gestión de Licencias Zoom</strong></p>
+          </div>
+          <div class="footer">
+            <p>Este es un mensaje automático. Por favor no respondas a este correo.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return await this.sendEmail({
+      to: data.teacherEmail,
+      subject: `🚫 Tu licencia de Zoom (${data.licenseEmail}) ha sido cancelada`,
+      html,
+      logType: 'assignment_cancelled',
     });
   }
 

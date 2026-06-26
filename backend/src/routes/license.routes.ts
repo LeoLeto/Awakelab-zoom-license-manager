@@ -184,11 +184,15 @@ router.put('/:id', authenticateToken, async (req: AuthRequest, res: Response) =>
 router.post('/:id/free', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const actor = req.username || 'system';
-    const license = await licenseService.freeLicense(req.params.id, actor);
+    const { license, cancelledCount } = await licenseService.freeLicense(req.params.id, actor);
 
     res.json({
       success: true,
-      message: 'Licencia liberada exitosamente',
+      message:
+        cancelledCount > 0
+          ? `Licencia liberada. Se canceló${cancelledCount === 1 ? '' : 'n'} ${cancelledCount} asignación(es) activa(s).`
+          : 'Licencia liberada exitosamente',
+      cancelledCount,
       license,
     });
   } catch (error: any) {

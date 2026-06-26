@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { licenseApi } from '../services/api.service';
 import { LicenseWithAssignment } from '../types/license.types';
+import { formatDate } from '../utils/date';
 
 interface FreeLicenseModalProps {
   licenseData: LicenseWithAssignment;
@@ -19,6 +20,7 @@ export default function FreeLicenseModal({ licenseData, onClose, onSuccess }: Fr
   const [error, setError] = useState<string | null>(null);
 
   const email = licenseData.license.email;
+  const activeAssignment = licenseData.assignment;
   const canConfirm = confirmText.trim().toLowerCase() === email.toLowerCase() && !loading;
 
   const handleConfirm = async () => {
@@ -58,14 +60,44 @@ export default function FreeLicenseModal({ licenseData, onClose, onSuccess }: Fr
           <strong>⚠️ Acción peligrosa y poco habitual.</strong>
           <p style={{ margin: '8px 0 0' }}>
             Vas a forzar la liberación de la licencia <strong>{email}</strong>, devolviéndola al
-            estado <strong>Disponible</strong>. Solo deberías hacerlo en casos excepcionales (por
-            ejemplo, una licencia que quedó marcada como ocupada por error).
+            estado <strong>Disponible</strong>. Solo deberías hacerlo en casos excepcionales.
           </p>
-          <p style={{ margin: '8px 0 0' }}>
-            Si la licencia tiene una asignación activa, la operación será rechazada: primero debes
-            cancelar la asignación del docente.
-          </p>
+          {activeAssignment ? (
+            <p style={{ margin: '8px 0 0' }}>
+              Esta licencia tiene una <strong>asignación activa</strong>. Al liberarla se{' '}
+              <strong>cancelará la asignación</strong> y el docente{' '}
+              <strong>perderá el acceso</strong> inmediatamente.
+            </p>
+          ) : (
+            <p style={{ margin: '8px 0 0' }}>
+              Esta licencia no tiene una asignación activa (por ejemplo, quedó marcada como ocupada
+              por error).
+            </p>
+          )}
         </div>
+
+        {activeAssignment && (
+          <div
+            style={{
+              padding: '12px 16px',
+              margin: '0 0 12px',
+              backgroundColor: '#fffbeb',
+              border: '1px solid #f59e0b',
+              borderRadius: '6px',
+              color: '#92400e',
+              fontSize: '0.9rem',
+              lineHeight: 1.5,
+            }}
+          >
+            Se cancelará la asignación de:{' '}
+            <strong>{activeAssignment.nombreApellidos}</strong> ({activeAssignment.correocorporativo})
+            <br />
+            Período: {formatDate(activeAssignment.fechaInicioUso)} –{' '}
+            {formatDate(activeAssignment.fechaFinUso)}
+            <br />
+            El docente recibirá un correo informándole que su acceso fue cancelado.
+          </div>
+        )}
 
         {error && <div className="error">{error}</div>}
 

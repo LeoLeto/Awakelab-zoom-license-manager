@@ -68,6 +68,7 @@ export type EmailLogType =
   | 'extension_confirmation'
   | 'expiration_warning'
   | 'password_changed'
+  | 'assignment_cancelled'
   | 'admin_copy'
   | 'test'
   | 'sample';

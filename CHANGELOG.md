@@ -2,6 +2,17 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.10.0] – 2026-06-26
+
+### Added
+- **Email de cancelación al docente**: Cuando se libera una licencia ocupada y se cancela su asignación activa, el docente afectado ahora recibe un correo informándole que su acceso fue cancelado y la licencia liberada. Se registra como un nuevo tipo de log de email («Asignación cancelada») visible en el visor de logs. El envío no bloquea la liberación si el correo falla.
+
+## [1.9.0] – 2026-06-26
+
+### Changed
+- **Liberar licencia ocupada**: La acción «Liberar» ya no se bloquea cuando la licencia tiene una asignación activa. Ahora, al confirmar, se **cancela automáticamente la asignación activa** (el docente pierde el acceso) y la licencia vuelve a **Disponible**, todo en un solo paso. Antes el mensaje pedía «cancelar primero la asignación del docente», pero no existía ninguna acción en la interfaz para cancelar una asignación activa (solo se podían cancelar solicitudes pendientes), por lo que la operación quedaba en un callejón sin salida.
+- **Modal de liberación**: La advertencia ahora indica claramente que se cancelará la asignación y muestra el docente y el período afectados cuando existe una asignación activa. La cancelación queda registrada en el historial tanto de la asignación como de la licencia.
+
 ## [1.8.1] – 2026-06-19
 
 ### Changed

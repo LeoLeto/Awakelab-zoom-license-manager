@@ -3,6 +3,7 @@ import { Assignment, IAssignment } from '../models/Assignment.model';
 import { Types } from 'mongoose';
 import { startOfDay, endOfDay } from 'date-fns';
 import { HistoryService } from './history.service';
+import { emailService } from './email.service';
 
 export class LicenseService {
   /**
@@ -135,10 +136,14 @@ export class LicenseService {
 
   /**
    * Force-free an occupied license (admin override, used in rare cases).
-   * Blocked if the license still has an active assignment — the admin must
-   * cancel that assignment first. Sets the license back to 'libre'.
+   * Cancels any active assignment(s) tied to the license (the teacher loses
+   * access) and sets the license back to 'libre'. Returns the freed license
+   * together with how many assignments were cancelled.
    */
-  async freeLicense(id: string, actor: string = 'system'): Promise<ILicense> {
+  async freeLicense(
+    id: string,
+    actor: string = 'system'
+  ): Promise<{ license: ILicense; cancelledCount: number }> {
     if (!Types.ObjectId.isValid(id)) {
       throw new Error('ID de licencia inválido');
     }
@@ -152,16 +157,44 @@ export class LicenseService {
       throw new Error('La licencia ya está disponible');
     }
 
-    // Block if there is any active assignment (current or upcoming) using it
-    const activeAssignment = await Assignment.findOne({
+    // Cancel any active assignment(s) (current or upcoming) using this license.
+    const activeAssignments = await Assignment.find({
       licenseId: new Types.ObjectId(id),
       estado: 'activo',
     });
 
-    if (activeAssignment) {
-      throw new Error(
-        'Esta licencia tiene una asignación activa. Cancela primero la asignación del docente antes de liberar la licencia.'
-      );
+    for (const assignment of activeAssignments) {
+      assignment.estado = 'cancelado';
+      await assignment.save();
+
+      await HistoryService.recordChange({
+        entityType: 'assignment',
+        entityId: assignment._id,
+        action: 'status_change',
+        actor,
+        changes: [{ field: 'estado', oldValue: 'activo', newValue: 'cancelado' }],
+        metadata: {
+          assignmentName: assignment.nombreApellidos,
+          reason: 'Cancelada al liberar la licencia (acción manual de administrador)',
+        },
+      });
+
+      // Notify the affected teacher that their access was revoked.
+      // Email failures must not block the release operation.
+      try {
+        await emailService.sendAssignmentCancelled({
+          teacherName: assignment.nombreApellidos,
+          teacherEmail: assignment.correocorporativo,
+          licenseEmail: license.email,
+          startDate: new Date(assignment.fechaInicioUso).toLocaleDateString('es-CL'),
+          endDate: new Date(assignment.fechaFinUso).toLocaleDateString('es-CL'),
+        });
+      } catch (error: any) {
+        console.error(
+          `Failed to send cancellation email to ${assignment.correocorporativo}:`,
+          error.message
+        );
+      }
     }
 
     const oldEstado = license.estado;
@@ -176,11 +209,15 @@ export class LicenseService {
       changes: [{ field: 'estado', oldValue: oldEstado, newValue: 'libre' }],
       metadata: {
         licenseEmail: license.email,
-        reason: 'Liberación forzada de licencia (acción manual de administrador)',
+        reason: `Liberación forzada de licencia (acción manual de administrador)${
+          activeAssignments.length > 0
+            ? `; se canceló${activeAssignments.length === 1 ? '' : 'n'} ${activeAssignments.length} asignación(es) activa(s)`
+            : ''
+        }`,
       },
     });
 
-    return license;
+    return { license, cancelledCount: activeAssignments.length };
   }
 
   /**
