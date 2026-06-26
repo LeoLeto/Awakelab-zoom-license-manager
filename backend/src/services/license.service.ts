@@ -164,8 +164,10 @@ export class LicenseService {
     });
 
     for (const assignment of activeAssignments) {
-      assignment.estado = 'cancelado';
-      await assignment.save();
+      // Use findByIdAndUpdate (not .save()) so Mongoose only touches `estado`
+      // and does NOT full-document-validate legacy fields such as a `tipoUso`
+      // value that predates the current enum. Matches cancelAssignment().
+      await Assignment.findByIdAndUpdate(assignment._id, { $set: { estado: 'cancelado' } });
 
       await HistoryService.recordChange({
         entityType: 'assignment',
@@ -198,8 +200,11 @@ export class LicenseService {
     }
 
     const oldEstado = license.estado;
-    license.estado = 'libre';
-    await license.save();
+    const updatedLicense = await License.findByIdAndUpdate(
+      license._id,
+      { $set: { estado: 'libre' } },
+      { new: true }
+    );
 
     await HistoryService.recordChange({
       entityType: 'license',
@@ -217,7 +222,7 @@ export class LicenseService {
       },
     });
 
-    return { license, cancelledCount: activeAssignments.length };
+    return { license: updatedLicense ?? license, cancelledCount: activeAssignments.length };
   }
 
   /**

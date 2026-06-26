@@ -2,6 +2,16 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.10.2] – 2026-06-26
+
+### Fixed
+- **Datos heredados de `tipoUso`**: Se normalizaron 146 asignaciones con valores de `tipoUso` anteriores al enum actual a los dos valores canónicos. Se añadió el script `npm run migrate-tipouso` (modo dry-run por defecto; `-- --apply` para escribir) que mapea los valores heredados y escribe mediante el driver nativo para no disparar la validación de Mongoose. Mapeos aplicados: `USO ASOCIADO A LMS MOODLE GRUPO ASPASIA`, `USO PARA UNA PLATAFORMA MOODLE DE GRUPO ASPASIA` y `Both` → «Uso para una plataforma Moodle de Grupo Aspasia»; `USO NO ASOCIADO A PLATAFORMA` y `Reunión` → «Uso no asociado a plataforma».
+
+## [1.10.1] – 2026-06-26
+
+### Fixed
+- **Liberar licencia — error de validación `tipoUso`**: Liberar una licencia con una asignación activa que tenía un valor de `tipoUso` heredado (anterior al enum actual) fallaba con «Assignment validation failed: tipoUso ... is not a valid enum value». La cancelación de la asignación ahora usa `findByIdAndUpdate` (solo actualiza `estado`) en lugar de `save()`, evitando la validación de todo el documento. La actualización del estado de la licencia se realiza igual.
+
 ## [1.10.0] – 2026-06-26
 
 ### Added
