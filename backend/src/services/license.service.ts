@@ -226,6 +226,65 @@ export class LicenseService {
   }
 
   /**
+   * Put a free license into maintenance mode (rare admin action).
+   * Only 'libre' licenses can enter maintenance — occupied licenses must be
+   * freed first so the assigned teacher isn't stranded. A justification is
+   * required and stored in the license history (metadata.reason) for auditing.
+   */
+  async setMaintenance(
+    id: string,
+    reason: string,
+    actor: string = 'system'
+  ): Promise<ILicense> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new Error('ID de licencia inválido');
+    }
+
+    const trimmedReason = (reason ?? '').trim();
+    if (trimmedReason.length < 10) {
+      throw new Error(
+        'Debes indicar una justificación de al menos 10 caracteres para poner la licencia en mantenimiento'
+      );
+    }
+
+    const license = await License.findById(id);
+    if (!license) {
+      throw new Error('Licencia no encontrada');
+    }
+
+    if (license.estado === 'mantenimiento') {
+      throw new Error('La licencia ya está en mantenimiento');
+    }
+
+    if (license.estado !== 'libre') {
+      throw new Error(
+        'Solo las licencias disponibles pueden ponerse en mantenimiento. Libera la licencia primero.'
+      );
+    }
+
+    const oldEstado = license.estado;
+    const updatedLicense = await License.findByIdAndUpdate(
+      license._id,
+      { $set: { estado: 'mantenimiento' } },
+      { new: true }
+    );
+
+    await HistoryService.recordChange({
+      entityType: 'license',
+      entityId: license._id,
+      action: 'status_change',
+      actor,
+      changes: [{ field: 'estado', oldValue: oldEstado, newValue: 'mantenimiento' }],
+      metadata: {
+        licenseEmail: license.email,
+        reason: trimmedReason,
+      },
+    });
+
+    return updatedLicense ?? license;
+  }
+
+  /**
    * Delete license
    */
   async deleteLicense(id: string, actor: string = 'system'): Promise<boolean> {

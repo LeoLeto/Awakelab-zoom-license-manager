@@ -204,6 +204,29 @@ router.post('/:id/free', authenticateToken, async (req: AuthRequest, res: Respon
 });
 
 /**
+ * Put a free license into maintenance mode (admin action, requires justification)
+ * POST /api/licenses/:id/maintenance
+ */
+router.post('/:id/maintenance', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const actor = req.username || 'system';
+    const { reason } = req.body;
+    const license = await licenseService.setMaintenance(req.params.id, reason, actor);
+
+    res.json({
+      success: true,
+      message: 'Licencia puesta en mantenimiento',
+      license,
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
  * Delete a license
  * DELETE /api/licenses/:id
  */

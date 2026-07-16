@@ -122,6 +122,14 @@ export const licenseApi = {
       method: 'POST',
     });
   },
+
+  async setMaintenance(id: string, reason: string): Promise<{ success: boolean; message: string; license: License }> {
+    return apiCall(`${API_BASE_URL}/licenses/${id}/maintenance`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason }),
+    });
+  },
 };
 
 export const assignmentApi = {

@@ -2,6 +2,11 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.11.0] – 2026-07-16
+
+### Added
+- **Resumen de Licencias — Poner en mantenimiento**: Las licencias en estado **Disponible** ahora ofrecen la acción «Poner en mantenimiento» dentro del menú de tres puntos («Más opciones»). Abre un modal que **exige una justificación escrita** (mínimo 10 caracteres) antes de confirmar. La justificación queda registrada en el historial de la licencia (`metadata.reason`) como cambio de estado. Solo las licencias disponibles pueden entrar en mantenimiento; las ocupadas deben liberarse primero (validado en el backend). Nueva ruta `POST /api/licenses/:id/maintenance`.
+
 ## [1.10.2] – 2026-06-26
 
 ### Fixed

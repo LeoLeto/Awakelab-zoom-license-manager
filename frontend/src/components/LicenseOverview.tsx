@@ -5,6 +5,7 @@ import { formatDate } from '../utils/date';
 import PasswordChangeModal from './PasswordChangeModal';
 import LicenseDetailsModal from './LicenseDetailsModal';
 import FreeLicenseModal from './FreeLicenseModal';
+import MaintenanceLicenseModal from './MaintenanceLicenseModal';
 import { ZoomUser } from '../types/zoom.types';
 
 interface LicenseOverviewProps {
@@ -21,6 +22,7 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
   const [selectedLicenseForDetails, setSelectedLicenseForDetails] = useState<LicenseWithAssignment | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [licenseToFree, setLicenseToFree] = useState<LicenseWithAssignment | null>(null);
+  const [licenseToMaintenance, setLicenseToMaintenance] = useState<LicenseWithAssignment | null>(null);
   const [actionMenu, setActionMenu] = useState<{ item: LicenseWithAssignment; x: number; y: number } | null>(null);
 
   const loadLicenses = async () => {
@@ -273,7 +275,7 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
                         {updatingId === item.license._id ? '…' : 'Marcar disponible'}
                       </button>
                     )}
-                    {item.license.estado === 'ocupado' && (
+                    {(item.license.estado === 'ocupado' || item.license.estado === 'libre') && (
                       <button
                         className="btn-small btn-more"
                         aria-haspopup="true"
@@ -312,16 +314,30 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
           style={{ top: actionMenu.y + 4, left: actionMenu.x }}
           onClick={(e) => e.stopPropagation()}
         >
-          <button
-            className="action-menu-item danger"
-            onClick={() => {
-              const item = actionMenu.item;
-              setActionMenu(null);
-              setLicenseToFree(item);
-            }}
-          >
-            Liberar licencia
-          </button>
+          {actionMenu.item.license.estado === 'ocupado' && (
+            <button
+              className="action-menu-item danger"
+              onClick={() => {
+                const item = actionMenu.item;
+                setActionMenu(null);
+                setLicenseToFree(item);
+              }}
+            >
+              Liberar licencia
+            </button>
+          )}
+          {actionMenu.item.license.estado === 'libre' && (
+            <button
+              className="action-menu-item"
+              onClick={() => {
+                const item = actionMenu.item;
+                setActionMenu(null);
+                setLicenseToMaintenance(item);
+              }}
+            >
+              Poner en mantenimiento
+            </button>
+          )}
         </div>
       )}
 
@@ -349,6 +365,17 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
           onClose={() => setLicenseToFree(null)}
           onSuccess={() => {
             setLicenseToFree(null);
+            loadLicenses();
+          }}
+        />
+      )}
+
+      {licenseToMaintenance && (
+        <MaintenanceLicenseModal
+          licenseData={licenseToMaintenance}
+          onClose={() => setLicenseToMaintenance(null)}
+          onSuccess={() => {
+            setLicenseToMaintenance(null);
             loadLicenses();
           }}
         />
