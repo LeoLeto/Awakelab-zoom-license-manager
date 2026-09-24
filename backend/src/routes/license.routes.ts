@@ -1,17 +1,26 @@
 import { Router, Request, Response } from 'express';
 import { licenseService } from '../services/license.service';
 import { assignmentService } from '../services/assignment.service';
-import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
+import {
+  authenticateToken,
+  optionalAuth,
+  hideLicenseSecretsFromPublic,
+  AuthRequest,
+} from '../middleware/auth.middleware';
 import { License } from '../models/License.model';
 import { emailService } from '../services/email.service';
 
 const router = Router();
 
+// Teacher-facing routes here are public; license credentials are only ever
+// returned to authenticated admins.
+router.use(optionalAuth, hideLicenseSecretsFromPublic);
+
 /**
  * Get all licenses with their current assignments
  * GET /api/licenses
  */
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', authenticateToken, async (req: Request, res: Response) => {
   try {
     const licenses = await licenseService.getAllLicensesWithAssignments();
     res.json({ 
@@ -94,7 +103,9 @@ router.get('/check-extension', async (req: Request, res: Response) => {
       parsedDate
     );
 
-    res.json({ success: true, ...result });
+    // The assignment itself is not returned: the portal already has it
+    const { assignment: _assignment, ...availability } = result;
+    res.json({ success: true, ...availability });
   } catch (error: any) {
     res.status(400).json({ success: false, error: error.message });
   }
@@ -104,7 +115,7 @@ router.get('/check-extension', async (req: Request, res: Response) => {
  * Get license by ID
  * GET /api/licenses/:id
  */
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
     const license = await licenseService.getLicenseWithAssignment(req.params.id);
     
@@ -124,6 +135,20 @@ router.get('/:id', async (req: Request, res: Response) => {
       success: false, 
       error: error.message 
     });
+  }
+});
+
+/**
+ * Current and future assignments of a license, plus pending extension
+ * requests that would continue one of them (admin view).
+ * GET /api/licenses/:id/assignments
+ */
+router.get('/:id/assignments', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const schedule = await assignmentService.getLicenseSchedule(req.params.id);
+    res.json({ success: true, ...schedule });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
   }
 });
 
@@ -362,7 +387,7 @@ router.post('/assignments', async (req: Request, res: Response) => {
  * Get all assignments
  * GET /api/licenses/assignments/all
  */
-router.get('/assignments/all', async (req: Request, res: Response) => {
+router.get('/assignments/all', authenticateToken, async (req: Request, res: Response) => {
   try {
     const assignments = await assignmentService.getAllAssignments();
     res.json({ 
@@ -382,7 +407,7 @@ router.get('/assignments/all', async (req: Request, res: Response) => {
  * Get active assignments
  * GET /api/licenses/assignments/active
  */
-router.get('/assignments/active', async (req: Request, res: Response) => {
+router.get('/assignments/active', authenticateToken, async (req: Request, res: Response) => {
   try {
     const assignments = await assignmentService.getActiveAssignments();
     res.json({ 
@@ -402,7 +427,7 @@ router.get('/assignments/active', async (req: Request, res: Response) => {
  * Get pending assignments (awaiting license assignment)
  * GET /api/licenses/assignments/pending
  */
-router.get('/assignments/pending', async (req: Request, res: Response) => {
+router.get('/assignments/pending', authenticateToken, async (req: Request, res: Response) => {
   try {
     const assignments = await assignmentService.getPendingAssignments();
     res.json({ 
@@ -422,7 +447,7 @@ router.get('/assignments/pending', async (req: Request, res: Response) => {
  * Get a single assignment by ID
  * GET /api/licenses/assignments/:id
  */
-router.get('/assignments/:id', async (req: Request, res: Response) => {
+router.get('/assignments/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
     const assignment = await assignmentService.getAssignmentById(req.params.id);
     if (!assignment) {

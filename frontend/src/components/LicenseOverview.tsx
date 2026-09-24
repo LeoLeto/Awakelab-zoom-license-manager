@@ -3,7 +3,7 @@ import { licenseApi } from '../services/api.service';
 import { LicenseWithAssignment } from '../types/license.types';
 import { formatDate } from '../utils/date';
 import PasswordChangeModal from './PasswordChangeModal';
-import LicenseDetailsModal from './LicenseDetailsModal';
+import LicenseDetailsModal, { LicenseDetailsTab } from './LicenseDetailsModal';
 import FreeLicenseModal from './FreeLicenseModal';
 import MaintenanceLicenseModal from './MaintenanceLicenseModal';
 import { ZoomUser } from '../types/zoom.types';
@@ -20,6 +20,11 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<ZoomUser | null>(null);
   const [selectedLicenseForDetails, setSelectedLicenseForDetails] = useState<LicenseWithAssignment | null>(null);
+  const [detailsTab, setDetailsTab] = useState<LicenseDetailsTab>('details');
+  const openDetails = (item: LicenseWithAssignment, tab: LicenseDetailsTab = 'details') => {
+    setDetailsTab(tab);
+    setSelectedLicenseForDetails(item);
+  };
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [licenseToFree, setLicenseToFree] = useState<LicenseWithAssignment | null>(null);
   const [licenseToMaintenance, setLicenseToMaintenance] = useState<LicenseWithAssignment | null>(null);
@@ -253,10 +258,17 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
                   <div className="table-actions">
                     <button
                       className="btn-small"
-                      onClick={() => setSelectedLicenseForDetails(item)}
+                      onClick={() => openDetails(item)}
                       data-tooltip="Ver detalles"
                     >
                       <img src="/icons/clipboard.png" className="icon-inline" alt="Ver detalles" />
+                    </button>
+                    <button
+                      className="btn-small"
+                      onClick={() => openDetails(item, 'schedule')}
+                      data-tooltip="Ver asignaciones actuales y futuras"
+                    >
+                      <img src="/icons/calendar.png" className="icon-inline" alt="Ver asignaciones" />
                     </button>
                     <button
                       className="btn-small"
@@ -355,6 +367,7 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
       {selectedLicenseForDetails && (
         <LicenseDetailsModal
           licenseData={selectedLicenseForDetails}
+          initialTab={detailsTab}
           onClose={() => setSelectedLicenseForDetails(null)}
         />
       )}

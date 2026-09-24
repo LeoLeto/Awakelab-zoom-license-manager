@@ -7,6 +7,14 @@ import { settingsService } from './settings.service';
 import zoomService from './zoom.service';
 import { licenseService } from './license.service';
 
+const MAX_ASSIGNMENT_DAYS = 365;
+
+const toIsoDay = (d: Date) => d.toISOString().split('T')[0];
+
+/** e.g. "18 de junio de 2027" — dates are stored in UTC day boundaries */
+const formatLongDate = (d: Date) =>
+  d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+
 export class AssignmentService {
   /**
    * Get all assignments
@@ -599,13 +607,26 @@ export class AssignmentService {
   }
 
   /**
-   * Check if the license from an existing assignment is available for an extension period.
-   * The extension window is from the current assignment's end date to the new requested end date.
+   * Check whether the license of an existing assignment can be extended to newEndDate.
+   *
+   * An extension is submitted as a new assignment covering
+   * [day after the current end, newEndDate], so both rules apply to that window:
+   *  - it may not exceed MAX_ASSIGNMENT_DAYS (same rule as POST /assignments);
+   *  - no other active assignment of the same license may overlap it.
+   * When a rule fails, the result says why and, when possible, the latest end
+   * date that would be accepted (maxEndDate, YYYY-MM-DD).
    */
   async checkExtensionAvailability(
     assignmentId: string,
     newEndDate: Date
-  ): Promise<{ available: boolean; assignment: IAssignment; message?: string }> {
+  ): Promise<{
+    available: boolean;
+    assignment: IAssignment;
+    message?: string;
+    reason?: 'max_period' | 'conflict';
+    maxEndDate?: string;
+    conflictStartDate?: string;
+  }> {
     if (!Types.ObjectId.isValid(assignmentId)) {
       throw new Error('ID de asignación inválido');
     }
@@ -625,26 +646,99 @@ export class AssignmentService {
       throw new Error('La nueva fecha de fin debe ser posterior a la fecha de fin actual de la asignación');
     }
 
-    // Check whether any OTHER active assignment for the same license overlaps
-    // with the extension window [assignment.fechaFinUso, newEndDate].
-    const conflicting = await Assignment.find({
-      licenseId: assignment.licenseId,
-      estado: 'activo',
-      _id: { $ne: assignment._id },
-      fechaInicioUso: { $lte: newEndDate },
-      fechaFinUso: { $gte: assignment.fechaFinUso },
-    });
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const extensionStart = new Date(assignment.fechaFinUso);
+    extensionStart.setUTCDate(extensionStart.getUTCDate() + 1);
+    extensionStart.setUTCHours(0, 0, 0, 0);
 
-    if (conflicting.length > 0) {
+    const requestedEnd = new Date(newEndDate);
+    requestedEnd.setUTCHours(0, 0, 0, 0);
+
+    const latestAllowedByPeriod = new Date(extensionStart.getTime() + MAX_ASSIGNMENT_DAYS * DAY_MS);
+    if (requestedEnd > latestAllowedByPeriod) {
       return {
         available: false,
         assignment,
+        reason: 'max_period',
+        maxEndDate: toIsoDay(latestAllowedByPeriod),
         message:
-          'La licencia ya está asignada a otro usuario durante ese período. Debes solicitar una nueva licencia.',
+          `Cada ampliación puede cubrir como máximo 1 año (${MAX_ASSIGNMENT_DAYS} días) desde el fin de tu período actual. ` +
+          `Puedes ampliar hasta el ${formatLongDate(latestAllowedByPeriod)} y, cuando ese período esté por terminar, solicitar otra ampliación.`,
+      };
+    }
+
+    const requestedEndOfDay = new Date(requestedEnd);
+    requestedEndOfDay.setUTCHours(23, 59, 59, 999);
+
+    // Other active assignments of the same license that overlap the extension window
+    const licenseId = (assignment.licenseId as any)._id ?? assignment.licenseId;
+    const conflicting = await Assignment.find({
+      licenseId,
+      estado: 'activo',
+      _id: { $ne: assignment._id },
+      fechaInicioUso: { $lte: requestedEndOfDay },
+      fechaFinUso: { $gte: extensionStart },
+    }).sort({ fechaInicioUso: 1 });
+
+    if (conflicting.length > 0) {
+      const next = conflicting[0];
+      const nextStart = new Date(next.fechaInicioUso);
+      const isSameTeacher = next.correocorporativo === assignment.correocorporativo;
+      const who = isSameTeacher ? 'ya tienes otra asignación de esta licencia' : 'esta licencia estará en uso por otra persona';
+
+      // Latest end date that still fits before the next booking starts
+      const dayBeforeNext = new Date(nextStart);
+      dayBeforeNext.setUTCHours(0, 0, 0, 0);
+      dayBeforeNext.setUTCDate(dayBeforeNext.getUTCDate() - 1);
+      const canExtendPartially = dayBeforeNext >= extensionStart;
+
+      return {
+        available: false,
+        assignment,
+        reason: 'conflict',
+        conflictStartDate: toIsoDay(nextStart),
+        ...(canExtendPartially && { maxEndDate: toIsoDay(dayBeforeNext) }),
+        message: canExtendPartially
+          ? `No es posible ampliar hasta esa fecha: ${who} a partir del ${formatLongDate(nextStart)}. ` +
+            `Puedes ampliar como máximo hasta el ${formatLongDate(dayBeforeNext)}, o solicitar una nueva licencia para el período completo.`
+          : `No es posible ampliar esta licencia: ${who} a partir del ${formatLongDate(nextStart)}. ` +
+            'Debes solicitar una nueva licencia para el período que necesitas.',
       };
     }
 
     return { available: true, assignment };
+  }
+
+  /**
+   * Admin view of a license's calendar: every active assignment that has not
+   * ended yet (current and future), plus pending extension requests that
+   * continue one of this license's assignments.
+   */
+  async getLicenseSchedule(licenseId: string): Promise<{
+    assignments: IAssignment[];
+    pendingExtensions: IAssignment[];
+  }> {
+    if (!Types.ObjectId.isValid(licenseId)) {
+      throw new Error('ID de licencia inválido');
+    }
+    const id = new Types.ObjectId(licenseId);
+
+    const assignments = await Assignment.find({
+      licenseId: id,
+      estado: 'activo',
+      fechaFinUso: { $gte: new Date() },
+    }).sort({ fechaInicioUso: 1 });
+
+    // Extension requests have no licenseId until approved; they point to the
+    // assignment they extend. Include those of any assignment of this license.
+    const licenseAssignmentIds = await Assignment.find({ licenseId: id }).distinct('_id');
+    const pendingExtensions = await Assignment.find({
+      estado: 'pendiente',
+      isExtension: true,
+      originalAssignmentId: { $in: licenseAssignmentIds },
+    }).sort({ fechaInicioUso: 1 });
+
+    return { assignments, pendingExtensions };
   }
 
   /**

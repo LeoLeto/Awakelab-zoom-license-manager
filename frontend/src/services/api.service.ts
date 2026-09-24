@@ -6,6 +6,7 @@ import {
   CreateLicenseDto,
   CreateAssignmentDto,
   EmailLog,
+  ExtensionAvailability,
 } from '../types/license.types';
 import { HistoryEntry, HistoryFilters } from '../types/history.types';
 
@@ -123,6 +124,14 @@ export const licenseApi = {
     });
   },
 
+  async getLicenseSchedule(id: string): Promise<{
+    success: boolean;
+    assignments: Assignment[];
+    pendingExtensions: Assignment[];
+  }> {
+    return apiCall(`${API_BASE_URL}/licenses/${id}/assignments`);
+  },
+
   async setMaintenance(id: string, reason: string): Promise<{ success: boolean; message: string; license: License }> {
     return apiCall(`${API_BASE_URL}/licenses/${id}/maintenance`, {
       method: 'POST',
@@ -198,7 +207,7 @@ export const assignmentApi = {
   async checkExtensionAvailability(
     assignmentId: string,
     newEndDate: string
-  ): Promise<{ success: boolean; available: boolean; message?: string }> {
+  ): Promise<ExtensionAvailability> {
     return apiCall(
       `${API_BASE_URL}/licenses/check-extension?assignmentId=${assignmentId}&newEndDate=${newEndDate}`
     );

@@ -1,8 +1,12 @@
 import { Router, Request, Response } from 'express';
+import { authenticateToken } from '../middleware/auth.middleware';
 import { HistoryService } from '../services/history.service';
 import { Types } from 'mongoose';
 
 const router = Router();
+
+// Admin-only: every route here exposes credentials, email contents or audit data
+router.use(authenticateToken);
 
 /**
  * GET /api/history/recent

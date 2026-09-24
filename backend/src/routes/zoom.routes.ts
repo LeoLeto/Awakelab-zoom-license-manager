@@ -1,9 +1,13 @@
 import { Router, Request, Response } from 'express';
+import { authenticateToken } from '../middleware/auth.middleware';
 import zoomService from '../services/zoom.service';
 import { licenseService } from '../services/license.service';
 import { PasswordChangeRequest } from '../types/zoom.types';
 
 const router = Router();
+
+// Admin-only: every route here exposes credentials, email contents or audit data
+router.use(authenticateToken);
 
 /**
  * Test Zoom API connection

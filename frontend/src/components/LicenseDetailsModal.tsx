@@ -1,16 +1,47 @@
-import { LicenseWithAssignment } from '../types/license.types';
-import { useState } from 'react';
+import { Assignment, LicenseWithAssignment } from '../types/license.types';
+import { useEffect, useState } from 'react';
 import { HistoryViewer } from './HistoryViewer';
 import { formatDate } from '../utils/date';
+import { licenseApi } from '../services/api.service';
+
+export type LicenseDetailsTab = 'details' | 'schedule' | 'history';
 
 interface LicenseDetailsModalProps {
   licenseData: LicenseWithAssignment;
   onClose: () => void;
+  initialTab?: LicenseDetailsTab;
 }
 
-export default function LicenseDetailsModal({ licenseData, onClose }: LicenseDetailsModalProps) {
+export default function LicenseDetailsModal({ licenseData, onClose, initialTab = 'details' }: LicenseDetailsModalProps) {
   const { license, assignment } = licenseData;
-  const [activeTab, setActiveTab] = useState<'details' | 'history'>('details');
+  const [activeTab, setActiveTab] = useState<LicenseDetailsTab>(initialTab);
+
+  // Current and future bookings of this license (loaded up front so the tab shows a count)
+  const [schedule, setSchedule] = useState<{ assignments: Assignment[]; pendingExtensions: Assignment[] } | null>(null);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setSchedule(null);
+    setScheduleError(null);
+    licenseApi
+      .getLicenseSchedule(license._id)
+      .then((res) => {
+        if (!cancelled) setSchedule({ assignments: res.assignments, pendingExtensions: res.pendingExtensions });
+      })
+      .catch((err) => {
+        if (!cancelled) setScheduleError(err instanceof Error ? err.message : 'Error al cargar asignaciones');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [license._id]);
+
+  const now = new Date();
+  const periodStatus = (a: Assignment) =>
+    new Date(a.fechaInicioUso) > now
+      ? { label: 'Próxima', className: 'upcoming' }
+      : { label: 'En curso', className: 'active' };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -26,6 +57,12 @@ export default function LicenseDetailsModal({ licenseData, onClose }: LicenseDet
             onClick={() => setActiveTab('details')}
           >
             Detalles
+          </button>
+          <button
+            className={activeTab === 'schedule' ? 'tab-active' : ''}
+            onClick={() => setActiveTab('schedule')}
+          >
+            Asignaciones{schedule ? ` (${schedule.assignments.length})` : ''}
           </button>
           <button 
             className={activeTab === 'history' ? 'tab-active' : ''} 
@@ -155,6 +192,83 @@ export default function LicenseDetailsModal({ licenseData, onClose }: LicenseDet
             </div>
           </div>
           </>
+          ) : activeTab === 'schedule' ? (
+            <div className="details-section">
+              <h4>Asignaciones actuales y futuras</h4>
+              {scheduleError && <div className="error">{scheduleError}</div>}
+              {!schedule && !scheduleError && <div className="loading">Cargando asignaciones...</div>}
+              {schedule && schedule.assignments.length === 0 && (
+                <p className="text-muted">Esta licencia no tiene asignaciones en curso ni reservas futuras.</p>
+              )}
+              {schedule && schedule.assignments.length > 0 && (
+                <div className="table-container">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Estado</th>
+                        <th>Asignado a</th>
+                        <th>Área</th>
+                        <th>Desde</th>
+                        <th>Hasta</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {schedule.assignments.map((a) => {
+                        const status = periodStatus(a);
+                        return (
+                          <tr key={a._id}>
+                            <td>
+                              <span className={`badge ${status.className}`}>{status.label}</span>
+                              {a.isExtension && <small className="text-muted"> ampliación</small>}
+                            </td>
+                            <td>
+                              <strong>{a.nombreApellidos}</strong>
+                              <br />
+                              <small>{a.correocorporativo}</small>
+                            </td>
+                            <td>{a.area}</td>
+                            <td>{formatDate(a.fechaInicioUso)}</td>
+                            <td>{formatDate(a.fechaFinUso)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {schedule && schedule.pendingExtensions.length > 0 && (
+                <>
+                  <h4 style={{ marginTop: '1.5rem' }}>Solicitudes de ampliación pendientes</h4>
+                  <div className="table-container">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Solicitante</th>
+                          <th>Desde</th>
+                          <th>Hasta</th>
+                          <th>Solicitada</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {schedule.pendingExtensions.map((a) => (
+                          <tr key={a._id}>
+                            <td>
+                              <strong>{a.nombreApellidos}</strong>
+                              <br />
+                              <small>{a.correocorporativo}</small>
+                            </td>
+                            <td>{formatDate(a.fechaInicioUso)}</td>
+                            <td>{formatDate(a.fechaFinUso)}</td>
+                            <td>{formatDate(a.createdAt)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
           ) : (
             <div className="history-section">
               <HistoryViewer 

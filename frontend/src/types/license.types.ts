@@ -45,6 +45,23 @@ export interface Assignment {
   updatedAt: string;
 }
 
+/** Result of GET /licenses/check-extension */
+export interface ExtensionAvailability {
+  success: boolean;
+  available: boolean;
+  message?: string;
+  reason?: 'max_period' | 'conflict';
+  /** Latest end date (YYYY-MM-DD) that would be accepted, when there is one */
+  maxEndDate?: string;
+  conflictStartDate?: string;
+}
+
+/** Email of the Zoom license an assignment uses, if it has one loaded */
+export function licenseEmailOf(assignment: Assignment): string | null {
+  const lic = assignment.licenseId;
+  return lic && typeof lic === 'object' ? lic.email : null;
+}
+
 export interface LicenseWithAssignment {
   license: License;
   assignment: Assignment | null;

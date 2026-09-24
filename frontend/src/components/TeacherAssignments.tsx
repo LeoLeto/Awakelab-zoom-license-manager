@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { assignmentApi } from '../services/api.service';
-import { Assignment, displayTipoUso } from '../types/license.types';
+import { Assignment, displayTipoUso, licenseEmailOf } from '../types/license.types';
 import { formatDate } from '../utils/date';
 
 interface TeacherAssignmentsProps {
@@ -42,12 +42,8 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
     try {
       setLoading(true);
       setError(null);
-      const response = await assignmentApi.getAllAssignments();
-      
-      // Filter assignments by email - only show matching assignments
-      const filteredAssignments = response.assignments.filter(
-        (a) => a.correocorporativo.toLowerCase() === searchEmail.toLowerCase().trim()
-      );
+      const response = await assignmentApi.getAllAssignmentsByTeacher(searchEmail.trim());
+      const filteredAssignments = [...response.assignments];
       
       // Sort by start date, most recent first
       filteredAssignments.sort(
@@ -171,6 +167,7 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
                     <thead>
                       <tr>
                         <th>Estado</th>
+                        <th>Licencia</th>
                         <th>Nombre</th>
                         <th>Área</th>
                         <th>Tipo de Uso</th>
@@ -194,6 +191,7 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
                                 </span>
                               )}
                             </td>
+                            <td>{licenseEmailOf(assignment) ?? <span style={{ color: 'var(--gray-500)' }}>{assignment.estado === 'pendiente' ? 'Pendiente de asignar' : '—'}</span>}</td>
                             <td>{assignment.nombreApellidos}</td>
                             <td>{assignment.area}</td>
                             <td>{displayTipoUso(assignment.tipoUso)}</td>
@@ -217,6 +215,7 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
                     <thead>
                       <tr>
                         <th>Estado</th>
+                        <th>Licencia</th>
                         <th>Nombre</th>
                         <th>Área</th>
                         <th>Fecha Inicio</th>
@@ -233,6 +232,7 @@ export default function TeacherAssignments({ teacherEmail, refreshTrigger }: Tea
                                 {status.icon} {status.label}
                               </span>
                             </td>
+                            <td>{licenseEmailOf(assignment) ?? <span style={{ color: 'var(--gray-500)' }}>{assignment.estado === 'pendiente' ? 'Pendiente de asignar' : '—'}</span>}</td>
                             <td>{assignment.nombreApellidos}</td>
                             <td>{assignment.area}</td>
                             <td>{formatDate(assignment.fechaInicioUso)}</td>

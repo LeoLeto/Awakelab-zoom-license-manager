@@ -1,6 +1,6 @@
-﻿import { useState, useEffect } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { assignmentApi, licenseApi, settingsApi } from '../services/api.service';
-import { License, Assignment, TipoUso, TIPO_USO_OPTIONS } from '../types/license.types';
+import { License, Assignment, TipoUso, TIPO_USO_OPTIONS, licenseEmailOf } from '../types/license.types';
 
 interface TeacherRequestFormProps {
   onSuccess?: (email: string) => void;
@@ -34,7 +34,10 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
   const [nuevaFechaFin, setNuevaFechaFin] = useState('');
   const [checkingExtension, setCheckingExtension] = useState(false);
   const [extensionAvailable, setExtensionAvailable] = useState<boolean | null>(null);
-  const [, setExtensionMessage] = useState('');
+  // Why the extension was rejected, and the latest end date that would be accepted
+  const [extensionResult, setExtensionResult] = useState<{ message: string; maxEndDate?: string } | null>(null);
+  // Only the latest availability check may update the UI (dates change while typing)
+  const extensionCheckSeq = useRef(0);
   const [extensionTipoUso, setExtensionTipoUso] = useState('');
 
   // ── Area/Departamento options (loaded from settings) ─────────────────────
@@ -82,7 +85,7 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
     setSelectedAssignment(null);
     setNuevaFechaFin('');
     setExtensionAvailable(null);
-    setExtensionMessage('');
+    setExtensionResult(null);
     setExtensionTipoUso('');
   };
 
@@ -139,20 +142,27 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
   // ── Ampliación: check extension availability ──────────────────────────────
   const checkExtension = async (assignmentId: string, newDate: string) => {
     if (!assignmentId || !newDate) return;
+    const seq = ++extensionCheckSeq.current;
 
     try {
       setCheckingExtension(true);
       setExtensionAvailable(null);
-      setExtensionMessage('');
+      setExtensionResult(null);
 
       const result = await assignmentApi.checkExtensionAvailability(assignmentId, newDate);
+      if (seq !== extensionCheckSeq.current) return;
       setExtensionAvailable(result.available);
-      setExtensionMessage(result.message ?? '');
+      setExtensionResult(
+        result.available ? null : { message: result.message ?? '', maxEndDate: result.maxEndDate }
+      );
     } catch (err) {
+      if (seq !== extensionCheckSeq.current) return;
       setExtensionAvailable(false);
-      setExtensionMessage(err instanceof Error ? err.message : 'Error al verificar disponibilidad');
+      setExtensionResult({
+        message: err instanceof Error ? err.message : 'Error al verificar disponibilidad',
+      });
     } finally {
-      setCheckingExtension(false);
+      if (seq === extensionCheckSeq.current) setCheckingExtension(false);
     }
   };
 
@@ -160,23 +170,22 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
     setSelectedAssignment(a);
     setNuevaFechaFin('');
     setExtensionAvailable(null);
-    setExtensionMessage('');
+    setExtensionResult(null);
     // Pre-populate tipoUso only if the stored value is still a valid option
     const isValidTipo = (TIPO_USO_OPTIONS as readonly string[]).includes(a.tipoUso);
     setExtensionTipoUso(isValidTipo ? a.tipoUso : '');
   };
 
   const handleNuevaFechaFinChange = (value: string) => {
+    // Discard any check still in flight for the previous value
+    extensionCheckSeq.current++;
+    setCheckingExtension(false);
     setNuevaFechaFin(value);
     setExtensionAvailable(null);
-    setExtensionMessage('');
+    setExtensionResult(null);
     if (selectedAssignment && value) {
-      // Validate 1-year max from the original assignment's start date
-      if (exceedsMaxPeriod(selectedAssignment.fechaInicioUso, value)) {
-        setExtensionAvailable(false);
-        setExtensionMessage(MAX_LICENSE_MSG);
-        return;
-      }
+      // The backend validates both the 1-year limit (on the extension window)
+      // and conflicts with other bookings, and explains the result
       checkExtension(selectedAssignment._id, value);
     }
   };
@@ -229,15 +238,17 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
           setError(DOMAIN_ERROR_MSG);
           return;
         }
-        if (exceedsMaxPeriod(selectedAssignment.fechaInicioUso, nuevaFechaFin)) {
-          setError(MAX_LICENSE_MSG);
-          return;
-        }
-
         // Compute fechaInicioUso for the extension: day after the existing assignment ends
         const currentEnd = new Date(selectedAssignment.fechaFinUso);
         currentEnd.setDate(currentEnd.getDate() + 1);
         const extensionStart = currentEnd.toISOString().split('T')[0];
+
+        // The 1-year limit applies to the newly allocated period, not to the
+        // whole life of the original assignment
+        if (exceedsMaxPeriod(extensionStart, nuevaFechaFin)) {
+          setError(MAX_LICENSE_MSG);
+          return;
+        }
 
         await assignmentApi.createAssignment({
           nombreApellidos: selectedAssignment.nombreApellidos,
@@ -467,6 +478,11 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                             onChange={() => handleSelectAssignment(a)}
                           />
                           <span>
+                            {licenseEmailOf(a) && (
+                              <>
+                                <strong>{licenseEmailOf(a)}</strong>&nbsp;|&nbsp;
+                              </>
+                            )}
                             <strong>{a.area}</strong>
                             {a.comunidadAutonoma ? ` (${a.comunidadAutonoma})` : ''}{' '}
                             &nbsp;|&nbsp; {formatDate(a.fechaInicioUso)} → {formatDate(a.fechaFinUso)}{' '}
@@ -526,6 +542,12 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                         <div>
                           <span style={{ color: '#6c757d' }}>CC.AA.:</span>{' '}
                           <strong>{selectedAssignment.comunidadAutonoma}</strong>
+                        </div>
+                      )}
+                      {licenseEmailOf(selectedAssignment) && (
+                        <div>
+                          <span style={{ color: '#6c757d' }}>Licencia Zoom:</span>{' '}
+                          <strong>{licenseEmailOf(selectedAssignment)}</strong>
                         </div>
                       )}
                       <div>
@@ -610,8 +632,23 @@ export default function TeacherRequestForm({ onSuccess }: TeacherRequestFormProp
                         marginBottom: '8px',
                       }}
                     >
-                      La licencia no está disponible para ese período.{' '}
-                      Debes <strong>solicitar una nueva licencia</strong> en su lugar.
+                      {extensionResult?.message || (
+                        <>
+                          La licencia no está disponible para ese período.{' '}
+                          Debes <strong>solicitar una nueva licencia</strong> en su lugar.
+                        </>
+                      )}
+                      {extensionResult?.maxEndDate && extensionResult.maxEndDate !== nuevaFechaFin && (
+                        <div style={{ marginTop: '10px' }}>
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            onClick={() => handleNuevaFechaFinChange(extensionResult.maxEndDate!)}
+                          >
+                            Ampliar hasta el {formatDate(`${extensionResult.maxEndDate}T12:00:00`)}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

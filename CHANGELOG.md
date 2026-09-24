@@ -2,6 +2,22 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.12.0] – 2026-09-24
+
+### Fixed
+- **Ampliaciones bloqueadas por el límite de 1 año**: El portal medía los 365 días desde la fecha de inicio *original* de la asignación, por lo que cualquier asignación con más de un año de antigüedad no podía ampliarse nunca («La licencia no está disponible para ese período»). El límite ahora se aplica al período que se añade (del día siguiente al fin actual hasta la nueva fecha), igual que ya validaba el backend al crear la solicitud.
+- **Mensaje de disponibilidad de ampliación**: El motivo real del rechazo nunca se mostraba. Ahora se indica si se supera el límite de 1 año o si la licencia estará en uso por otra persona a partir de una fecha concreta (p. ej. «a partir del 18 de junio de 2027»), junto con la fecha máxima hasta la que sí se puede ampliar y un botón para seleccionarla.
+- Las comprobaciones de disponibilidad que llegaban tarde (al cambiar la fecha rápidamente) ya no sobrescriben el resultado de la fecha actual.
+
+### Added
+- **Portal docente — nombre de la licencia**: «Mis Asignaciones» y el flujo de ampliación muestran el email de la licencia Zoom de cada asignación, para facilitar la comunicación con los administradores.
+- **Resumen de Licencias — Asignaciones actuales y futuras**: Nueva pestaña «Asignaciones» en el detalle de cada licencia (también accesible con el botón de calendario de la tabla) con todas las asignaciones en curso y reservas futuras, más las solicitudes de ampliación pendientes que la afectan. Nueva ruta `GET /api/licenses/:id/assignments`.
+
+### Security
+- Las credenciales de las licencias (`passwordZoom`, `passwordEmail`, `claveAnfitrionZoom`, `claveUsuarioMoodle`) ya no se devuelven en las respuestas públicas; solo las reciben administradores autenticados. Antes, `GET /api/licenses` exponía sin autenticación las credenciales de todas las licencias.
+- Requieren sesión de administrador: `/api/zoom/*` (incluido el cambio de contraseña de Zoom), `/api/email-logs/*`, `/api/history/*`, `GET /api/licenses`, `GET /api/licenses/:id` y `GET /api/licenses/assignments/{all,active,pending,:id}`.
+- «Mis Asignaciones» consulta solo las asignaciones del email indicado en lugar de descargar las de todos los docentes.
+
 ## [1.11.0] – 2026-07-16
 
 ### Added
