@@ -1,11 +1,28 @@
 import cron from 'node-cron';
-import { Assignment } from '../models/Assignment.model';
-import { License } from '../models/License.model';
+import { Assignment, IAssignment } from '../models/Assignment.model';
+import { License, ILicense } from '../models/License.model';
 import { assignmentService } from '../services/assignment.service';
 import { settingsService } from '../services/settings.service';
 import { licenseService } from '../services/license.service';
 import zoomService from '../services/zoom.service';
-import { emailService } from '../services/email.service';
+import { emailService, LicenseCredentials } from '../services/email.service';
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Dates are stored on UTC day boundaries — format them in UTC too */
+const formatDay = (d: Date) => new Date(d).toLocaleDateString('es-CL', { timeZone: 'UTC' });
+
+/**
+ * Key that groups assignments into a single email: same person, same period,
+ * same type of use.
+ */
+const groupKey = (a: IAssignment) =>
+  [
+    a.correocorporativo.trim().toLowerCase(),
+    new Date(a.fechaInicioUso).toISOString().slice(0, 10),
+    new Date(a.fechaFinUso).toISOString().slice(0, 10),
+    a.tipoUso,
+  ].join('|');
 
 /**
  * Schedule cron job to mark expired assignments and rotate passwords
@@ -16,88 +33,87 @@ export const initCronJobs = () => {
   cron.schedule('0 1 * * *', async () => {
     try {
       console.log('🕐 Running cron job: Mark expired assignments & rotate passwords');
-      
-      // Step 1: Mark expired assignments
-      const expiredCount = await assignmentService.markExpiredAssignments();
-      console.log(`✅ Marked ${expiredCount} expired assignments`);
-      
+
+      // Step 1: Mark expired assignments (frees their licenses)
+      const { count: expiredCount, freedLicenseIds } = await assignmentService.markExpiredAssignments();
+      console.log(`✅ Marked ${expiredCount} expired assignments, freed ${freedLicenseIds.length} license(s)`);
+
       // Step 2: Check if auto password rotation is enabled
       const autoRotationEnabled = await settingsService.isAutoPasswordRotationEnabled();
-      
+
       if (!autoRotationEnabled) {
         console.log('ℹ️  Auto password rotation is disabled');
         return;
       }
-      
+
       console.log('🔐 Starting automatic password rotation for expired licenses...');
-      
-      // Step 3: Get all licenses that just became available (no active assignments)
-      const allLicenses = await licenseService.getAllLicensesWithAssignments();
-      const availableLicenses = allLicenses.filter(license => 
-        license.status === 'libre' && 
-        (!license.currentAssignment || license.currentAssignment.estado !== 'activo')
-      );
-      
+
+      // Step 3: Rotate exactly the licenses freed in this run, so the previous
+      // user loses access when the assignment ends. Re-check that each one is
+      // still free and has no active assignment before touching it.
+      const freedLicenses = await License.find({ _id: { $in: freedLicenseIds }, estado: 'libre' });
+
       let rotatedCount = 0;
       let failedCount = 0;
-      const rotatedLicenses: Array<{ email: string, password: string }> = [];
-      
+      let skippedCount = 0;
+
       // Check if password change notifications are enabled
       const notifyOnPasswordChange = await settingsService.getSetting('notifyOnPasswordChange');
-      const adminEmails = await settingsService.getSetting('adminNotificationEmails');
-      
-      // Step 4: Rotate passwords for available licenses
-      for (const license of availableLicenses) {
+      const adminEmails = notifyOnPasswordChange ? await emailService.getAdminNotificationEmails() : [];
+
+      // Step 4: Rotate passwords for freed licenses
+      for (const license of freedLicenses) {
         try {
+          const stillAssigned = await Assignment.exists({ licenseId: license._id, estado: 'activo' });
+          if (stillAssigned) {
+            skippedCount++;
+            continue;
+          }
+
           // Generate new password
           const newPassword = zoomService.generateSecurePassword();
-          
+
           // Change password in Zoom
           await zoomService.changeUserPassword(license.email, newPassword);
-          
+
           // Update password in database
           await licenseService.updateLicense(
             license._id.toString(),
-            { 
+            {
               passwordZoom: newPassword,
-              passwordEmail: newPassword // Also update passwordEmail if needed
+              passwordEmail: newPassword,
             },
             'system-cron'
           );
-          
+
           rotatedCount++;
-          rotatedLicenses.push({ email: license.email, password: newPassword });
           console.log(`   ✅ Rotated password for license: ${license.email}`);
-          
+
           // Send individual notification if enabled
-          if (notifyOnPasswordChange && adminEmails) {
-            const emails = adminEmails.split(',').map((email: string) => email.trim());
-            for (const adminEmail of emails) {
-              await emailService.sendPasswordChanged(
-                {
-                  licenseEmail: license.email,
-                  newPassword,
-                  reason: 'Rotación automática - Licencia disponible'
-                },
-                adminEmail
-              );
-            }
+          for (const adminEmail of adminEmails) {
+            await emailService.sendPasswordChanged(
+              {
+                licenseEmail: license.email,
+                newPassword,
+                reason: 'Rotación automática - Licencia disponible',
+              },
+              adminEmail
+            );
           }
-          
+
           // Add delay between API calls to avoid rate limiting
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
+          await sleep(1000);
         } catch (error: any) {
           failedCount++;
           console.error(`   ❌ Failed to rotate password for ${license.email}:`, error.message);
         }
       }
-      
+
       console.log(`\n📊 Password Rotation Summary:`);
-      console.log(`   Total available licenses: ${availableLicenses.length}`);
+      console.log(`   Licenses freed in this run: ${freedLicenseIds.length}`);
       console.log(`   Successfully rotated: ${rotatedCount}`);
+      console.log(`   Skipped (assigned again): ${skippedCount}`);
       console.log(`   Failed: ${failedCount}`);
-      
     } catch (error) {
       console.error('❌ Error in cron job:', error);
     }
@@ -107,77 +123,90 @@ export const initCronJobs = () => {
   cron.schedule('0 9 * * *', async () => {
     try {
       console.log('🕐 Running cron job: Check expiring assignments');
-      
+
       // Check if expiration notifications are enabled
       const notificationsEnabled = await settingsService.getSetting('notifyOnExpiration');
       if (!notificationsEnabled) {
         console.log('ℹ️  Expiration notifications are disabled');
         return;
       }
-      
+
       // Get warning threshold
-      const warningDays = await settingsService.getSetting('expirationWarningDays') || 2;
-      
-      // Calculate threshold date (today + warningDays)
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const thresholdDate = new Date(today);
-      thresholdDate.setDate(thresholdDate.getDate() + warningDays);
-      
-      // Get all active assignments
-      const allLicenses = await licenseService.getAllLicensesWithAssignments();
-      const expiringAssignments = allLicenses
-        .filter(license => {
-          if (!license.currentAssignment || license.currentAssignment.estado !== 'activo') {
-            return false;
-          }
-          
-          const endDate = new Date(license.currentAssignment.fechaFin);
-          endDate.setHours(0, 0, 0, 0);
-          
-          // Check if end date is within the warning threshold
-          return endDate.getTime() === thresholdDate.getTime();
-        })
-        .map(license => ({
-          license,
-          assignment: license.currentAssignment!
-        }));
-      
-      console.log(`📧 Found ${expiringAssignments.length} assignments expiring in ${warningDays} days`);
-      
+      const warningDays = Number(await settingsService.getSetting('expirationWarningDays')) || 2;
+
+      // End dates are stored as 23:59:59.999Z of their last day: warn about the
+      // assignments whose last day (UTC) is exactly `warningDays` from today.
+      const dayStart = new Date();
+      dayStart.setUTCHours(0, 0, 0, 0);
+      dayStart.setUTCDate(dayStart.getUTCDate() + warningDays);
+      const dayEnd = new Date(dayStart);
+      dayEnd.setUTCHours(23, 59, 59, 999);
+
+      const expiring = await Assignment.find({
+        estado: 'activo',
+        licenseId: { $ne: null },
+        fechaFinUso: { $gte: dayStart, $lte: dayEnd },
+      }).populate('licenseId');
+
+      // Skip assignments that already have an extension approved or requested
+      const withoutExtension: IAssignment[] = [];
+      for (const assignment of expiring) {
+        const extended = await Assignment.exists({
+          originalAssignmentId: assignment._id,
+          estado: { $in: ['activo', 'pendiente'] },
+        });
+        if (!extended) withoutExtension.push(assignment);
+      }
+
+      // One warning per person and end date, listing every license
+      const groups = new Map<string, IAssignment[]>();
+      for (const assignment of withoutExtension) {
+        const key = `${assignment.correocorporativo.trim().toLowerCase()}|${dayStart.toISOString().slice(0, 10)}`;
+        groups.set(key, [...(groups.get(key) || []), assignment]);
+      }
+
+      console.log(
+        `📧 Found ${expiring.length} assignments expiring in ${warningDays} days ` +
+          `(${expiring.length - withoutExtension.length} already extended) → ${groups.size} email(s)`
+      );
+
       let sentCount = 0;
       let failedCount = 0;
-      
+
       // Send warning emails
-      for (const { license, assignment } of expiringAssignments) {
+      for (const group of groups.values()) {
+        const first = group[0];
         try {
-          const endDate = new Date(assignment.fechaFin);
-          
-          await emailService.sendExpirationWarning({
-            teacherName: assignment.nombreDocente,
-            teacherEmail: assignment.emailDocente,
-            licenseEmail: license.email,
-            endDate: endDate.toLocaleDateString('es-CL'),
-            daysRemaining: warningDays
+          const sent = await emailService.sendExpirationWarning({
+            teacherName: first.nombreApellidos,
+            teacherEmail: first.correocorporativo,
+            licenseEmail: group
+              .map((a) => (a.licenseId as unknown as ILicense)?.email)
+              .filter(Boolean)
+              .sort((x, y) => x.localeCompare(y, 'es', { numeric: true })),
+            endDate: formatDay(first.fechaFinUso),
+            daysRemaining: warningDays,
           });
-          
-          sentCount++;
-          console.log(`   ✅ Sent warning to: ${assignment.emailDocente}`);
-          
+
+          if (sent) {
+            sentCount++;
+            console.log(`   ✅ Sent warning to: ${first.correocorporativo} (${group.length} license(s))`);
+          } else {
+            failedCount++;
+          }
+
           // Add small delay to avoid rate limiting
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
+          await sleep(500);
         } catch (error: any) {
           failedCount++;
-          console.error(`   ❌ Failed to send warning to ${assignment.emailDocente}:`, error.message);
+          console.error(`   ❌ Failed to send warning to ${first.correocorporativo}:`, error.message);
         }
       }
-      
+
       console.log(`\n📊 Expiration Warning Summary:`);
-      console.log(`   Assignments expiring in ${warningDays} days: ${expiringAssignments.length}`);
+      console.log(`   Assignments expiring in ${warningDays} days: ${withoutExtension.length}`);
       console.log(`   Warnings sent: ${sentCount}`);
       console.log(`   Failed: ${failedCount}`);
-      
     } catch (error) {
       console.error('❌ Error in expiration warning cron job:', error);
     }
@@ -188,7 +217,8 @@ export const initCronJobs = () => {
   // ── Lock licenses & send credentials 48h before start ─────────────────────
   // Runs daily at 7:00 AM — finds assignments starting within the next 48 hours
   // whose credentials haven't been sent yet, locks the license to "ocupado",
-  // generates a fresh password, and emails the teacher.
+  // generates a fresh password, and emails the teacher. Licenses of the same
+  // person for the same period go out in ONE email.
   cron.schedule('0 7 * * *', async () => {
     try {
       console.log('🕐 Running cron job: Lock licenses & send credentials (48h before start)');
@@ -209,9 +239,9 @@ export const initCronJobs = () => {
 
       console.log(`   Found ${pending.length} assignment(s) needing credentials`);
 
-      let sentCount = 0;
       let skippedCount = 0;
       let failedCount = 0;
+      const ready = new Map<string, { assignments: IAssignment[]; credentials: LicenseCredentials[] }>();
 
       for (const assignment of pending) {
         try {
@@ -234,37 +264,60 @@ export const initCronJobs = () => {
           await zoomService.changeUserPassword(license.email, freshPassword);
           await licenseService.updatePasswordByEmail(license.email, freshPassword);
 
-          // Send credentials email
-          await emailService.sendAssignmentConfirmation({
-            teacherName: assignment.nombreApellidos,
-            teacherEmail: assignment.correocorporativo,
+          const key = groupKey(assignment);
+          const group = ready.get(key) || { assignments: [], credentials: [] };
+          group.assignments.push(assignment);
+          group.credentials.push({
             licenseEmail: license.email,
-            startDate: new Date(assignment.fechaInicioUso).toLocaleDateString('es-CL'),
-            endDate: new Date(assignment.fechaFinUso).toLocaleDateString('es-CL'),
-            platform: assignment.tipoUso,
             zoomPassword: freshPassword,
             hostKey: license.claveAnfitrionZoom,
             moodleUser: license.usuarioMoodle,
             moodlePassword: license.claveUsuarioMoodle,
           });
-
-          // Mark credentials as sent
-          await Assignment.findByIdAndUpdate(assignment._id, { $set: { credentialsSent: true } });
-
-          sentCount++;
-          console.log(`   ✅ License locked & credentials sent to ${assignment.correocorporativo} for ${license.email}`);
+          ready.set(key, group);
 
           // Respect Zoom API rate limits
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await sleep(1000);
         } catch (error: any) {
           failedCount++;
           console.error(`   ❌ Failed for ${assignment.correocorporativo}:`, error.message);
         }
       }
 
+      let sentCount = 0;
+      for (const { assignments, credentials } of ready.values()) {
+        const first = assignments[0];
+        try {
+          await emailService.sendMultiAssignmentConfirmation({
+            teacherName: first.nombreApellidos,
+            teacherEmail: first.correocorporativo,
+            startDate: formatDay(first.fechaInicioUso),
+            endDate: formatDay(first.fechaFinUso),
+            platform: first.tipoUso,
+            licenses: credentials.sort((a, b) =>
+              a.licenseEmail.localeCompare(b.licenseEmail, 'es', { numeric: true })
+            ),
+          });
+          sentCount += assignments.length;
+          console.log(
+            `   ✅ Credentials sent to ${first.correocorporativo} for ${credentials.length} license(s)`
+          );
+        } catch (error: any) {
+          failedCount += assignments.length;
+          console.error(`   ❌ Failed to email ${first.correocorporativo}:`, error.message);
+        }
+
+        // The passwords were rotated, so mark them as handled either way:
+        // a failed email is visible in the email log and can be resent.
+        await Assignment.updateMany(
+          { _id: { $in: assignments.map((a) => a._id) } },
+          { $set: { credentialsSent: true } }
+        );
+      }
+
       console.log(`\n📊 48h Credential Lock Summary:`);
       console.log(`   Pending assignments: ${pending.length}`);
-      console.log(`   Credentials sent: ${sentCount}`);
+      console.log(`   Credentials sent: ${sentCount} (in ${ready.size} email(s))`);
       console.log(`   Skipped (still occupied): ${skippedCount}`);
       console.log(`   Failed: ${failedCount}`);
     } catch (error) {
@@ -272,4 +325,3 @@ export const initCronJobs = () => {
     }
   });
 };
-

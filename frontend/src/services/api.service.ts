@@ -5,6 +5,8 @@ import {
   LicenseWithAssignment,
   CreateLicenseDto,
   CreateAssignmentDto,
+  BulkAssignmentDto,
+  BulkAssignmentResult,
   EmailLog,
   ExtensionAvailability,
 } from '../types/license.types';
@@ -163,6 +165,14 @@ export const assignmentApi = {
     assignment: Assignment 
   }> {
     return apiCall(`${API_BASE_URL}/licenses/assignments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  },
+
+  async createBulkAssignments(data: BulkAssignmentDto): Promise<BulkAssignmentResult> {
+    return apiCall(`${API_BASE_URL}/licenses/assignments/bulk`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),

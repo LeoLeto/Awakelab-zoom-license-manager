@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { assignmentApi, licenseApi, settingsApi } from '../services/api.service';
 import { Assignment, License, TipoUso, TIPO_USO_OPTIONS, displayTipoUso } from '../types/license.types';
 import { formatDate } from '../utils/date';
@@ -21,8 +21,12 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
   const [forcePickLicense, setForcePickLicense] = useState(false);
   const [assignModalError, setAssignModalError] = useState<string | null>(null);
   const [areaOptions, setAreaOptions] = useState<string[]>([]);
+  const [selectedLicenseIds, setSelectedLicenseIds] = useState<string[]>([]);
+  const [licenseFilter, setLicenseFilter] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    licenseId: '',
     nombreApellidos: '',
     correocorporativo: '',
     area: '',
@@ -54,9 +58,13 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
         formData.fechaFinUso
       );
       setAvailableLicenses(response.availableLicenses);
+      // Drop selections that are no longer available for the new dates
+      const stillAvailable = new Set(response.availableLicenses.map((l) => l._id));
+      setSelectedLicenseIds((ids) => ids.filter((id) => stillAvailable.has(id)));
     } catch (err) {
       console.error('Failed to load available licenses:', err);
       setAvailableLicenses([]);
+      setSelectedLicenseIds([]);
     }
   };
 
@@ -88,25 +96,80 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
     }
   }, [formData.fechaInicioUso, formData.fechaFinUso, showCreateForm]);
 
+  const filteredLicenses = useMemo(() => {
+    const q = licenseFilter.trim().toLowerCase();
+    if (!q) return availableLicenses;
+    return availableLicenses.filter(
+      (l) => l.email.toLowerCase().includes(q) || (l.usuarioMoodle || '').toLowerCase().includes(q)
+    );
+  }, [availableLicenses, licenseFilter]);
+
+  // Same 48h rule as the backend: start dates are stored as midnight UTC
+  const startsWithin48h = useMemo(() => {
+    if (!formData.fechaInicioUso) return null;
+    const start = new Date(`${formData.fechaInicioUso}T00:00:00Z`).getTime();
+    return start - Date.now() <= 48 * 60 * 60 * 1000;
+  }, [formData.fechaInicioUso]);
+
+  const toggleLicense = (id: string) => {
+    setSelectedLicenseIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
+    setCreateError(null);
+  };
+
+  const selectAllFiltered = () => {
+    setSelectedLicenseIds((ids) => [...new Set([...ids, ...filteredLicenses.map((l) => l._id)])]);
+  };
+
+  const resetCreateForm = () => {
+    setFormData({
+      nombreApellidos: '',
+      correocorporativo: '',
+      area: '',
+      comunidadAutonoma: '',
+      tipoUso: '',
+      fechaInicioUso: '',
+      fechaFinUso: '',
+    });
+    setSelectedLicenseIds([]);
+    setLicenseFilter('');
+    setCreateError(null);
+  };
+
   const handleCreateAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (selectedLicenseIds.length === 0) {
+      setCreateError('Selecciona al menos una licencia');
+      return;
+    }
+    const n = selectedLicenseIds.length;
+    if (n > 1 && !confirm(`Se asignarán ${n} licencias a ${formData.correocorporativo}. ¿Continuar?`)) {
+      return;
+    }
+
+    setCreating(true);
+    setCreateError(null);
     try {
-      await assignmentApi.createAssignment({ ...formData, tipoUso: formData.tipoUso as TipoUso });
-      setShowCreateForm(false);
-      setFormData({
-        licenseId: '',
-        nombreApellidos: '',
-        correocorporativo: '',
-        area: '',
-        comunidadAutonoma: '',
-        tipoUso: '',
-        fechaInicioUso: '',
-        fechaFinUso: '',
+      const result = await assignmentApi.createBulkAssignments({
+        ...formData,
+        tipoUso: formData.tipoUso as TipoUso,
+        licenseIds: selectedLicenseIds,
       });
+      const what = result.count === 1 ? '1 licencia asignada' : `${result.count} licencias asignadas`;
+      setNotice(
+        !result.emailSent
+          ? `${what}, pero el correo no se pudo enviar. Revisa los logs de email y reenvíalo desde allí.`
+          : result.credentialsPending
+            ? `${what} a ${formData.correocorporativo}. Se ha enviado la reserva; las contraseñas se enviarán automáticamente unas 48 h antes del inicio.`
+            : `${what} a ${formData.correocorporativo}. Se han renovado las contraseñas y se ha enviado un único correo con los datos de acceso (con copia a administración).`
+      );
+      setShowCreateForm(false);
+      resetCreateForm();
       loadPendingAssignments();
       onAssignmentChange?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al crear asignación');
+      setCreateError(err instanceof Error ? err.message : 'Error al crear asignación');
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -196,13 +259,17 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
         <h2><img src="/icons/clipboard.png" className="icon-inline" alt="" /> Solicitudes y Nuevas Asignaciones</h2>
         <button
           className="btn-primary"
-          onClick={() => setShowCreateForm(!showCreateForm)}
+          onClick={() => {
+            setShowCreateForm(!showCreateForm);
+            setNotice(null);
+          }}
         >
           {showCreateForm ? '✖ Cancelar' : '+ Nueva Asignación'}
         </button>
       </div>
 
       {error && <div className="error">{error}</div>}
+      {notice && <div className="success">{notice}</div>}
 
       {/* Create Assignment Form */}
       {showCreateForm && (
@@ -313,41 +380,94 @@ export default function AssignmentManager({ onAssignmentChange }: AssignmentMana
             </div>
 
             <div className="form-group">
-              <label>Licencia Disponible *</label>
-              <select
-                required
-                value={formData.licenseId}
-                onChange={(e) => setFormData({ ...formData, licenseId: e.target.value })}
-                disabled={!formData.fechaInicioUso || !formData.fechaFinUso}
-              >
-                <option value="">
-                  {!formData.fechaInicioUso || !formData.fechaFinUso
-                    ? 'Selecciona primero las fechas...'
-                    : availableLicenses.length === 0
-                    ? 'No hay licencias disponibles para el período seleccionado'
-                    : 'Selecciona una licencia...'}
-                </option>
-                {availableLicenses.map((license) => (
-                  <option key={license._id} value={license._id}>
-                    {license.email} - {license.usuarioMoodle}
-                  </option>
-                ))}
-              </select>
-              {availableLicenses.length > 0 && (
-                <small className="form-hint">
-                  {availableLicenses.length} licencia(s) disponible(s) para el período seleccionado
-                </small>
+              <label>
+                Licencias *{' '}
+                {selectedLicenseIds.length > 0 && (
+                  <span className="form-hint" style={{ display: 'inline', marginLeft: 6 }}>
+                    ({selectedLicenseIds.length} seleccionada{selectedLicenseIds.length !== 1 ? 's' : ''})
+                  </span>
+                )}
+              </label>
+              {!formData.fechaInicioUso || !formData.fechaFinUso ? (
+                <div className="assign-modal-empty">Selecciona primero las fechas...</div>
+              ) : availableLicenses.length === 0 ? (
+                <div className="assign-modal-empty">No hay licencias disponibles para el período seleccionado</div>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
+                    <input
+                      type="search"
+                      value={licenseFilter}
+                      onChange={(e) => setLicenseFilter(e.target.value)}
+                      placeholder="Filtrar por email o usuario Moodle..."
+                      style={{ flex: '1 1 220px' }}
+                    />
+                    <button type="button" className="btn-secondary btn-small" onClick={selectAllFiltered}>
+                      Seleccionar {licenseFilter ? 'filtradas' : 'todas'} ({filteredLicenses.length})
+                    </button>
+                    {selectedLicenseIds.length > 0 && (
+                      <button type="button" className="btn-secondary btn-small" onClick={() => setSelectedLicenseIds([])}>
+                        Quitar selección
+                      </button>
+                    )}
+                  </div>
+                  <div className="assign-license-list">
+                    {filteredLicenses.map((license) => {
+                      const selected = selectedLicenseIds.includes(license._id);
+                      return (
+                        <div
+                          key={license._id}
+                          className={`assign-license-card${selected ? ' selected' : ''}`}
+                          role="checkbox"
+                          aria-checked={selected}
+                          tabIndex={0}
+                          onClick={() => toggleLicense(license._id)}
+                          onKeyDown={(e) => {
+                            if (e.key === ' ' || e.key === 'Enter') {
+                              e.preventDefault();
+                              toggleLicense(license._id);
+                            }
+                          }}
+                        >
+                          <div className="assign-license-card-check">{selected ? '☑' : '☐'}</div>
+                          <div>
+                            <div className="assign-license-card-email">{license.email}</div>
+                            <div className="assign-license-card-user">{license.usuarioMoodle}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {filteredLicenses.length === 0 && (
+                      <div className="assign-modal-empty">Ninguna licencia coincide con el filtro</div>
+                    )}
+                  </div>
+                  <small className="form-hint">
+                    {availableLicenses.length} licencia(s) disponible(s) para el período seleccionado.{' '}
+                    {startsWithin48h
+                      ? 'Empieza en menos de 48 h: al crear se renovarán las contraseñas y se enviará ahora un único correo con todas las licencias.'
+                      : 'Al crear se enviará ahora la reserva; las contraseñas se enviarán en un único correo unas 48 h antes del inicio.'}
+                  </small>
+                </>
               )}
             </div>
 
+            {createError && <div className="error">{createError}</div>}
+
             <div className="form-actions">
-              <button type="submit" className="btn-primary">
-                Crear Asignación
+              <button type="submit" className="btn-primary" disabled={creating || selectedLicenseIds.length === 0}>
+                {creating
+                  ? 'Asignando...'
+                  : selectedLicenseIds.length > 1
+                    ? `Asignar ${selectedLicenseIds.length} licencias`
+                    : 'Crear Asignación'}
               </button>
               <button
                 type="button"
                 className="btn-secondary"
-                onClick={() => setShowCreateForm(false)}
+                onClick={() => {
+                  setShowCreateForm(false);
+                  resetCreateForm();
+                }}
               >
                 Cancelar
               </button>
