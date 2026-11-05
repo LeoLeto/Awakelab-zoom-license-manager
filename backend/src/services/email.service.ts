@@ -25,10 +25,42 @@ interface AssignmentEmailData {
   credentialsPending?: boolean;
 }
 
+/** Credentials of one license inside a multi-license email */
+export interface LicenseCredentials {
+  licenseEmail: string;
+  zoomPassword?: string;
+  hostKey?: string;
+  moodleUser?: string;
+  moodlePassword?: string;
+}
+
+/**
+ * Several licenses assigned to the same person with the same dates and use,
+ * sent as ONE email (plus one admin copy) instead of one email per license.
+ */
+export interface MultiAssignmentEmailData {
+  teacherName: string;
+  teacherEmail: string;
+  startDate: string;
+  endDate: string;
+  platform: string;
+  /** true → reservation (>48h away): Zoom passwords are sent later by the 48h cron */
+  credentialsPending?: boolean;
+  licenses: LicenseCredentials[];
+}
+
+const escapeHtml = (value: unknown): string =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
 interface ExpirationWarningData {
   teacherName: string;
   teacherEmail: string;
-  licenseEmail: string;
+  /** One license, or every license of the same person expiring that day */
+  licenseEmail: string | string[];
   endDate: string;
   daysRemaining: number;
 }
@@ -283,28 +315,194 @@ export class EmailService {
    * Subject is prefixed with [COPIA ADMIN] so admins can distinguish it.
    */
   private async sendAdminCredentialCopy(data: AssignmentEmailData, html: string): Promise<void> {
+    await this.sendAdminCopy(
+      `[COPIA ADMIN] ✅ Credenciales enviadas a ${data.teacherName} (${data.licenseEmail})`,
+      html
+    );
+  }
+
+  /**
+   * Configured admin notification addresses. The setting has been stored both
+   * as an array and as a comma-separated string, so accept both.
+   */
+  async getAdminNotificationEmails(): Promise<string[]> {
+    const setting = await settingsService.getSetting('adminNotificationEmails');
+    if (Array.isArray(setting)) {
+      return setting.map((e: string) => String(e).trim()).filter(Boolean);
+    }
+    if (typeof setting === 'string' && setting.trim()) {
+      return setting.split(',').map((e: string) => e.trim()).filter(Boolean);
+    }
+    return [];
+  }
+
+  /** Send a copy of a credentials email to every admin address. Never throws. */
+  private async sendAdminCopy(subject: string, html: string): Promise<void> {
     try {
-      const adminEmailsSetting = await settingsService.getSetting('adminNotificationEmails');
-
-      let emails: string[] = [];
-      if (Array.isArray(adminEmailsSetting)) {
-        emails = adminEmailsSetting.map((e: string) => e.trim()).filter(Boolean);
-      } else if (typeof adminEmailsSetting === 'string' && adminEmailsSetting.trim()) {
-        emails = adminEmailsSetting.split(',').map((e: string) => e.trim()).filter(Boolean);
-      }
-
+      const emails = await this.getAdminNotificationEmails();
       if (emails.length === 0) return;
-
-      const subject = `[COPIA ADMIN] ✅ Credenciales enviadas a ${data.teacherName} (${data.licenseEmail})`;
-      await this.sendEmail({
-        to: emails,
-        subject,
-        html,
-        logType: 'admin_copy',
-      });
+      await this.sendEmail({ to: emails, subject, html, logType: 'admin_copy' });
     } catch (error: any) {
       console.error('Failed to send admin credential copy:', error.message);
     }
+  }
+
+  /**
+   * Send ONE email with every license assigned to the same person for the
+   * same period (plus one admin copy). With a single license it falls back to
+   * the regular single-license email so nothing changes for the usual case.
+   */
+  async sendMultiAssignmentConfirmation(data: MultiAssignmentEmailData): Promise<boolean> {
+    if (data.licenses.length === 0) return false;
+    if (data.licenses.length === 1) {
+      const [license] = data.licenses;
+      return this.sendAssignmentConfirmation({
+        teacherName: data.teacherName,
+        teacherEmail: data.teacherEmail,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        platform: data.platform,
+        credentialsPending: data.credentialsPending,
+        ...license,
+      });
+    }
+
+    const n = data.licenses.length;
+    const html = this.buildMultiAssignmentEmailHtml(data);
+    const subject = data.credentialsPending
+      ? `📋 ${n} licencias de Zoom reservadas - ${data.startDate} a ${data.endDate}`
+      : `✅ ${n} licencias de Zoom asignadas - ${data.startDate} a ${data.endDate}`;
+
+    const sent = await this.sendEmail({
+      to: data.teacherEmail,
+      subject,
+      html,
+      logType: 'assignment_confirmation',
+    });
+
+    if (sent) {
+      await this.sendAdminCopy(
+        data.credentialsPending
+          ? `[COPIA ADMIN] 📋 Reserva de ${n} licencias enviada a ${data.teacherName}`
+          : `[COPIA ADMIN] ✅ Credenciales de ${n} licencias enviadas a ${data.teacherName}`,
+        html
+      );
+    }
+
+    return sent;
+  }
+
+  /**
+   * Build HTML body for the multi-license assignment email: shared details
+   * once, then one table row per license.
+   */
+  private buildMultiAssignmentEmailHtml(data: MultiAssignmentEmailData): string {
+    const n = data.licenses.length;
+    const pending = !!data.credentialsPending;
+    const hasMoodle = data.licenses.some((l) => l.moodleUser || l.moodlePassword);
+
+    const rows = data.licenses
+      .map((l, i) => `
+        <tr style="background:${i % 2 ? '#f8fafc' : '#ffffff'}">
+          <td style="padding:10px 8px;border-bottom:1px solid #e5e7eb;color:#6b7280;vertical-align:top">${i + 1}</td>
+          <td style="padding:10px 8px;border-bottom:1px solid #e5e7eb;vertical-align:top">
+            <strong>${escapeHtml(l.licenseEmail)}</strong>
+            ${!pending && l.zoomPassword ? `<br><span style="font-size:13px">🔑 Contraseña: <code>${escapeHtml(l.zoomPassword)}</code></span>` : ''}
+            ${l.hostKey ? `<br><span style="font-size:13px">🎙️ Clave anfitrión: <code>${escapeHtml(l.hostKey)}</code></span>` : ''}
+          </td>
+          ${hasMoodle ? `
+          <td style="padding:10px 8px;border-bottom:1px solid #e5e7eb;vertical-align:top;font-size:13px">
+            ${l.moodleUser ? `👤 <code>${escapeHtml(l.moodleUser)}</code><br>` : ''}
+            ${l.moodlePassword ? `🔒 <code>${escapeHtml(l.moodlePassword)}</code>` : ''}
+          </td>` : ''}
+        </tr>`)
+      .join('');
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 680px; margin: 0 auto; padding: 20px; }
+          .header { background: #2563eb; color: white; padding: 20px; border-radius: 5px 5px 0 0; }
+          .content { background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+          .info-box { background: white; padding: 15px; margin: 15px 0; border-left: 4px solid #2563eb; }
+          .footer { background: #f3f4f6; padding: 15px; text-align: center; font-size: 12px; color: #6b7280; }
+          .section-heading { font-size: 16px; font-weight: bold; margin: 20px 0 8px 0; padding-bottom: 6px; }
+          .warning-box { background: #fef3c7; padding: 12px 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #f59e0b; font-size: 13px; }
+          .danger-box { background: #fef2f2; padding: 12px 15px; margin: 10px 0; border-radius: 5px; border: 2px solid #dc2626; font-size: 13px; }
+          strong { color: #1f2937; }
+          code { background: #e5e7eb; padding: 2px 6px; border-radius: 3px; font-family: monospace; font-size: 13px; }
+          table { width: 100%; border-collapse: collapse; background: white; border: 1px solid #e5e7eb; }
+          th { text-align: left; background: #eff6ff; color: #1d4ed8; padding: 8px; font-size: 13px; border-bottom: 2px solid #bfdbfe; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h2>${pending ? `📋 ${n} Licencias de Zoom Reservadas` : `✅ ${n} Licencias de Zoom Asignadas`}</h2>
+          </div>
+          <div class="content">
+            <p>Hola <strong>${escapeHtml(data.teacherName)}</strong>,</p>
+
+            <p>${pending
+              ? `Se te han reservado <strong>${n} licencias de Zoom</strong>, todas con las mismas fechas. A continuación encontrarás los detalles de tu reserva:`
+              : `Se te han asignado <strong>${n} licencias de Zoom</strong>, todas con las mismas fechas. A continuación encontrarás los datos de acceso de cada una:`}</p>
+
+            <div class="info-box">
+              <p><strong>📅 Fecha de Inicio:</strong> ${escapeHtml(data.startDate)}</p>
+              <p><strong>📅 Fecha de Fin:</strong> ${escapeHtml(data.endDate)}</p>
+              <p><strong>🖥️ Tipo de Uso:</strong> ${escapeHtml(data.platform)}</p>
+              <p><strong>🔢 Licencias:</strong> ${n}</p>
+            </div>
+
+            <p class="section-heading" style="color: #1d4ed8; border-bottom: 2px solid #1d4ed8;">🎥 Licencias${pending ? '' : ' y datos de acceso'}</p>
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:28px">#</th>
+                  <th>Acceso a Zoom</th>
+                  ${hasMoodle ? '<th>Acceso a Moodle</th>' : ''}
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+
+            ${pending ? `
+            <div class="warning-box">
+              <p style="margin: 0;">🔑 <strong>Las contraseñas de acceso a Zoom se enviarán automáticamente aproximadamente 48 horas antes de la fecha de inicio (<u>${escapeHtml(data.startDate)}</u>)</strong>, en un único correo con todas las licencias. Esto garantiza que recibas contraseñas válidas y actualizadas.</p>
+            </div>
+            ` : `
+            <div class="warning-box">
+              <p style="margin: 0 0 6px 0;"><strong>⚠️ Sobre las contraseñas Zoom:</strong></p>
+              <ul style="margin: 0; padding-left: 20px;">
+                <li>Al finalizar las licencias el <strong>${escapeHtml(data.endDate)}</strong>, las contraseñas Zoom se cambiarán automáticamente por razones de seguridad y perderás el acceso a las cuentas.</li>
+                <li>Si necesitas extender el período de uso, puedes solicitar una prórroga al administrador antes de la fecha de vencimiento.</li>
+                <li>Recibirás un correo de recordatorio unos días antes de que expiren.</li>
+              </ul>
+            </div>
+            `}
+
+            ${hasMoodle ? `
+            <div class="danger-box">
+              <p style="margin: 0 0 6px 0;"><strong>🚫 MUY IMPORTANTE — NO CAMBIES LAS CONTRASEÑAS DE MOODLE</strong></p>
+              <p style="margin: 0;">Las contraseñas de Moodle <strong>NO deben ser modificadas bajo ningún concepto</strong>. Estas cuentas están vinculadas al sistema de gestión de licencias y cualquier cambio de contraseña afectará el acceso de otros usuarios. Si tienes algún inconveniente con el acceso a Moodle, contacta al administrador.</p>
+            </div>
+            ` : ''}
+
+            <p>Si tienes alguna pregunta, contacta al equipo de soporte.</p>
+
+            <p>Saludos,<br><strong>Sistema de Gestión de Licencias Zoom</strong></p>
+          </div>
+          <div class="footer">
+            <p>Este es un mensaje automático. Por favor no respondas a este correo.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
   }
 
   /**
@@ -376,6 +574,9 @@ export class EmailService {
    * Send expiration warning email to teacher
    */
   async sendExpirationWarning(data: ExpirationWarningData): Promise<boolean> {
+    const licenseEmails = Array.isArray(data.licenseEmail) ? data.licenseEmail : [data.licenseEmail];
+    const many = licenseEmails.length > 1;
+    const days = `${data.daysRemaining} día${data.daysRemaining !== 1 ? 's' : ''}`;
     const html = `
       <!DOCTYPE html>
       <html>
@@ -393,27 +594,29 @@ export class EmailService {
       <body>
         <div class="container">
           <div class="header">
-            <h2>⚠️ Tu Licencia de Zoom Está por Expirar</h2>
+            <h2>${many ? `⚠️ Tus ${licenseEmails.length} Licencias de Zoom Están por Expirar` : '⚠️ Tu Licencia de Zoom Está por Expirar'}</h2>
           </div>
           <div class="content">
-            <p>Hola <strong>${data.teacherName}</strong>,</p>
+            <p>Hola <strong>${escapeHtml(data.teacherName)}</strong>,</p>
             
             <div class="warning-box">
-              <p style="font-size: 18px; margin: 0;"><strong>⏰ Tu licencia expira en ${data.daysRemaining} día${data.daysRemaining !== 1 ? 's' : ''}</strong></p>
+              <p style="font-size: 18px; margin: 0;"><strong>⏰ ${many ? `Tus ${licenseEmails.length} licencias expiran` : 'Tu licencia expira'} en ${days}</strong></p>
             </div>
             
-            <p>Te recordamos que tu licencia de Zoom tiene las siguientes características:</p>
+            <p>${many ? 'Te recordamos que estas licencias de Zoom expiran el mismo día:' : 'Te recordamos que tu licencia de Zoom tiene las siguientes características:'}</p>
             
             <ul>
-              <li><strong>📧 Email de la Licencia:</strong> ${data.licenseEmail}</li>
-              <li><strong>📅 Fecha de Expiración:</strong> ${data.endDate}</li>
+              ${many
+                ? `<li><strong>📧 Licencias:</strong><ul>${licenseEmails.map((e) => `<li>${escapeHtml(e)}</li>`).join('')}</ul></li>`
+                : `<li><strong>📧 Email de la Licencia:</strong> ${escapeHtml(licenseEmails[0])}</li>`}
+              <li><strong>📅 Fecha de Expiración:</strong> ${escapeHtml(data.endDate)}</li>
             </ul>
             
             <p><strong>¿Qué sucederá después de la expiración?</strong></p>
             <ul>
-              <li>🔒 La contraseña será cambiada automáticamente por seguridad</li>
-              <li>❌ No podrás acceder a la cuenta después de la fecha de expiración</li>
-              <li>📋 La licencia quedará disponible para otros docentes</li>
+              <li>🔒 ${many ? 'Las contraseñas serán cambiadas' : 'La contraseña será cambiada'} automáticamente por seguridad</li>
+              <li>❌ No podrás acceder ${many ? 'a las cuentas' : 'a la cuenta'} después de la fecha de expiración</li>
+              <li>📋 ${many ? 'Las licencias quedarán disponibles' : 'La licencia quedará disponible'} para otros docentes</li>
             </ul>
             
             <p><strong>¿Necesitas más tiempo?</strong></p>
@@ -431,7 +634,9 @@ export class EmailService {
 
     return await this.sendEmail({
       to: data.teacherEmail,
-      subject: `⚠️ Tu Licencia de Zoom Expira en ${data.daysRemaining} Día${data.daysRemaining !== 1 ? 's' : ''}`,
+      subject: many
+        ? `⚠️ Tus ${licenseEmails.length} Licencias de Zoom Expiran en ${data.daysRemaining} Día${data.daysRemaining !== 1 ? 's' : ''}`
+        : `⚠️ Tu Licencia de Zoom Expira en ${data.daysRemaining} Día${data.daysRemaining !== 1 ? 's' : ''}`,
       html,
       logType: 'expiration_warning',
     });
