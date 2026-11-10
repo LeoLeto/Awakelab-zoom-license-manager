@@ -144,13 +144,11 @@ class ZoomService {
       const url = `https://api.zoom.us/v2/users/${encodeURIComponent(userIdOrEmail)}/password`;
       const payload = { password: newPassword };
       
-      console.log('🔍 [PASSWORD CHANGE DEBUG]');
-      console.log(`   URL: ${url}`);
-      console.log(`   Payload:`, JSON.stringify(payload, null, 2));
-      console.log(`   User: ${userIdOrEmail}`);
-      
+      // Never log the payload: it holds the new password in plain text
+      console.log(`🔑 Changing Zoom password for user: ${userIdOrEmail}`);
+
       // Correct Zoom API endpoint: PUT /users/{userId}/password with password in body
-      const response = await axios.put(
+      await axios.put(
         url,
         payload,
         {
@@ -162,11 +160,6 @@ class ZoomService {
       );
 
 
-      console.log('📥 [ZOOM API RESPONSE]');
-      // console.log(`   Status: ${response.status}`);
-      // console.log(`   Status Text: ${response.statusText}`);
-      // console.log(`   Response Data:`, JSON.stringify(response.data, null, 2));
-      // console.log(`   Headers:`, JSON.stringify(response.headers, null, 2));
       console.log(`✅ Successfully changed password for user: ${userIdOrEmail}`);
       
       return true;

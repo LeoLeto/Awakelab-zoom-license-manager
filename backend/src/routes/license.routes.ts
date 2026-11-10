@@ -346,8 +346,67 @@ const VALID_TIPO_USO = [
   'Uso para una plataforma Moodle de Grupo Aspasia',
 ] as const;
 
-router.post('/assignments', async (req: Request, res: Response) => {
+/** Fields a request (teacher portal) or a manual assignment may set */
+const pickAssignmentFields = (body: any) => ({
+  nombreApellidos: body.nombreApellidos,
+  correocorporativo: body.correocorporativo,
+  area: body.area,
+  comunidadAutonoma: body.comunidadAutonoma,
+  tipoUso: body.tipoUso,
+  fechaInicioUso: body.fechaInicioUso,
+  fechaFinUso: body.fechaFinUso,
+});
+
+/**
+ * Admin: assign one or more specific licenses to a person at once.
+ * Sends ONE email with every license (see assignmentService.createManualAssignments).
+ * POST /api/licenses/assignments/bulk
+ * body: { nombreApellidos, correocorporativo, area, comunidadAutonoma?, tipoUso,
+ *         fechaInicioUso, fechaFinUso, licenseIds: string[] }
+ */
+router.post('/assignments/bulk', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
+    const data = pickAssignmentFields(req.body);
+    if (!data.tipoUso || !VALID_TIPO_USO.includes(data.tipoUso)) {
+      return res.status(400).json({
+        success: false,
+        error: `El campo tipoUso debe ser uno de: ${VALID_TIPO_USO.join(', ')}`,
+      });
+    }
+    if (!data.nombreApellidos || !data.correocorporativo || !data.area) {
+      return res.status(400).json({ success: false, error: 'Nombre, email y área son obligatorios' });
+    }
+    if (!Array.isArray(req.body.licenseIds)) {
+      return res.status(400).json({ success: false, error: 'licenseIds debe ser una lista' });
+    }
+
+    const actor = req.username || 'admin';
+    const result = await assignmentService.createManualAssignments(data, req.body.licenseIds, actor);
+    res.status(201).json({
+      success: true,
+      message: `${result.assignments.length} licencia(s) asignada(s)`,
+      count: result.assignments.length,
+      credentialsPending: result.credentialsPending,
+      emailSent: result.emailSent,
+      assignments: result.assignments,
+    });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+router.post('/assignments', async (req: AuthRequest, res: Response) => {
+  try {
+    // A specific license can only be assigned by an admin, through
+    // POST /assignments/bulk (which also sends the emails). Requests from the
+    // teacher portal always start as 'pendiente'.
+    if (req.body.licenseId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Solo un administrador puede asignar una licencia concreta',
+      });
+    }
+
     const { tipoUso, fechaInicioUso, fechaFinUso } = req.body;
     if (!tipoUso || !VALID_TIPO_USO.includes(tipoUso)) {
       return res.status(400).json({
@@ -369,7 +428,14 @@ router.post('/assignments', async (req: Request, res: Response) => {
 
     // Use teacher's corporate email as actor so history shows who submitted the request
     const actor = req.body.correocorporativo || 'teacher';
-    const assignment = await assignmentService.createAssignment(req.body, actor);
+    const assignment = await assignmentService.createAssignment(
+      {
+        ...pickAssignmentFields(req.body),
+        isExtension: !!req.body.isExtension,
+        originalAssignmentId: req.body.originalAssignmentId || undefined,
+      },
+      actor
+    );
     res.status(201).json({ 
       success: true,
       message: 'Asignación creada exitosamente',

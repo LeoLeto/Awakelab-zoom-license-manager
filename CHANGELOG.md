@@ -2,6 +2,22 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.13.0] – 2026-11-05
+
+### Added
+- **Asignación manual de varias licencias a la vez**: El formulario «Nueva Asignación» permite seleccionar varias licencias (con filtro y «Seleccionar todas») para la misma persona y las mismas fechas. Nueva ruta solo para administradores `POST /api/licenses/assignments/bulk`. Antes había que crearlas una por una.
+- **Un único correo por persona**: Cuando a una persona se le asignan varias licencias con las mismas fechas, recibe un solo correo con una tabla de todas (y administración una sola copia), en lugar de uno por licencia. Aplica a la asignación manual, al envío de credenciales 48 h antes del inicio y al aviso de expiración.
+
+### Fixed
+- **La asignación manual no enviaba ningún correo**: Si la licencia empezaba en menos de 48 h, ni el usuario ni administración recibían nada y la contraseña de Zoom no se renovaba. Ahora funciona igual que aprobar una solicitud: en menos de 48 h se renuevan las contraseñas y se envían los datos al momento; si empieza más tarde, se envía la reserva ahora y las contraseñas unas 48 h antes.
+- **Rotación nocturna de contraseñas**: El proceso de la 01:00 nunca encontraba licencias que rotar (leía campos que no existen), así que las licencias liberadas conservaban la contraseña del usuario anterior. Ahora rota exactamente las licencias que se liberan al expirar su asignación.
+- **Aviso de expiración**: El correo de recordatorio de las 09:00 nunca se enviaba por el mismo motivo. Ahora se envía y omite las asignaciones que ya tienen una ampliación aprobada o solicitada.
+- El historial registra al administrador que hizo la asignación manual, en lugar del email del usuario asignado.
+
+### Security
+- Las contraseñas nuevas de Zoom ya no se escriben en texto plano en los logs del servidor.
+- `POST /api/licenses/assignments` (pública, portal docente) ya no acepta `licenseId`: antes cualquiera podía asignarse una licencia concreta sin aprobación. Además solo acepta los campos de una solicitud.
+
 ## [1.12.0] – 2026-09-24
 
 ### Fixed

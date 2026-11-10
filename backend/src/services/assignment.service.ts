@@ -82,6 +82,131 @@ export class AssignmentService {
   }
 
   /**
+   * Admin manual assignment of one or more licenses to the same person for the
+   * same period. Mirrors what approving a request does, but grouped:
+   *  - starts within 48h → each Zoom password is rotated now and ONE email with
+   *    every license's credentials is sent immediately (plus one admin copy);
+   *  - starts later → ONE reservation email now (no Zoom passwords); the 48h
+   *    cron rotates the passwords and sends ONE credentials email later.
+   * Every license is validated before anything is created, so a conflict
+   * never leaves a half-made batch.
+   */
+  async createManualAssignments(
+    assignmentData: Partial<IAssignment>,
+    licenseIds: string[],
+    actor: string
+  ): Promise<{ assignments: IAssignment[]; credentialsPending: boolean; emailSent: boolean }> {
+    const ids = [...new Set((licenseIds || []).map(String))];
+    if (ids.length === 0) {
+      throw new Error('Selecciona al menos una licencia');
+    }
+    if (!ids.every((id) => Types.ObjectId.isValid(id))) {
+      throw new Error('ID de licencia inválido');
+    }
+    if (!assignmentData.fechaInicioUso || !assignmentData.fechaFinUso) {
+      throw new Error('Las fechas de inicio y fin son obligatorias');
+    }
+
+    const start = new Date(assignmentData.fechaInicioUso);
+    const end = new Date(assignmentData.fechaFinUso);
+    end.setUTCHours(23, 59, 59, 999);
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) {
+      throw new Error('Las fechas indicadas no son válidas');
+    }
+    if (end.getTime() - start.getTime() > MAX_ASSIGNMENT_DAYS * 24 * 60 * 60 * 1000) {
+      throw new Error('El período máximo de una licencia es de 1 año (365 días).');
+    }
+
+    // Validate the whole batch first
+    const licenses = await License.find({ _id: { $in: ids } });
+    if (licenses.length !== ids.length) {
+      throw new Error('Alguna de las licencias seleccionadas no existe');
+    }
+    const inMaintenance = licenses.filter((l) => l.estado === 'mantenimiento');
+    if (inMaintenance.length > 0) {
+      throw new Error(`Licencia en mantenimiento: ${inMaintenance.map((l) => l.email).join(', ')}`);
+    }
+    const conflicts = await Assignment.find({
+      licenseId: { $in: ids },
+      estado: 'activo',
+      fechaInicioUso: { $lte: end },
+      fechaFinUso: { $gte: start },
+    }).populate('licenseId');
+    if (conflicts.length > 0) {
+      const taken = [...new Set(conflicts.map((c: any) => c.licenseId?.email).filter(Boolean))];
+      throw new Error(`No disponibles para el rango de fechas solicitado: ${taken.join(', ')}`);
+    }
+
+    const created: IAssignment[] = [];
+    for (const id of ids) {
+      created.push(
+        await this.createAssignment(
+          { ...assignmentData, licenseId: id as any, isExtension: false, originalAssignmentId: undefined },
+          actor
+        )
+      );
+    }
+
+    const hoursUntilStart = (start.getTime() - Date.now()) / (1000 * 60 * 60);
+    const credentialsPending = hoursUntilStart > 48;
+    const byId = new Map(licenses.map((l) => [l._id.toString(), l]));
+    const credentials = [];
+
+    for (const assignment of created) {
+      const license = byId.get(String(assignment.licenseId))!;
+      let zoomPassword: string | undefined;
+      if (!credentialsPending) {
+        zoomPassword = await this.refreshLicensePassword(license.email, license.passwordEmail);
+        await Assignment.findByIdAndUpdate(assignment._id, { $set: { credentialsSent: true } });
+      }
+      credentials.push({
+        licenseEmail: license.email,
+        zoomPassword,
+        hostKey: license.claveAnfitrionZoom,
+        moodleUser: license.usuarioMoodle,
+        moodlePassword: license.claveUsuarioMoodle,
+      });
+    }
+
+    let emailSent = false;
+    try {
+      emailSent = await emailService.sendMultiAssignmentConfirmation({
+        teacherName: created[0].nombreApellidos,
+        teacherEmail: created[0].correocorporativo,
+        startDate: start.toLocaleDateString('es-CL', { timeZone: 'UTC' }),
+        endDate: end.toLocaleDateString('es-CL', { timeZone: 'UTC' }),
+        platform: created[0].tipoUso,
+        credentialsPending,
+        licenses: credentials.sort((a, b) =>
+          a.licenseEmail.localeCompare(b.licenseEmail, 'es', { numeric: true })
+        ),
+      });
+    } catch (error: any) {
+      console.error('Failed to send manual assignment email:', error.message);
+    }
+
+    return { assignments: created, credentialsPending, emailSent };
+  }
+
+  /**
+   * Set a fresh Zoom password for a license (Zoom + DB). Falls back to the
+   * stored password if Zoom rejects the change, same as approving a request.
+   */
+  private async refreshLicensePassword(licenseEmail: string, storedPassword?: string): Promise<string | undefined> {
+    try {
+      const fresh = zoomService.generateSecurePassword();
+      await zoomService.changeUserPassword(licenseEmail, fresh);
+      await licenseService.updatePasswordByEmail(licenseEmail, fresh);
+      // Respect Zoom API rate limits on batches
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      return fresh;
+    } catch (error: any) {
+      console.error(`Failed to refresh Zoom password for ${licenseEmail}, using stored password:`, error.message);
+      return storedPassword;
+    }
+  }
+
+  /**
    * Create a new assignment
    */
   async createAssignment(assignmentData: Partial<IAssignment>, actor: string = 'system'): Promise<IAssignment> {
@@ -560,8 +685,15 @@ export class AssignmentService {
    * Mark expired assignments
    * This should be called by a cron job
    */
-  async markExpiredAssignments(): Promise<number> {
+  /**
+   * Mark past-end assignments as expired and free their licenses.
+   * Returns the IDs of the licenses that became free in this run, so the
+   * nightly job can rotate exactly those passwords (the previous user's
+   * access must end with the assignment).
+   */
+  async markExpiredAssignments(): Promise<{ count: number; freedLicenseIds: string[] }> {
     const now = new Date();
+    const freedLicenseIds: string[] = [];
 
     // Fetch before updating so we have the docs for history recording
     const toExpire = await Assignment.find({
@@ -569,7 +701,7 @@ export class AssignmentService {
       fechaFinUso: { $lt: now }
     });
 
-    if (toExpire.length === 0) return 0;
+    if (toExpire.length === 0) return { count: 0, freedLicenseIds };
 
     await Assignment.updateMany(
       { _id: { $in: toExpire.map(a => a._id) } },
@@ -599,11 +731,12 @@ export class AssignmentService {
             assignment.licenseId,
             { $set: { estado: 'libre' } }
           );
+          freedLicenseIds.push(assignment.licenseId.toString());
         }
       }
     }
 
-    return toExpire.length;
+    return { count: toExpire.length, freedLicenseIds: [...new Set(freedLicenseIds)] };
   }
 
   /**

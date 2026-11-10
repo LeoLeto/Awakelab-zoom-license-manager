@@ -102,6 +102,28 @@ export interface EmailLog {
   updatedAt: string;
 }
 
+/** Admin manual assignment of one or more licenses (POST /licenses/assignments/bulk) */
+export interface BulkAssignmentDto {
+  nombreApellidos: string;
+  correocorporativo: string;
+  area: string;
+  comunidadAutonoma?: string;
+  tipoUso: TipoUso;
+  fechaInicioUso: string;
+  fechaFinUso: string;
+  licenseIds: string[];
+}
+
+export interface BulkAssignmentResult {
+  success: boolean;
+  message: string;
+  count: number;
+  /** true → start is >48h away: reservation sent now, passwords 48h before */
+  credentialsPending: boolean;
+  emailSent: boolean;
+  assignments: Assignment[];
+}
+
 export interface CreateAssignmentDto {
   licenseId?: string;
   nombreApellidos: string;
