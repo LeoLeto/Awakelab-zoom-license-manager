@@ -607,30 +607,59 @@ router.post('/assignments/:id/resend-confirmation', authenticateToken, async (re
 });
 
 /**
- * Cancel an assignment
- * POST /api/licenses/assignments/:id/cancel
+ * Admin: edit an assignment that already has a license (person, area, type of
+ * use, dates). See assignmentService.editAssignment for the email rules.
+ * PATCH /api/licenses/assignments/:id
+ * body: { nombreApellidos?, correocorporativo?, area?, comunidadAutonoma?, tipoUso?,
+ *         fechaInicioUso?, fechaFinUso?, notify?: boolean }
+ */
+router.patch('/assignments/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const data = pickAssignmentFields(req.body);
+    if (data.tipoUso !== undefined && !VALID_TIPO_USO.includes(data.tipoUso)) {
+      return res.status(400).json({ success: false, error: 'Tipo de uso no válido' });
+    }
+    const result = await assignmentService.editAssignment(
+      req.params.id,
+      data as any,
+      req.username || 'system',
+      { notify: req.body.notify !== false }
+    );
+    res.json({ success: true, ...result });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * Cancel an assignment (a pending request, or an assigned one: the person is
+ * emailed unless notify is false, and the Zoom password is changed if they
+ * already had it).
+ * POST /api/licenses/assignments/:id/cancel   body: { notify?: boolean }
  */
 router.post('/assignments/:id/cancel', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const actor = req.username || 'system';
-    const assignment = await assignmentService.cancelAssignment(req.params.id, actor);
-    
-    if (!assignment) {
+    const result = await assignmentService.cancelAssignment(req.params.id, actor, {
+      notify: req.body?.notify !== false,
+    });
+
+    if (!result) {
       return res.status(404).json({
         success: false,
         error: 'Asignación no encontrada'
       });
     }
 
-    res.json({ 
+    res.json({
       success: true,
       message: 'Asignación cancelada exitosamente',
-      assignment
+      ...result,
     });
   } catch (error: any) {
-    res.status(400).json({ 
-      success: false, 
-      error: error.message 
+    res.status(400).json({
+      success: false,
+      error: error.message
     });
   }
 });

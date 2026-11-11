@@ -47,6 +47,16 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
     }
   };
 
+  // Refresh the table without the loading screen, so an open modal stays open
+  const reloadQuietly = async () => {
+    try {
+      const response = await licenseApi.getAllLicenses();
+      setLicenses(response.licenses.filter((item: any) => item && item.license && item.license.email));
+    } catch {
+      // keep the current table; the next manual refresh will show any error
+    }
+  };
+
   useEffect(() => {
     loadLicenses();
   }, [refreshTrigger]);
@@ -326,6 +336,16 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
           style={{ top: actionMenu.y + 4, left: actionMenu.x }}
           onClick={(e) => e.stopPropagation()}
         >
+          <button
+            className="action-menu-item"
+            onClick={() => {
+              const item = actionMenu.item;
+              setActionMenu(null);
+              openDetails(item, 'schedule');
+            }}
+          >
+            Editar o cancelar asignaciones
+          </button>
           {actionMenu.item.license.estado === 'ocupado' && (
             <button
               className="action-menu-item danger"
@@ -369,6 +389,7 @@ export default function LicenseOverview({ refreshTrigger }: LicenseOverviewProps
           licenseData={selectedLicenseForDetails}
           initialTab={detailsTab}
           onClose={() => setSelectedLicenseForDetails(null)}
+          onChanged={reloadQuietly}
         />
       )}
 

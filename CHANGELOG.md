@@ -2,6 +2,20 @@
 
 All notable changes to **Gestor de Licencias Zoom** are documented here.
 
+## [1.14.0] – 2026-11-11
+
+### Added
+- **Editar una asignación**: En la pestaña «Asignaciones actuales y futuras» de cada licencia, el botón «Editar» permite cambiar el nombre, el correo, el área, la comunidad, el tipo de uso y las fechas. Se aplican las mismas reglas que al crearla (máximo 365 días, sin solaparse con otra asignación de la licencia). Si cambia la persona, la nueva recibe el correo de asignación y, si la anterior ya tenía las claves, se cambia la contraseña de Zoom. Si solo cambian las fechas, se puede avisar a la persona con un correo «Licencia de Zoom actualizada». Nueva ruta solo para administradores `PATCH /api/licenses/assignments/:id`.
+- **Cancelar una sola asignación**: Botón «Cancelar» en la misma pestaña. Cancela solo esa asignación (antes la única opción era «Liberar licencia», que cancelaba todas las de la licencia y solo si estaba ocupada, así que una reserva futura no se podía anular). Avisa a la persona por correo con copia a administración (opcional) y, si ya tenía las claves, cambia la contraseña de Zoom para que deje de tener acceso.
+- Opción «Editar o cancelar asignaciones» en el menú ⋮ de cada licencia.
+
+### Changed
+- El correo de cancelación también llega a administración como copia, y distingue una reserva que no había empezado de un acceso en curso.
+
+### Fixed
+- **El panel mostraba la fecha de fin un día más tarde**: Las fechas se guardan en UTC y se mostraban en hora local (una asignación hasta el 05/11/2027 aparecía hasta el 06/11/27). Ahora se muestran en UTC, igual que en los correos.
+- **La tabla de licencias podía mostrar a la persona equivocada**: Si una licencia tenía una asignación en curso y otra reservada para más adelante, la columna «Asignado a» podía mostrar la reserva futura. Ahora muestra siempre la asignación en curso (o la siguiente).
+
 ## [1.13.0] – 2026-11-05
 
 ### Added

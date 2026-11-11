@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { HistoryViewer } from './HistoryViewer';
 import { formatDate } from '../utils/date';
 import { licenseApi } from '../services/api.service';
+import { CancelAssignmentPanel, EditAssignmentPanel } from './AssignmentActionPanels';
 
 export type LicenseDetailsTab = 'details' | 'schedule' | 'history';
 
@@ -10,15 +11,27 @@ interface LicenseDetailsModalProps {
   licenseData: LicenseWithAssignment;
   onClose: () => void;
   initialTab?: LicenseDetailsTab;
+  /** An assignment was edited or cancelled: the caller should reload */
+  onChanged?: () => void;
 }
 
-export default function LicenseDetailsModal({ licenseData, onClose, initialTab = 'details' }: LicenseDetailsModalProps) {
+export default function LicenseDetailsModal({ licenseData, onClose, initialTab = 'details', onChanged }: LicenseDetailsModalProps) {
   const { license, assignment } = licenseData;
   const [activeTab, setActiveTab] = useState<LicenseDetailsTab>(initialTab);
 
   // Current and future bookings of this license (loaded up front so the tab shows a count)
   const [schedule, setSchedule] = useState<{ assignments: Assignment[]; pendingExtensions: Assignment[] } | null>(null);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [action, setAction] = useState<{ kind: 'edit' | 'cancel'; assignment: Assignment } | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const handleActionDone = (message: string) => {
+    setAction(null);
+    setNotice(message);
+    setReloadKey((k) => k + 1);
+    onChanged?.();
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -35,7 +48,7 @@ export default function LicenseDetailsModal({ licenseData, onClose, initialTab =
     return () => {
       cancelled = true;
     };
-  }, [license._id]);
+  }, [license._id, reloadKey]);
 
   const now = new Date();
   const periodStatus = (a: Assignment) =>
@@ -45,7 +58,7 @@ export default function LicenseDetailsModal({ licenseData, onClose, initialTab =
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content license-details-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h3><img src="/icons/clipboard.png" className="icon-inline" alt="" /> Detalles de la Licencia</h3>
           <button onClick={onClose} className="close-button">×</button>
@@ -195,12 +208,29 @@ export default function LicenseDetailsModal({ licenseData, onClose, initialTab =
           ) : activeTab === 'schedule' ? (
             <div className="details-section">
               <h4>Asignaciones actuales y futuras</h4>
+              {notice && !action && <div className="schedule-notice">{notice}</div>}
+              {action?.kind === 'edit' && (
+                <EditAssignmentPanel
+                  assignment={action.assignment}
+                  licenseEmail={license.email}
+                  onDone={handleActionDone}
+                  onCancel={() => setAction(null)}
+                />
+              )}
+              {action?.kind === 'cancel' && (
+                <CancelAssignmentPanel
+                  assignment={action.assignment}
+                  licenseEmail={license.email}
+                  onDone={handleActionDone}
+                  onCancel={() => setAction(null)}
+                />
+              )}
               {scheduleError && <div className="error">{scheduleError}</div>}
               {!schedule && !scheduleError && <div className="loading">Cargando asignaciones...</div>}
               {schedule && schedule.assignments.length === 0 && (
                 <p className="text-muted">Esta licencia no tiene asignaciones en curso ni reservas futuras.</p>
               )}
-              {schedule && schedule.assignments.length > 0 && (
+              {!action && schedule && schedule.assignments.length > 0 && (
                 <div className="table-container">
                   <table>
                     <thead>
@@ -210,6 +240,7 @@ export default function LicenseDetailsModal({ licenseData, onClose, initialTab =
                         <th>Área</th>
                         <th>Desde</th>
                         <th>Hasta</th>
+                        <th></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -229,6 +260,20 @@ export default function LicenseDetailsModal({ licenseData, onClose, initialTab =
                             <td>{a.area}</td>
                             <td>{formatDate(a.fechaInicioUso)}</td>
                             <td>{formatDate(a.fechaFinUso)}</td>
+                            <td className="schedule-actions">
+                              <button
+                                className="btn-small"
+                                onClick={() => { setNotice(null); setAction({ kind: 'edit', assignment: a }); }}
+                              >
+                                Editar
+                              </button>
+                              <button
+                                className="btn-small btn-danger-outline"
+                                onClick={() => { setNotice(null); setAction({ kind: 'cancel', assignment: a }); }}
+                              >
+                                Cancelar
+                              </button>
+                            </td>
                           </tr>
                         );
                       })}
@@ -237,7 +282,7 @@ export default function LicenseDetailsModal({ licenseData, onClose, initialTab =
                 </div>
               )}
 
-              {schedule && schedule.pendingExtensions.length > 0 && (
+              {!action && schedule && schedule.pendingExtensions.length > 0 && (
                 <>
                   <h4 style={{ marginTop: '1.5rem' }}>Solicitudes de ampliación pendientes</h4>
                   <div className="table-container">
@@ -317,6 +362,33 @@ export default function LicenseDetailsModal({ licenseData, onClose, initialTab =
             color: #007bff;
             border-bottom: 3px solid #007bff;
           }
+
+          .modal-content.license-details-modal { max-width: 960px; width: 95%; }
+          .schedule-actions { white-space: nowrap; }
+          .schedule-actions .btn-small + .btn-small { margin-left: 6px; }
+          .btn-danger-outline { color: #b91c1c; border-color: #fca5a5; }
+          .schedule-notice {
+            background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46;
+            padding: 10px 14px; border-radius: 6px; margin-bottom: 12px;
+          }
+          .assignment-action-panel {
+            border: 1px solid #dee2e6; border-radius: 8px; padding: 16px; margin-bottom: 12px;
+          }
+          .assignment-action-panel.danger { border-color: #fca5a5; background: #fef2f2; }
+          .assignment-action-panel h4 { margin-top: 0; }
+          .assignment-action-panel ul { margin: 8px 0; padding-left: 20px; }
+          .assignment-action-panel .form-row { display: flex; gap: 12px; flex-wrap: wrap; }
+          .assignment-action-panel .form-group { flex: 1 1 220px; display: flex; flex-direction: column; margin-bottom: 10px; }
+          .assignment-action-panel .form-group label { font-weight: 500; margin-bottom: 4px; }
+          .assignment-action-panel input, .assignment-action-panel select { padding: 6px 8px; }
+          .panel-note { font-size: 13px; color: #555; margin: 8px 0; }
+          .panel-note.warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 10px 12px; color: #333; }
+          .panel-check { display: flex; gap: 8px; align-items: flex-start; margin: 10px 0; font-size: 14px; }
+          .panel-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+          .btn-danger {
+            background: #dc2626; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;
+          }
+          .btn-danger:disabled { opacity: 0.6; cursor: default; }
 
           .history-section {
             max-height: 500px;
