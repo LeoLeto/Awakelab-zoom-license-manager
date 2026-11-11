@@ -41,6 +41,8 @@ export interface Assignment {
   estado: 'activo' | 'expirado' | 'cancelado' | 'pendiente';
   isExtension?: boolean;
   originalAssignmentId?: string;
+  /** false → reservation whose credentials the 48h cron has not sent yet */
+  credentialsSent?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -112,6 +114,24 @@ export interface BulkAssignmentDto {
   fechaInicioUso: string;
   fechaFinUso: string;
   licenseIds: string[];
+}
+
+/** Result of PATCH /licenses/assignments/:id */
+export interface EditAssignmentResult {
+  success: boolean;
+  assignment: Assignment;
+  emailSent: boolean;
+  passwordRotated: boolean;
+  credentialsPending: boolean;
+}
+
+/** Result of POST /licenses/assignments/:id/cancel */
+export interface CancelAssignmentResult {
+  success: boolean;
+  message: string;
+  emailSent?: boolean;
+  passwordRotated?: boolean;
+  rotationSkipped?: string;
 }
 
 export interface BulkAssignmentResult {

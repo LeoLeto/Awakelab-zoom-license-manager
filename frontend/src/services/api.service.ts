@@ -7,6 +7,8 @@ import {
   CreateAssignmentDto,
   BulkAssignmentDto,
   BulkAssignmentResult,
+  EditAssignmentResult,
+  CancelAssignmentResult,
   EmailLog,
   ExtensionAvailability,
 } from '../types/license.types';
@@ -190,9 +192,20 @@ export const assignmentApi = {
     });
   },
 
-  async cancelAssignment(id: string): Promise<{ success: boolean; message: string }> {
+  /** Admin edit of an assigned license (person, area, type, dates) */
+  async editAssignment(id: string, data: Record<string, unknown>): Promise<EditAssignmentResult> {
+    return apiCall(`${API_BASE_URL}/licenses/assignments/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  },
+
+  async cancelAssignment(id: string, notify: boolean = true): Promise<CancelAssignmentResult> {
     return apiCall(`${API_BASE_URL}/licenses/assignments/${id}/cancel`, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notify }),
     });
   },
 

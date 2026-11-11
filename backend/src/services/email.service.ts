@@ -23,6 +23,8 @@ interface AssignmentEmailData {
   hostKey?: string;
   isExtension?: boolean;
   credentialsPending?: boolean;
+  /** An admin edited an existing assignment (dates or recipient) */
+  isUpdate?: boolean;
 }
 
 /** Credentials of one license inside a multi-license email */
@@ -77,6 +79,8 @@ interface AssignmentCancelledData {
   licenseEmail: string;
   startDate: string;
   endDate: string;
+  /** false = a future reservation that never started */
+  started?: boolean;
 }
 
 export class EmailService {
@@ -224,12 +228,14 @@ export class EmailService {
       <body>
         <div class="container">
           <div class="header">
-            <h2>${data.isExtension ? '📅 Licencia de Zoom Ampliada' : '✅ Licencia de Zoom Asignada'}</h2>
+            <h2>${data.isUpdate ? '✏️ Licencia de Zoom Actualizada' : data.isExtension ? '📅 Licencia de Zoom Ampliada' : '✅ Licencia de Zoom Asignada'}</h2>
           </div>
           <div class="content">
             <p>Hola <strong>${data.teacherName}</strong>,</p>
 
-            <p>${data.isExtension
+            <p>${data.isUpdate
+              ? 'Un administrador ha <strong>actualizado</strong> los datos de tu licencia de Zoom. Estos son los datos vigentes:'
+              : data.isExtension
               ? 'Tu licencia de Zoom ha sido <strong>ampliada</strong>. A continuación encontrarás los datos de acceso actualizados:'
               : data.credentialsPending
                 ? 'Tu solicitud de licencia de Zoom ha sido <strong>aprobada</strong>. A continuación encontrarás los detalles de tu reserva:'
@@ -294,7 +300,9 @@ export class EmailService {
    */
   async sendAssignmentConfirmation(data: AssignmentEmailData): Promise<boolean> {
     const html = this.buildAssignmentEmailHtml(data);
-    const subject = `✅ Licencia de Zoom Asignada - ${data.startDate} a ${data.endDate}`;
+    const subject = data.isUpdate
+      ? `✏️ Licencia de Zoom actualizada - ${data.startDate} a ${data.endDate}`
+      : `✅ Licencia de Zoom Asignada - ${data.startDate} a ${data.endDate}`;
 
     const sent = await this.sendEmail({
       to: data.teacherEmail,
@@ -669,17 +677,20 @@ export class EmailService {
           <div class="content">
             <p>Hola <strong>${data.teacherName}</strong>,</p>
 
-            <p>Te informamos que tu acceso a la siguiente licencia de Zoom ha sido
+            ${data.started === false
+              ? `<p>Te informamos que tu <strong>reserva</strong> de la siguiente licencia de Zoom ha sido
+            <strong>cancelada por un administrador</strong>. No llegarás a recibir las claves de acceso.</p>`
+              : `<p>Te informamos que tu acceso a la siguiente licencia de Zoom ha sido
             <strong>cancelado por un administrador</strong> y la licencia ha quedado liberada.
-            A partir de ahora <strong>ya no podrás acceder a esta cuenta</strong>.</p>
+            A partir de ahora <strong>ya no podrás acceder a esta cuenta</strong>.</p>`}
 
             <div class="info-box">
               <p><strong>📧 Email de la Licencia:</strong> ${data.licenseEmail}</p>
               <p><strong>📅 Período asignado originalmente:</strong> ${data.startDate} - ${data.endDate}</p>
             </div>
 
-            <p>Por motivos de seguridad, la contraseña de la cuenta puede ser modificada, por lo que
-            las credenciales que tenías ya no serán válidas.</p>
+            ${data.started === false ? '' : `<p>Por motivos de seguridad, la contraseña de la cuenta puede ser modificada, por lo que
+            las credenciales que tenías ya no serán válidas.</p>`}
 
             <p>Si crees que esto es un error o necesitas una licencia para continuar tu actividad,
             por favor contacta al administrador lo antes posible.</p>
@@ -694,12 +705,19 @@ export class EmailService {
       </html>
     `;
 
-    return await this.sendEmail({
+    const subject = data.started === false
+      ? `🚫 Tu reserva de licencia de Zoom (${data.licenseEmail}) ha sido cancelada`
+      : `🚫 Tu licencia de Zoom (${data.licenseEmail}) ha sido cancelada`;
+    const sent = await this.sendEmail({
       to: data.teacherEmail,
-      subject: `🚫 Tu licencia de Zoom (${data.licenseEmail}) ha sido cancelada`,
+      subject,
       html,
       logType: 'assignment_cancelled',
     });
+    if (sent) {
+      await this.sendAdminCopy(`[COPIA ADMIN] 🚫 Cancelada a ${data.teacherName} (${data.licenseEmail})`, html);
+    }
+    return sent;
   }
 
   /**

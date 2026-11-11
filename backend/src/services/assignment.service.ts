@@ -15,6 +15,9 @@ const toIsoDay = (d: Date) => d.toISOString().split('T')[0];
 const formatLongDate = (d: Date) =>
   d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 
+/** e.g. "5-11-2027": same format as the other emails, read in UTC */
+const formatShortDate = (d: Date | string) => new Date(d).toLocaleDateString('es-CL', { timeZone: 'UTC' });
+
 export class AssignmentService {
   /**
    * Get all assignments
@@ -579,9 +582,19 @@ export class AssignmentService {
   }
 
   /**
-   * Cancel assignment
+   * Cancel one assignment (admin). A pending request is just cancelled. For an
+   * assignment with a license:
+   *  - the person is emailed (plus admin copy) unless notify === false;
+   *  - if the credentials were already sent, the Zoom password is changed so
+   *    they cannot keep using the account — unless another assignment of the
+   *    same license already holds those same credentials;
+   *  - the license status is recomputed from what is left on it.
    */
-  async cancelAssignment(id: string, actor: string = 'system'): Promise<IAssignment | null> {
+  async cancelAssignment(
+    id: string,
+    actor: string = 'system',
+    options: { notify?: boolean } = {}
+  ): Promise<{ assignment: IAssignment; emailSent: boolean; passwordRotated: boolean; rotationSkipped?: string } | null> {
     if (!Types.ObjectId.isValid(id)) {
       throw new Error('ID de asignación inválido');
     }
@@ -590,46 +603,288 @@ export class AssignmentService {
     if (!existingAssignment) {
       return null;
     }
+    if (existingAssignment.estado === 'cancelado') {
+      throw new Error('Esta asignación ya está cancelada');
+    }
 
+    // findByIdAndUpdate (not .save()) so legacy tipoUso values are not re-validated
     const assignment = await Assignment.findByIdAndUpdate(
       id,
       { $set: { estado: 'cancelado' } },
       { new: true }
-    ).populate('licenseId');
+    );
+    if (!assignment) return null;
 
-    if (assignment) {
-      // Check if there are other active assignments for this license
-      const activeAssignments = await Assignment.find({
-        licenseId: assignment.licenseId,
-        estado: 'activo',
-        _id: { $ne: id }
-      });
+    let emailSent = false;
+    let passwordRotated = false;
+    let rotationSkipped: string | undefined;
+    const licenseId = existingAssignment.licenseId;
 
-      // If no other active assignments, set license to 'libre'
-      if (activeAssignments.length === 0) {
-        await License.findByIdAndUpdate(
-          assignment.licenseId,
-          { $set: { estado: 'libre' } }
-        );
+    if (licenseId && existingAssignment.estado === 'activo') {
+      const license = await License.findById(licenseId);
+      const now = new Date();
+      const started = new Date(existingAssignment.fechaInicioUso) <= now;
+      const credentialsOut = existingAssignment.credentialsSent !== false;
+      const ended = new Date(existingAssignment.fechaFinUso) < now;
+
+      if (license && credentialsOut && !ended) {
+        const othersWithCredentials = await Assignment.countDocuments({
+          licenseId,
+          estado: 'activo',
+          _id: { $ne: id },
+          credentialsSent: { $ne: false },
+          fechaFinUso: { $gte: now },
+        });
+        if (othersWithCredentials > 0) {
+          rotationSkipped = 'Otra asignación de esta licencia ya tiene las mismas claves; no se ha cambiado la contraseña.';
+        } else {
+          const before = license.passwordEmail;
+          const fresh = await this.refreshLicensePassword(license.email, before);
+          passwordRotated = !!fresh && fresh !== before;
+        }
       }
 
-      // Record history
-      await HistoryService.recordChange({
-        entityType: 'assignment',
-        entityId: assignment._id,
-        action: 'status_change',
-        actor,
-        changes: [
-          { field: 'estado', oldValue: existingAssignment.estado, newValue: 'cancelado' },
-        ],
-        metadata: {
-          assignmentName: assignment.nombreApellidos,
-          reason: 'Assignment cancelled',
-        },
-      });
+      await this.syncLicenseStatus(String(licenseId));
+
+      if (license && options.notify !== false) {
+        try {
+          emailSent = await emailService.sendAssignmentCancelled({
+            teacherName: existingAssignment.nombreApellidos,
+            teacherEmail: existingAssignment.correocorporativo,
+            licenseEmail: license.email,
+            startDate: formatShortDate(existingAssignment.fechaInicioUso),
+            endDate: formatShortDate(existingAssignment.fechaFinUso),
+            started,
+          });
+        } catch (error: any) {
+          console.error('Failed to send cancellation email:', error.message);
+        }
+      }
     }
 
-    return assignment;
+    await HistoryService.recordChange({
+      entityType: 'assignment',
+      entityId: assignment._id,
+      action: 'status_change',
+      actor,
+      changes: [
+        { field: 'estado', oldValue: existingAssignment.estado, newValue: 'cancelado' },
+      ],
+      metadata: {
+        assignmentName: assignment.nombreApellidos,
+        reason: licenseId
+          ? `Cancelada manualmente por un administrador${passwordRotated ? '; contraseña de Zoom cambiada' : ''}${emailSent ? '; aviso enviado al docente' : ''}`
+          : 'Solicitud cancelada',
+      },
+    });
+
+    return { assignment, emailSent, passwordRotated, rotationSkipped };
+  }
+
+  /**
+   * License status follows its assignments: 'ocupado' while an active
+   * assignment is running or starts within 48h, otherwise 'libre'.
+   * Licenses in maintenance are left alone.
+   */
+  private async syncLicenseStatus(licenseId: string): Promise<void> {
+    const license = await License.findById(licenseId);
+    if (!license || license.estado === 'mantenimiento') return;
+    const now = new Date();
+    const busy = await Assignment.countDocuments({
+      licenseId: license._id,
+      estado: 'activo',
+      fechaInicioUso: { $lte: new Date(now.getTime() + 48 * 60 * 60 * 1000) },
+      fechaFinUso: { $gte: now },
+    });
+    const estado = busy > 0 ? 'ocupado' : 'libre';
+    if (license.estado !== estado) {
+      await License.findByIdAndUpdate(license._id, { $set: { estado } });
+      await HistoryService.recordChange({
+        entityType: 'license',
+        entityId: license._id,
+        action: 'status_change',
+        actor: 'system',
+        changes: [{ field: 'estado', oldValue: license.estado, newValue: estado }],
+        metadata: { licenseEmail: license.email, reason: 'Recalculado tras modificar o cancelar una asignación' },
+      });
+    }
+  }
+
+  /**
+   * Admin edit of an assignment that already has a license: person, area,
+   * type of use and dates. Same rules as creating one (365 days max, no
+   * overlap on the license, start at 00:00 UTC, end at 23:59:59.999 UTC).
+   *  - New recipient: they always get an email. If the previous person may
+   *    know the password, it is changed first. Within 48h of the start the new
+   *    person gets the credentials now; otherwise a reservation, and the 48h
+   *    cron sends them later.
+   *  - Same person, new dates: with notify, an "actualizada" email (with the
+   *    password if they already had it, or fresh credentials if the new start
+   *    is now within 48h).
+   *  - Only name/area/type: no email.
+   */
+  async editAssignment(
+    id: string,
+    data: Partial<IAssignment>,
+    actor: string = 'system',
+    options: { notify?: boolean } = {}
+  ): Promise<{ assignment: IAssignment; emailSent: boolean; passwordRotated: boolean; credentialsPending: boolean }> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new Error('ID de asignación inválido');
+    }
+    const existing = await Assignment.findById(id);
+    if (!existing) {
+      throw new Error('Asignación no encontrada');
+    }
+    if (existing.estado !== 'activo' || !existing.licenseId) {
+      throw new Error('Solo se pueden editar asignaciones activas con licencia');
+    }
+
+    const patch: Record<string, any> = {};
+    const str = (v: any) => (typeof v === 'string' ? v.trim() : v);
+
+    for (const field of ['nombreApellidos', 'area', 'comunidadAutonoma', 'tipoUso'] as const) {
+      const v = str((data as any)[field]);
+      if (v !== undefined && v !== ((existing as any)[field] ?? '')) patch[field] = v;
+    }
+    if (patch.nombreApellidos === '') throw new Error('El nombre es obligatorio');
+    if (patch.area === '') throw new Error('El área es obligatoria');
+
+    if (data.correocorporativo !== undefined) {
+      const email = String(data.correocorporativo).trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        throw new Error('El correo indicado no es válido');
+      }
+      if (email !== existing.correocorporativo.toLowerCase()) patch.correocorporativo = email;
+    }
+
+    const start = new Date(data.fechaInicioUso ?? existing.fechaInicioUso);
+    const end = new Date(data.fechaFinUso ?? existing.fechaFinUso);
+    start.setUTCHours(0, 0, 0, 0);
+    end.setUTCHours(23, 59, 59, 999);
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) {
+      throw new Error('Las fechas indicadas no son válidas');
+    }
+    if (end.getTime() - start.getTime() > MAX_ASSIGNMENT_DAYS * 24 * 60 * 60 * 1000) {
+      throw new Error('El período máximo de una licencia es de 1 año (365 días).');
+    }
+    if (end < new Date()) {
+      throw new Error('La fecha de fin no puede ser anterior a hoy. Para terminar una asignación, cancélala.');
+    }
+    if (start.getTime() !== new Date(existing.fechaInicioUso).getTime()) patch.fechaInicioUso = start;
+    if (end.getTime() !== new Date(existing.fechaFinUso).getTime()) patch.fechaFinUso = end;
+
+    if (Object.keys(patch).length === 0) {
+      throw new Error('No hay cambios que guardar');
+    }
+
+    if (patch.fechaInicioUso || patch.fechaFinUso) {
+      const overlapping = await Assignment.findOne({
+        _id: { $ne: id },
+        licenseId: existing.licenseId,
+        estado: 'activo',
+        fechaInicioUso: { $lte: end },
+        fechaFinUso: { $gte: start },
+      });
+      if (overlapping) {
+        throw new Error(
+          `Las fechas se solapan con otra asignación de esta licencia (${overlapping.nombreApellidos}, ` +
+          `${formatShortDate(overlapping.fechaInicioUso)} - ${formatShortDate(overlapping.fechaFinUso)})`
+        );
+      }
+    }
+
+    const license = await License.findById(existing.licenseId);
+    if (!license) throw new Error('Licencia no encontrada');
+
+    const recipientChanged = !!patch.correocorporativo;
+    const datesChanged = !!(patch.fechaInicioUso || patch.fechaFinUso);
+    const credentialsOut = existing.credentialsSent !== false;
+    const startsWithin48h = (start.getTime() - Date.now()) / (1000 * 60 * 60) <= 48;
+
+    let passwordRotated = false;
+    let sendCredentialsNow = false;
+    let credentialsPending = false;
+    let notify = false;
+
+    if (recipientChanged) {
+      notify = true;
+      if (credentialsOut || startsWithin48h) {
+        // The previous person may know the current password
+        const before = license.passwordEmail;
+        const fresh = await this.refreshLicensePassword(license.email, before);
+        passwordRotated = !!fresh && fresh !== before;
+      }
+      sendCredentialsNow = startsWithin48h;
+      credentialsPending = !startsWithin48h;
+      patch.credentialsSent = startsWithin48h;
+    } else if (datesChanged && options.notify !== false) {
+      notify = true;
+      if (credentialsOut) {
+        sendCredentialsNow = true;
+      } else if (startsWithin48h) {
+        // A reservation that now starts within 48h: what the 48h cron would do
+        const before = license.passwordEmail;
+        const fresh = await this.refreshLicensePassword(license.email, before);
+        passwordRotated = !!fresh && fresh !== before;
+        sendCredentialsNow = true;
+        patch.credentialsSent = true;
+      } else {
+        credentialsPending = true;
+      }
+    } else {
+      credentialsPending = !credentialsOut;
+    }
+
+    const updated = await Assignment.findByIdAndUpdate(
+      id,
+      { $set: patch },
+      { new: true, runValidators: true }
+    );
+    if (!updated) throw new Error('Asignación no encontrada');
+
+    const changes = HistoryService.extractChanges(existing.toObject(), updated.toObject(), [
+      'nombreApellidos', 'correocorporativo', 'area', 'comunidadAutonoma', 'tipoUso', 'fechaInicioUso', 'fechaFinUso',
+    ]);
+    await HistoryService.recordChange({
+      entityType: 'assignment',
+      entityId: updated._id,
+      action: 'update',
+      actor,
+      changes,
+      metadata: {
+        assignmentName: updated.nombreApellidos,
+        reason: `Editada por un administrador${passwordRotated ? '; contraseña de Zoom cambiada' : ''}`,
+      },
+    });
+
+    await this.syncLicenseStatus(String(license._id));
+
+    let emailSent = false;
+    if (notify) {
+      const current = await License.findById(license._id);
+      try {
+        emailSent = await emailService.sendAssignmentConfirmation({
+          teacherName: updated.nombreApellidos,
+          teacherEmail: updated.correocorporativo,
+          licenseEmail: license.email,
+          startDate: formatShortDate(updated.fechaInicioUso),
+          endDate: formatShortDate(updated.fechaFinUso),
+          platform: updated.tipoUso,
+          zoomPassword: sendCredentialsNow ? current?.passwordEmail : undefined,
+          hostKey: license.claveAnfitrionZoom,
+          moodleUser: license.usuarioMoodle,
+          moodlePassword: license.claveUsuarioMoodle,
+          credentialsPending: !sendCredentialsNow,
+          // A new recipient never saw this assignment: plain assignment email
+          isUpdate: !recipientChanged,
+        });
+      } catch (error: any) {
+        console.error('Failed to send edited assignment email:', error.message);
+      }
+    }
+
+    return { assignment: updated, emailSent, passwordRotated, credentialsPending };
   }
 
   /**

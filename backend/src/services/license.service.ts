@@ -407,7 +407,11 @@ export class LicenseService {
     // .lean() returns plain JS objects instead of Mongoose Documents — significantly faster
     const [licenses, activeAssignments] = await Promise.all([
       License.find().sort({ createdAt: -1 }).lean(),
-      Assignment.find({ estado: 'activo', fechaFinUso: { $gte: now } }).lean()
+      // Latest start first: the Map keeps the last one per license, i.e. the
+      // current (or next) assignment, not a later reservation
+      Assignment.find({ estado: 'activo', fechaFinUso: { $gte: now } })
+        .sort({ fechaInicioUso: -1 })
+        .lean()
     ]);
 
     // Build a Map from licenseId -> assignment for O(1) lookup
